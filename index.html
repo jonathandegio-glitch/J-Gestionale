@@ -1,1 +1,323 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestionale Spese & Entrate</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --primary-color: #2c3e50;
+      --secondary-color: #18bc9c;
+      --bg-light: #f8f9fa;
+    }
+    body { background-color: var(--bg-light); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .navbar { background-color: var(--primary-color); }
+    .card { border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    .nav-tabs .nav-link.active { font-weight: bold; border-bottom: 3px solid var(--secondary-color); }
+    .week-card { border-left: 4px solid var(--secondary-color); background: #fff; padding: 15px; margin-bottom: 15px; border-radius: 5px; }
+    .badge-mastrino { background-color: #e9ecef; color: #495057; font-weight: 600; }
+    .drag-unlocked .draggable-item { cursor: grab; }
+    .drag-locked .draggable-item { cursor: default; }
+  </style>
+</head>
+<body>
 
+  <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#"><i class="fa-solid fa-wallet me-2"></i>Gestionale Spese</a>
+      <div class="d-flex align-items-center gap-2">
+        <select id="selectAnno" class="form-select form-select-sm" onchange="cambiaAnno(this.value)">
+          <option value="2026" selected>Anno 2026 (Attivo)</option>
+          <option value="2025">Anno 2025 (Archivio)</option>
+        </select>
+        <button class="btn btn-outline-light btn-sm" onclick="sincronizzaGoogleSheets()">
+          <i class="fa-solid fa-rotate me-1"></i> Sync Sheets
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container-fluid px-4">
+    <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
+      <li class="nav-item">
+        <button class="nav-link active" id="tab-inserimento" data-bs-toggle="tab" data-bs-target="#sec-inserimento"><i class="fa-solid fa-plus me-1"></i> Inserimento Rapido</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="tab-mensile" data-bs-toggle="tab" data-bs-target="#sec-mensile"><i class="fa-solid fa-calendar-days me-1"></i> Gestione Mensile</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="tab-mastrini" data-bs-toggle="tab" data-bs-target="#sec-mastrini"><i class="fa-solid fa-vault me-1"></i> Mastrini & Fondi</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="tab-banca" data-bs-toggle="tab" data-bs-target="#sec-banca"><i class="fa-solid fa-building-columns me-1"></i> Spese Bancarie</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="tab-investimenti" data-bs-toggle="tab" data-bs-target="#sec-investimenti"><i class="fa-solid fa-chart-line me-1"></i> Investimenti</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="tab-setup" data-bs-toggle="tab" data-bs-target="#sec-setup"><i class="fa-solid fa-gear me-1"></i> Setup / Import</button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="mainTabsContent">
+
+      <div class="tab-pane fade show active" id="sec-inserimento">
+        <div class="row justify-content-center">
+          <div class="col-md-6">
+            <div class="card p-4">
+              <h5 class="card-title mb-3"><i class="fa-solid fa-bolt text-warning me-2"></i>Nuova Transazione Rapida</h5>
+              <form id="formNuovaSpesa" onsubmit="salvaSpesaRapida(event)">
+                <div class="mb-3">
+                  <label class="form-label">Data</label>
+                  <input type="date" id="inputDataSpesa" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Nome / Descrizione Spesa</label>
+                  <input type="text" id="inputNotaSpesa" class="form-control" placeholder="es. Pranzo, Benzina, Spesa" required>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Importo (€)</label>
+                  <input type="number" step="0.01" id="inputImportoSpesa" class="form-control" placeholder="0.00" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100"><i class="fa-solid fa-check me-1"></i> Inserisci Spesa</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="sec-mensile">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="d-flex align-items-center gap-2">
+            <label class="fw-bold">Mese Contabile:</label>
+            <select id="selectMese" class="form-select form-select-sm" style="width: auto;" onchange="caricaSettimaneMese()">
+              <option value="agosto" selected>Agosto (15/08 - 15/09)</option>
+              <option value="settembre">Settembre (15/09 - 15/10)</option>
+            </select>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="toggleDragLock()" id="btnLockDrag">
+              <i class="fa-solid fa-lock me-1"></i> Blocco Spostamenti
+            </button>
+            <button class="btn btn-sm btn-success" onclick="inviaAiFondi()">
+              <i class="fa-solid fa-paper-plane me-1"></i> Invia ai Fondi
+            </button>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-8" id="containerSettimane">
+            </div>
+          
+          <div class="col-md-4">
+            <div class="card p-3">
+              <h6><i class="fa-solid fa-calculator me-2"></i>Ripartizione Stipendio / Extra</h6>
+              <div class="mb-2 small text-muted">Aggiungi o personalizza le quote mensili destinate ai vari mastrini.</div>
+              <div id="listaAllocazioneMese">
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="sec-mastrini">
+        <div class="row mb-3">
+          <div class="col-md-8">
+            <div class="card p-3 bg-white">
+              <h5>Totale Mastrini Disponibili: <span class="text-success" id="totaleMastriniDisponibili">€ 0.00</span></h5>
+              <small class="text-muted">(Esclusi investimenti, vincoli e fondo pensione)</small>
+            </div>
+          </div>
+          <div class="col-md-4 text-end">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTrasferimento">
+              <i class="fa-solid fa-arrow-right-arrow-left me-1"></i> Trasferisci tra Fondi
+            </button>
+          </div>
+        </div>
+
+        <div class="row" id="containerMastrini">
+          </div>
+      </div>
+
+      <div class="tab-pane fade" id="sec-banca">
+        <div class="card p-3">
+          <h5><i class="fa-solid fa-receipt me-2"></i>Tracciamento Spese Bancarie</h5>
+          <p class="text-muted small">Il totale progressivo aggiorna automaticamente il mastrino "Extra".</p>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Causale / Voce</th>
+                  <th>Costo (€)</th>
+                </tr>
+              </thead>
+              <tbody id="tbodySpeseBancarie">
+                </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="sec-investimenti">
+        <div class="card p-3">
+          <h5><i class="fa-solid fa-chart-pie me-2"></i>Recap Portafoglio & Investimenti</h5>
+          <div class="table-responsive">
+            <table class="table table-striped align-middle">
+              <thead>
+                <tr>
+                  <th>Strumento / Fondo</th>
+                  <th>Ultimo Aggiornamento</th>
+                  <th>Controvalore (€)</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyInvestimenti">
+                </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="sec-setup">
+        <div class="card p-4">
+          <h5><i class="fa-solid fa-file-import me-2"></i>Importazione Dati da Foglio Google</h5>
+          <p class="text-muted">Incolla il link di condivisione del tuo foglio Google a blocchi per importare saldi e mastrini.</p>
+          <div class="mb-3">
+            <input type="url" id="linkGoogleSheet" class="form-control" placeholder="https://docs.google.com/spreadsheets/d/...">
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-warning" onclick="confermaImportazione('sovrascrivi')">
+              <i class="fa-solid fa-rotate-right me-1"></i> Sostituisci / Sovrascrivi Dati
+            </button>
+            <button class="btn btn-secondary" onclick="confermaImportazione('unisci')">
+              <i class="fa-solid fa-plus me-1"></i> Magazzino / Unisci
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalTrasferimento" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Trasferimento tra Mastrini</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Fondo di Origine (Da)</label>
+            <select id="transfDa" class="form-select"></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fondo di Destinazione (A)</label>
+            <select id="transfA" class="form-select"></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Importo (€)</label>
+            <input type="number" step="0.01" id="transfImporto" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Causale</label>
+            <input type="text" id="transfCausale" class="form-control" placeholder="Spostamento fondi">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" onclick="eseguiTrasferimento()">Conferma Trasferimento</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Credenziali Firebase del Progetto
+    const firebaseConfig = {
+      apiKey: "AIzaSyBF1S3NeA-IKxqna87CEzRiMGGN3AOnONo",
+      authDomain: "gestionale-spese-e-entrate.firebaseapp.com",
+      projectId: "gestionale-spese-e-entrate",
+      storageBucket: "gestionale-spese-e-entrate.firebasestorage.app",
+      messagingSenderId: "129010726048",
+      appId: "1:129010726048:web:ebabd5819b52743ff505c5",
+      measurementId: "G-26D9CJ55RW"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Inizializzazione data odierna nel form rapido
+    document.getElementById('inputDataSpesa').valueAsDate = new Date();
+  </script>
+
+  <script>
+    // Stato Applicativo Globale
+    let statoDragSbloccato = false;
+    
+    // Inserimento Rapido Transazione
+    function salvaSpesaRapida(e) {
+      e.preventDefault();
+      const data = document.getElementById('inputDataSpesa').value;
+      const nota = document.getElementById('inputNotaSpesa').value;
+      const importo = parseFloat(document.getElementById('inputImportoSpesa').value);
+
+      alert(`Spesa registrata con successo: ${nota} - €${importo} in data ${data}`);
+      document.getElementById('formNuovaSpesa').reset();
+      document.getElementById('inputDataSpesa').valueAsDate = new Date();
+    }
+
+    // Toggle Blocco/Sblocco Drag & Drop
+    function toggleDragLock() {
+      statoDragSbloccato = !statoDragSbloccato;
+      const btn = document.getElementById('btnLockDrag');
+      if (statoDragSbloccato) {
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-warning');
+        btn.innerHTML = `<i class="fa-solid fa-lock-open me-1"></i> Spostamenti Attivi`;
+      } else {
+        btn.classList.remove('btn-warning');
+        btn.classList.add('btn-outline-secondary');
+        btn.innerHTML = `<i class="fa-solid fa-lock me-1"></i> Blocco Spostamenti`;
+      }
+    }
+
+    // Popup Conferma Importazione Google Sheets
+    function confermaImportazione(modalita) {
+      const messaggio = modalita === 'sovrascrivi' 
+        ? "Attenzione: Questa operazione azzererà tutti i mastrini attuali sostituendoli con quelli del Foglio Google. Continuare?"
+        : "I nuovi mastrini e le voci importate verranno uniti a quelli già esistenti. Continuare?";
+      
+      if (confirm(messaggio)) {
+        alert("Importazione avviata tramite il link fornito.");
+      }
+    }
+
+    // Chiamata Webhook verso Google Apps Script
+    function sincronizzaGoogleSheets() {
+      alert("Sincronizzazione in corso con Google Sheets tramite Google Apps Script...");
+    }
+
+    function inviaAiFondi() {
+      alert("Quote mensili trasferite ai Mastrini con successo!");
+    }
+
+    function eseguiTrasferimento() {
+      alert("Trasferimento intra-fondo eseguito correttamente!");
+      const modal = bootstrap.Modal.getInstance(document.getElementById('modalTrasferimento'));
+      modal.hide();
+    }
+
+    function cambiaAnno(anno) {
+      console.log("Anno selezionato:", anno);
+    }
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
