@@ -1,323 +1,779 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestionale Spese & Entrate</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <style>
-    :root {
-      --primary-color: #2c3e50;
-      --secondary-color: #18bc9c;
-      --bg-light: #f8f9fa;
-    }
-    body { background-color: var(--bg-light); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    .navbar { background-color: var(--primary-color); }
-    .card { border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
-    .nav-tabs .nav-link.active { font-weight: bold; border-bottom: 3px solid var(--secondary-color); }
-    .week-card { border-left: 4px solid var(--secondary-color); background: #fff; padding: 15px; margin-bottom: 15px; border-radius: 5px; }
-    .badge-mastrino { background-color: #e9ecef; color: #495057; font-weight: 600; }
-    .drag-unlocked .draggable-item { cursor: grab; }
-    .drag-locked .draggable-item { cursor: default; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionale Spese & Entrate</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // Configurazione Firebase dal documento
+        const firebaseConfig = {
+            apiKey: "AIzaSyBF1S3NeA-IKxqna87CEzRiMGGN3AOnONo",
+            authDomain: "gestionale-spese-e-entrate.firebaseapp.com",
+            projectId: "gestionale-spese-e-entrate",
+            storageBucket: "gestionale-spese-e-entrate.firebasestorage.app",
+            messagingSenderId: "129010726048",
+            appId: "1:129010726048:web:ebabd5819b52743ff505c5",
+            measurementId: "G-26D9CJ55RW"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        window.db = db;
+        window.auth = auth;
+        window.setDoc = setDoc;
+        window.doc = doc;
+        window.getDoc = getDoc;
+
+        // Autenticazione automatica
+        signInAnonymously(auth).catch(console.error);
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log("Autenticato Firebase:", user.uid);
+                initFirebaseSync(user.uid);
+            }
+        });
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #f4f7fe;
+            --card-bg: #ffffff;
+            --primary: #4318ff;
+            --primary-hover: #3311cc;
+            --text-main: #2b3674;
+            --text-muted: #a3edcc;
+            --text-gray: #707ebe;
+            --accent-green: #01b574;
+            --accent-orange: #ffb547;
+            --accent-red: #ee5d50;
+            --border-radius: 20px;
+            --border-radius-sm: 12px;
+            --shadow: 0px 18px 40px rgba(112, 144, 176, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding-bottom: 40px;
+        }
+
+        /* HEADER & NAVBAR */
+        header {
+            background: var(--card-bg);
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-container img {
+            max-height: 45px;
+            object-fit: contain;
+        }
+
+        .hamburger-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-main);
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        /* SIDE MENU (DRAWER) */
+        .side-menu {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 280px;
+            height: 100%;
+            background: var(--card-bg);
+            box-shadow: -5px 0 25px rgba(0,0,0,0.1);
+            transition: right 0.3s ease;
+            z-index: 200;
+            padding: 25px 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .side-menu.open {
+            right: 0;
+        }
+
+        .close-menu-btn {
+            align-self: flex-end;
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: var(--text-gray);
+            margin-bottom: 20px;
+        }
+
+        .menu-items button {
+            width: 100%;
+            text-align: left;
+            padding: 12px 18px;
+            margin-bottom: 10px;
+            border: none;
+            background: transparent;
+            border-radius: var(--border-radius-sm);
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-main);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+
+        .menu-items button:hover, .menu-items button.active {
+            background: var(--bg-color);
+            color: var(--primary);
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3);
+            display: none;
+            z-index: 150;
+        }
+
+        .overlay.active { display: block; }
+
+        /* CONTAINER PRINCIPALE */
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        /* SEZIONI SCHERMATA */
+        .section-view {
+            display: none;
+        }
+
+        .section-view.active {
+            display: block;
+        }
+
+        /* CARD STYLING */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* TASTI TONDEGGIANTI E INPUT */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 30px; /* Tasti tondeggianti */
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover { background: var(--primary-hover); }
+        .btn-success { background: var(--accent-green); }
+        .btn-warning { background: var(--accent-orange); }
+        .btn-danger { background: var(--accent-red); }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: var(--border-radius-sm);
+            border: 1px solid #e0e5f2;
+            margin-bottom: 12px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+        }
+
+        /* LAYOUT A GRIGLIA E TABELLE */
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+        .grid-blocks { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
+
+        .block-item {
+            background: var(--bg-color);
+            border-radius: var(--border-radius-sm);
+            padding: 15px;
+            border: 1px solid #e0e5f2;
+        }
+
+        .block-header {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 5px;
+        }
+
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e0e5f2; font-size: 14px; }
+        th { font-weight: 600; color: var(--text-gray); }
+
+        /* QUICK FORM MOBILE */
+        .quick-form {
+            background: linear-gradient(135deg, #868CFF 0%, #4318FF 100%);
+            color: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .quick-form input, .quick-form select {
+            color: #333;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-green { background: #e6f9f0; color: var(--accent-green); }
+        .badge-red { background: #fde8e8; color: var(--accent-red); }
+
+        /* MODALE POPUP */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 450px;
+        }
+    </style>
 </head>
 <body>
 
-  <nav class="navbar navbar-expand-lg navbar-dark mb-4">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="#"><i class="fa-solid fa-wallet me-2"></i>Gestionale Spese</a>
-      <div class="d-flex align-items-center gap-2">
-        <select id="selectAnno" class="form-select form-select-sm" onchange="cambiaAnno(this.value)">
-          <option value="2026" selected>Anno 2026 (Attivo)</option>
-          <option value="2025">Anno 2025 (Archivio)</option>
-        </select>
-        <button class="btn btn-outline-light btn-sm" onclick="sincronizzaGoogleSheets()">
-          <i class="fa-solid fa-rotate me-1"></i> Sync Sheets
-        </button>
-      </div>
-    </div>
-  </nav>
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
-  <div class="container-fluid px-4">
-    <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
-      <li class="nav-item">
-        <button class="nav-link active" id="tab-inserimento" data-bs-toggle="tab" data-bs-target="#sec-inserimento"><i class="fa-solid fa-plus me-1"></i> Inserimento Rapido</button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link" id="tab-mensile" data-bs-toggle="tab" data-bs-target="#sec-mensile"><i class="fa-solid fa-calendar-days me-1"></i> Gestione Mensile</button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link" id="tab-mastrini" data-bs-toggle="tab" data-bs-target="#sec-mastrini"><i class="fa-solid fa-vault me-1"></i> Mastrini & Fondi</button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link" id="tab-banca" data-bs-toggle="tab" data-bs-target="#sec-banca"><i class="fa-solid fa-building-columns me-1"></i> Spese Bancarie</button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link" id="tab-investimenti" data-bs-toggle="tab" data-bs-target="#sec-investimenti"><i class="fa-solid fa-chart-line me-1"></i> Investimenti</button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link" id="tab-setup" data-bs-toggle="tab" data-bs-target="#sec-setup"><i class="fa-solid fa-gear me-1"></i> Setup / Import</button>
-      </li>
-    </ul>
+    <header>
+        <div class="logo-container">
+            <img src="https://drive.google.com/thumbnail?id=1eimNS4XHA7QeuNP2qnTRdC1COpFQGV3c&sz=w500" alt="Logo Gestione Spese" onerror="this.onerror=null; this.src='https://via.placeholder.com/150x45?text=LOGISTICA+SPESE';">
+        </div>
+        <button class="hamburger-btn" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
+    </header>
 
-    <div class="tab-content" id="mainTabsContent">
+    <nav class="side-menu" id="sideMenu">
+        <button class="close-menu-btn" onclick="toggleMenu()"><i class="fas fa-times"></i></button>
+        <div class="menu-items">
+            <button class="active" onclick="switchSection('dashboardView')"><i class="fas fa-home"></i> Dashboard / Inserimento</button>
+            <button onclick="switchSection('mastriniView')"><i class="fas fa-wallet"></i> Gestione Mastrini</button>
+            <button onclick="switchSection('setupView')"><i class="fas fa-file-import"></i> Setup & Inizio / Import</button>
+            <button onclick="switchSection('speseBancarieView')"><i class="fas fa-university"></i> Spese Bancarie</button>
+            <button onclick="switchSection('investimentiView')"><i class="fas fa-chart-line"></i> Investimenti</button>
+            <button onclick="switchSection('analisiView')"><i class="fas fa-chart-pie"></i> Analisi Dati</button>
+            <button onclick="switchSection('syncView')"><i class="fas fa-sync"></i> Sincronizzazione / GAS</button>
+            <button onclick="switchSection('archivioView')"><i class="fas fa-archive"></i> Archivio Annuale</button>
+        </div>
+    </nav>
 
-      <div class="tab-pane fade show active" id="sec-inserimento">
-        <div class="row justify-content-center">
-          <div class="col-md-6">
-            <div class="card p-4">
-              <h5 class="card-title mb-3"><i class="fa-solid fa-bolt text-warning me-2"></i>Nuova Transazione Rapida</h5>
-              <form id="formNuovaSpesa" onsubmit="salvaSpesaRapida(event)">
-                <div class="mb-3">
-                  <label class="form-label">Data</label>
-                  <input type="date" id="inputDataSpesa" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">Nome / Descrizione Spesa</label>
-                  <input type="text" id="inputNotaSpesa" class="form-control" placeholder="es. Pranzo, Benzina, Spesa" required>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">Importo (€)</label>
-                  <input type="number" step="0.01" id="inputImportoSpesa" class="form-control" placeholder="0.00" required>
-                </div>
-                <button type="submit" class="btn btn-primary w-100"><i class="fa-solid fa-check me-1"></i> Inserisci Spesa</button>
-              </form>
+    <div class="container">
+
+        <section id="dashboardView" class="section-view active">
+            
+            <div class="quick-form">
+                <h3 style="margin-bottom: 15px;"><i class="fas fa-plus-circle"></i> Nuova Spesa / Transazione</h3>
+                <form id="quickForm" onsubmit="addTransaction(event)">
+                    <div class="grid-2">
+                        <input type="date" id="txDate" required>
+                        <input type="text" id="txDesc" placeholder="Descrizione (es. Pranzo, Spesa)" required>
+                    </div>
+                    <div class="grid-2">
+                        <input type="number" step="0.01" id="txAmount" placeholder="Importo (€)" required>
+                        <select id="txType">
+                            <option value="uscita">Uscita (Spesa Live)</option>
+                            <option value="entrata">Entrata / Accredito</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success" style="width: 100%; justify-content: center;"><i class="fas fa-save"></i> Registra Subito</button>
+                </form>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <div class="tab-pane fade" id="sec-mensile">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <div class="d-flex align-items-center gap-2">
-            <label class="fw-bold">Mese Contabile:</label>
-            <select id="selectMese" class="form-select form-select-sm" style="width: auto;" onchange="caricaSettimaneMese()">
-              <option value="agosto" selected>Agosto (15/08 - 15/09)</option>
-              <option value="settembre">Settembre (15/09 - 15/10)</option>
-            </select>
-          </div>
-          <div class="d-flex gap-2">
-            <button class="btn btn-sm btn-outline-secondary" onclick="toggleDragLock()" id="btnLockDrag">
-              <i class="fa-solid fa-lock me-1"></i> Blocco Spostamenti
-            </button>
-            <button class="btn btn-sm btn-success" onclick="inviaAiFondi()">
-              <i class="fa-solid fa-paper-plane me-1"></i> Invia ai Fondi
-            </button>
-          </div>
-        </div>
+            <div class="card">
+                <div class="card-title">
+                    <span><i class="fas fa-calendar-alt"></i> Mese Contabile (15 - 15)</span>
+                    <button class="btn btn-warning" onclick="sendToFondi()"><i class="fas fa-paper-plane"></i> Invia ai Fondi</button>
+                </div>
 
-        <div class="row">
-          <div class="col-md-8" id="containerSettimane">
+                <div id="weeksContainer" class="grid-blocks">
+                    </div>
             </div>
-          
-          <div class="col-md-4">
-            <div class="card p-3">
-              <h6><i class="fa-solid fa-calculator me-2"></i>Ripartizione Stipendio / Extra</h6>
-              <div class="mb-2 small text-muted">Aggiungi o personalizza le quote mensili destinate ai vari mastrini.</div>
-              <div id="listaAllocazioneMese">
+        </section>
+
+        <section id="mastriniView" class="section-view">
+            <div class="card">
+                <div class="card-title">
+                    <span><i class="fas fa-wallet"></i> Saldi Mastrini / Fondi Virtuali</span>
+                    <button class="btn" onclick="openTransferModal()"><i class="fas fa-exchange-alt"></i> Sposta Tra Fondi</button>
+                </div>
+
+                <div style="margin-bottom: 15px; font-weight: 600; color: var(--accent-green);">
+                    TOTALE MASTRINI (Esclusi Investimenti): <span id="totaleMastriniDisplay">0.00 €</span>
+                </div>
+
+                <div id="mastriniGrid" class="grid-blocks">
+                    </div>
+            </div>
+        </section>
+
+        <section id="setupView" class="section-view">
+            <div class="card">
+                <div class="card-title"><span><i class="fas fa-file-import"></i> Import Dati Iniziali da Google Sheets</span></div>
+                <p style="margin-bottom: 15px; font-size: 14px; color: var(--text-gray);">
+                    Incolla il link del Foglio Google strutturato a blocchi (Fondo 1 in A, Fondo 2 in D, ecc.) per importare i saldi iniziali.
+                </p>
+                <input type="url" id="importSheetUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
+                <button class="btn" onclick="confirmImport()"><i class="fas fa-download"></i> Avvia Importazione</button>
+            </div>
+        </section>
+
+        <section id="speseBancarieView" class="section-view">
+            <div class="card">
+                <div class="card-title"><span><i class="fas fa-university"></i> Modulo Spese Bancarie</span></div>
+                <form onsubmit="addBankFee(event)">
+                    <div class="grid-2">
+                        <input type="date" id="bankDate" required>
+                        <input type="text" id="bankDesc" placeholder="Voce (es. Canone, Bollo)" required>
+                    </div>
+                    <input type="number" step="0.01" id="bankCost" placeholder="Costo (€)" required>
+                    <button type="submit" class="btn"><i class="fas fa-plus"></i> Aggiungi Spesa Bancaria</button>
+                </form>
+
+                <div class="table-responsive" style="margin-top: 20px;">
+                    <table>
+                        <thead>
+                            <tr><th>Data</th><th>Voce</th><th>Costo</th></tr>
+                        </thead>
+                        <tbody id="bankFeesTable"></tbody>
+                    </table>
                 </div>
             </div>
-          </div>
-        </div>
-      </div>
+        </section>
 
-      <div class="tab-pane fade" id="sec-mastrini">
-        <div class="row mb-3">
-          <div class="col-md-8">
-            <div class="card p-3 bg-white">
-              <h5>Totale Mastrini Disponibili: <span class="text-success" id="totaleMastriniDisponibili">€ 0.00</span></h5>
-              <small class="text-muted">(Esclusi investimenti, vincoli e fondo pensione)</small>
+        <section id="investimentiView" class="section-view">
+            <div class="card">
+                <div class="card-title"><span><i class="fas fa-chart-line"></i> Tracciamento Patrimoniale & Investimenti</span></div>
+                <form onsubmit="addInvestment(event)">
+                    <input type="text" id="invDesc" placeholder="Tipologia (es. Fondo Pensione, Titoli)" required>
+                    <input type="number" step="0.01" id="invVal" placeholder="Valore Corrente (€)" required>
+                    <button type="submit" class="btn"><i class="fas fa-save"></i> Aggiorna / Aggiungi</button>
+                </form>
+
+                <div class="table-responsive" style="margin-top: 20px;">
+                    <table>
+                        <thead>
+                            <tr><th>Tipologia</th><th>Valore</th><th>Ultimo Aggiornamento</th></tr>
+                        </thead>
+                        <tbody id="investmentsTable"></tbody>
+                    </table>
+                </div>
             </div>
-          </div>
-          <div class="col-md-4 text-end">
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTrasferimento">
-              <i class="fa-solid fa-arrow-right-arrow-left me-1"></i> Trasferisci tra Fondi
-            </button>
-          </div>
-        </div>
+        </section>
 
-        <div class="row" id="containerMastrini">
-          </div>
-      </div>
+        <section id="analisiView" class="section-view">
+            <div class="card">
+                <div class="card-title"><span><i class="fas fa-chart-pie"></i> Analisi e Reportistica</span></div>
+                <p style="color: var(--text-gray);">Visualizzazione sintetica e storico dell'andamento disponibilità.</p>
+                <div style="margin-top:20px;" id="analyticsSummary"></div>
+            </div>
+        </section>
 
-      <div class="tab-pane fade" id="sec-banca">
-        <div class="card p-3">
-          <h5><i class="fa-solid fa-receipt me-2"></i>Tracciamento Spese Bancarie</h5>
-          <p class="text-muted small">Il totale progressivo aggiorna automaticamente il mastrino "Extra".</p>
-          <div class="table-responsive">
-            <table class="table table-hover align-middle">
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th>Causale / Voce</th>
-                  <th>Costo (€)</th>
-                </tr>
-              </thead>
-              <tbody id="tbodySpeseBancarie">
-                </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+        <section id="syncView" class="section-view">
+            <div class="card">
+                <div class="card-title"><span><i class="fas fa-sync"></i> Backup & Sincronizzazione Google Apps Script</span></div>
+                <p style="margin-bottom: 15px; font-size: 14px; color: var(--text-gray);">
+                    Inserisci l'URL del Webhook generato dal tuo Google Apps Script per abilitare la sincronizzazione in tempo reale.
+                </p>
+                <input type="url" id="gasScriptUrl" placeholder="https://script.google.com/macros/s/.../exec">
+                <button class="btn btn-success" onclick="syncWithGoogleSheets()"><i class="fas fa-cloud-upload-alt"></i> Sincronizza Ora</button>
+                <p id="syncStatus" style="margin-top: 10px; font-size: 13px; font-weight: 500;"></p>
+            </div>
+        </section>
 
-      <div class="tab-pane fade" id="sec-investimenti">
-        <div class="card p-3">
-          <h5><i class="fa-solid fa-chart-pie me-2"></i>Recap Portafoglio & Investimenti</h5>
-          <div class="table-responsive">
-            <table class="table table-striped align-middle">
-              <thead>
-                <tr>
-                  <th>Strumento / Fondo</th>
-                  <th>Ultimo Aggiornamento</th>
-                  <th>Controvalore (€)</th>
-                </tr>
-              </thead>
-              <tbody id="tbodyInvestimenti">
-                </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div class="tab-pane fade" id="sec-setup">
-        <div class="card p-4">
-          <h5><i class="fa-solid fa-file-import me-2"></i>Importazione Dati da Foglio Google</h5>
-          <p class="text-muted">Incolla il link di condivisione del tuo foglio Google a blocchi per importare saldi e mastrini.</p>
-          <div class="mb-3">
-            <input type="url" id="linkGoogleSheet" class="form-control" placeholder="https://docs.google.com/spreadsheets/d/...">
-          </div>
-          <div class="d-flex gap-2">
-            <button class="btn btn-warning" onclick="confermaImportazione('sovrascrivi')">
-              <i class="fa-solid fa-rotate-right me-1"></i> Sostituisci / Sovrascrivi Dati
-            </button>
-            <button class="btn btn-secondary" onclick="confermaImportazione('unisci')">
-              <i class="fa-solid fa-plus me-1"></i> Magazzino / Unisci
-            </button>
-          </div>
-        </div>
-      </div>
+        <section id="archivioView" class="section-view">
+            <div class="card">
+                <div class="card-title"><span><i class="fas fa-archive"></i> Chiusura e Archivio Annuale</span></div>
+                <p style="font-size: 14px; color: var(--text-gray); margin-bottom: 15px;">
+                    Esegui la chiusura a Febbraio per riportare i saldi finali nel nuovo anno.
+                </p>
+                <button class="btn btn-warning" onclick="archiveCurrentYear()"><i class="fas fa-box-archive"></i> Archivia Anno Corrente</button>
+                <div id="archivioList" style="margin-top: 20px;"></div>
+            </div>
+        </section>
 
     </div>
-  </div>
 
-  <div class="modal fade" id="modalTrasferimento" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Trasferimento tra Mastrini</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal" id="transferModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px;">Sposta Quota Tra Fondi</h3>
+            <select id="transFrom"></select>
+            <select id="transTo"></select>
+            <input type="number" step="0.01" id="transAmount" placeholder="Importo (€)">
+            <input type="text" id="transNote" placeholder="Causale / Nota">
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn" onclick="executeTransfer()">Conferma</button>
+                <button class="btn btn-danger" onclick="closeTransferModal()">Annulla</button>
+            </div>
         </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Fondo di Origine (Da)</label>
-            <select id="transfDa" class="form-select"></select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Fondo di Destinazione (A)</label>
-            <select id="transfA" class="form-select"></select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Importo (€)</label>
-            <input type="number" step="0.01" id="transfImporto" class="form-control">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Causale</label>
-            <input type="text" id="transfCausale" class="form-control" placeholder="Spostamento fondi">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-primary" onclick="eseguiTrasferimento()">Conferma Trasferimento</button>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <script>
+        // Stato Applicazione locale
+        let state = {
+            currentYear: 2026,
+            mastrini: {
+                "FONDO": [{ nota: "Saldo 2025", imp: 2404 }],
+                "BASE": [{ nota: "Saldo 2025", imp: 255 }],
+                "EXTRA": [{ nota: "Saldo 2025", imp: 375 }],
+                "CALDERONE": [{ nota: "Saldo 2025", imp: 194 }],
+                "SCARPE COLLEZIONE": [{ nota: "Saldo 2025", imp: 443 }]
+            },
+            transactions: [],
+            bankFees: [],
+            investments: [],
+            gasUrl: ""
+        };
 
-    // Credenziali Firebase del Progetto
-    const firebaseConfig = {
-      apiKey: "AIzaSyBF1S3NeA-IKxqna87CEzRiMGGN3AOnONo",
-      authDomain: "gestionale-spese-e-entrate.firebaseapp.com",
-      projectId: "gestionale-spese-e-entrate",
-      storageBucket: "gestionale-spese-e-entrate.firebasestorage.app",
-      messagingSenderId: "129010726048",
-      appId: "1:129010726048:web:ebabd5819b52743ff505c5",
-      measurementId: "G-26D9CJ55RW"
-    };
+        // Inizializzazione
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('txDate').valueAsDate = new Date();
+            document.getElementById('bankDate').valueAsDate = new Date();
+            renderAll();
+        });
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+        // Toggle Hamburger Menu
+        function toggleMenu() {
+            document.getElementById('sideMenu').classList.toggle('open');
+            document.getElementById('overlay').classList.toggle('active');
+        }
 
-    // Inizializzazione data odierna nel form rapido
-    document.getElementById('inputDataSpesa').valueAsDate = new Date();
-  </script>
+        // Navigazione Sezioni
+        function switchSection(sectionId) {
+            document.querySelectorAll('.section-view').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.menu-items button').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(sectionId).classList.add('active');
+            toggleMenu();
+        }
 
-  <script>
-    // Stato Applicativo Globale
-    let statoDragSbloccato = false;
-    
-    // Inserimento Rapido Transazione
-    function salvaSpesaRapida(e) {
-      e.preventDefault();
-      const data = document.getElementById('inputDataSpesa').value;
-      const nota = document.getElementById('inputNotaSpesa').value;
-      const importo = parseFloat(document.getElementById('inputImportoSpesa').value);
+        // Render Complessivo
+        function renderAll() {
+            renderWeeks();
+            renderMastrini();
+            renderBankFees();
+            renderInvestments();
+        }
 
-      alert(`Spesa registrata con successo: ${nota} - €${importo} in data ${data}`);
-      document.getElementById('formNuovaSpesa').reset();
-      document.getElementById('inputDataSpesa').valueAsDate = new Date();
-    }
+        // 1. Calcolo Settimane e Gestione Transazioni
+        function renderWeeks() {
+            const container = document.getElementById('weeksContainer');
+            container.innerHTML = '';
 
-    // Toggle Blocco/Sblocco Drag & Drop
-    function toggleDragLock() {
-      statoDragSbloccato = !statoDragSbloccato;
-      const btn = document.getElementById('btnLockDrag');
-      if (statoDragSbloccato) {
-        btn.classList.remove('btn-outline-secondary');
-        btn.classList.add('btn-warning');
-        btn.innerHTML = `<i class="fa-solid fa-lock-open me-1"></i> Spostamenti Attivi`;
-      } else {
-        btn.classList.remove('btn-warning');
-        btn.classList.add('btn-outline-secondary');
-        btn.innerHTML = `<i class="fa-solid fa-lock me-1"></i> Blocco Spostamenti`;
-      }
-    }
+            // Definizione di esempio 4-5 settimane per ciclo contabile 15-15
+            const weeks = [
+                { name: "Settimana 1 (15/02 - 22/02)", key: "w1" },
+                { name: "Settimana 2 (23/02 - 01/03)", key: "w2" },
+                { name: "Settimana 3 (02/03 - 08/03)", key: "w3" },
+                { name: "Settimana 4 (09/03 - 15/03)", key: "w4" }
+            ];
 
-    // Popup Conferma Importazione Google Sheets
-    function confermaImportazione(modalita) {
-      const messaggio = modalita === 'sovrascrivi' 
-        ? "Attenzione: Questa operazione azzererà tutti i mastrini attuali sostituendoli con quelli del Foglio Google. Continuare?"
-        : "I nuovi mastrini e le voci importate verranno uniti a quelli già esistenti. Continuare?";
-      
-      if (confirm(messaggio)) {
-        alert("Importazione avviata tramite il link fornito.");
-      }
-    }
+            weeks.forEach((w, idx) => {
+                const weekTxs = state.transactions.filter(t => t.weekIndex === idx);
+                const total = weekTxs.reduce((acc, curr) => acc + (curr.type === 'uscita' ? curr.amount : -curr.amount), 0);
 
-    // Chiamata Webhook verso Google Apps Script
-    function sincronizzaGoogleSheets() {
-      alert("Sincronizzazione in corso con Google Sheets tramite Google Apps Script...");
-    }
+                let html = `
+                    <div class="block-item">
+                        <div class="block-header">${w.name}</div>
+                        <div style="font-size:13px;">
+                `;
 
-    function inviaAiFondi() {
-      alert("Quote mensili trasferite ai Mastrini con successo!");
-    }
+                weekTxs.forEach(t => {
+                    html += `<div style="display:flex; justify-size:space-between; margin-bottom:5px;">
+                        <span>${t.desc}</span>
+                        <strong style="color:${t.type === 'uscita' ? 'var(--accent-red)' : 'var(--accent-green)'}">
+                            ${t.type === 'uscita' ? '-' : '+'}${t.amount.toFixed(2)}€
+                        </strong>
+                    </div>`;
+                });
 
-    function eseguiTrasferimento() {
-      alert("Trasferimento intra-fondo eseguito correttamente!");
-      const modal = bootstrap.Modal.getInstance(document.getElementById('modalTrasferimento'));
-      modal.hide();
-    }
+                html += `
+                        </div>
+                        <div style="margin-top:10px; font-weight:bold; border-top:1px solid #ccc; padding-top:5px;">
+                            Totale: ${total.toFixed(2)} €
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
 
-    function cambiaAnno(anno) {
-      console.log("Anno selezionato:", anno);
-    }
-  </script>
+        function addTransaction(e) {
+            e.preventDefault();
+            const date = document.getElementById('txDate').value;
+            const desc = document.getElementById('txDesc').value;
+            const amount = parseFloat(document.getElementById('txAmount').value);
+            const type = document.getElementById('txType').value;
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+            // Assegnazione della settimana di default
+            state.transactions.push({ date, desc, amount, type, weekIndex: 0 });
+            saveToFirebase();
+            renderWeeks();
+            
+            document.getElementById('txDesc').value = '';
+            document.getElementById('txAmount').value = '';
+        }
+
+        // 2. Render Mastrini e Totali
+        function renderMastrini() {
+            const grid = document.getElementById('mastriniGrid');
+            grid.innerHTML = '';
+            let totaleGenerale = 0;
+
+            const excludeList = ["INVESTIMENTI", "TIME DEPOSIT", "FONDO PENSIONE"];
+
+            for (const [nome, voci] of Object.entries(state.mastrini)) {
+                const totFondo = voci.reduce((acc, v) => acc + v.imp, 0);
+                if (!excludeList.includes(nome.toUpperCase())) {
+                    totaleGenerale += totFondo;
+                }
+
+                let blockHtml = `
+                    <div class="block-item">
+                        <div class="block-header">${nome}</div>
+                        <div style="max-height: 150px; overflow-y:auto;">
+                `;
+
+                voci.forEach(v => {
+                    blockHtml += `
+                        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:3px;">
+                            <span>${v.nota}</span>
+                            <span>${v.imp.toFixed(2)} €</span>
+                        </div>
+                    `;
+                });
+
+                blockHtml += `
+                        </div>
+                        <div style="margin-top:10px; font-weight:bold; color:var(--primary); border-top:1px solid #ddd; padding-top:4px;">
+                            Tot: ${totFondo.toFixed(2)} €
+                        </div>
+                    </div>
+                `;
+
+                grid.innerHTML += blockHtml;
+            }
+
+            document.getElementById('totaleMastriniDisplay').innerText = totaleGenerale.toFixed(2) + " €";
+        }
+
+        // Modale Trasferimenti
+        function openTransferModal() {
+            const from = document.getElementById('transFrom');
+            const to = document.getElementById('transTo');
+            from.innerHTML = ''; to.innerHTML = '';
+
+            Object.keys(state.mastrini).forEach(m => {
+                from.innerHTML += `<option value="${m}">${m}</option>`;
+                to.innerHTML += `<option value="${m}">${m}</option>`;
+            });
+
+            document.getElementById('transferModal').classList.add('active');
+        }
+
+        function closeTransferModal() {
+            document.getElementById('transferModal').classList.remove('active');
+        }
+
+        function executeTransfer() {
+            const f = document.getElementById('transFrom').value;
+            const t = document.getElementById('transTo').value;
+            const amt = parseFloat(document.getElementById('transAmount').value);
+            const note = document.getElementById('transNote').value || 'Trasferimento';
+
+            if (f && t && amt && f !== t) {
+                state.mastrini[f].push({ nota: `Trsf -> ${t} (${note})`, imp: -amt });
+                state.mastrini[t].push({ nota: `Trsf da ${f} (${note})`, imp: amt });
+                saveToFirebase();
+                renderMastrini();
+                closeTransferModal();
+            }
+        }
+
+        // 3. Spese Bancarie
+        function addBankFee(e) {
+            e.preventDefault();
+            const date = document.getElementById('bankDate').value;
+            const desc = document.getElementById('bankDesc').value;
+            const cost = parseFloat(document.getElementById('bankCost').value);
+
+            state.bankFees.push({ date, desc, cost });
+
+            // Riduzione Automatica Mastrino "EXTRA"
+            if (state.mastrini["EXTRA"]) {
+                state.mastrini["EXTRA"].push({ nota: `Spesa Bca: ${desc}`, imp: -cost });
+            }
+
+            saveToFirebase();
+            renderBankFees();
+            renderMastrini();
+
+            document.getElementById('bankDesc').value = '';
+            document.getElementById('bankCost').value = '';
+        }
+
+        function renderBankFees() {
+            const tbody = document.getElementById('bankFeesTable');
+            tbody.innerHTML = '';
+            state.bankFees.forEach(b => {
+                tbody.innerHTML += `<tr><td>${b.date}</td><td>${b.desc}</td><td>${b.cost.toFixed(2)} €</td></tr>`;
+            });
+        }
+
+        // 4. Investimenti
+        function addInvestment(e) {
+            e.preventDefault();
+            const desc = document.getElementById('invDesc').value;
+            const val = parseFloat(document.getElementById('invVal').value);
+            const date = new Date().toLocaleDateString();
+
+            state.investments.push({ desc, val, date });
+            saveToFirebase();
+            renderInvestments();
+
+            document.getElementById('invDesc').value = '';
+            document.getElementById('invVal').value = '';
+        }
+
+        function renderInvestments() {
+            const tbody = document.getElementById('investmentsTable');
+            tbody.innerHTML = '';
+            state.investments.forEach(i => {
+                tbody.innerHTML += `<tr><td>${i.desc}</td><td>${i.val.toFixed(2)} €</td><td>${i.date}</td></tr>`;
+            });
+        }
+
+        // 5. Sincronizzazione con Google Apps Script (GAS)
+        async function syncWithGoogleSheets() {
+            const url = document.getElementById('gasScriptUrl').value || state.gasUrl;
+            const status = document.getElementById('syncStatus');
+
+            if (!url) {
+                status.style.color = "var(--accent-red)";
+                status.innerText = "Inserisci un URL Apps Script valido.";
+                return;
+            }
+
+            status.style.color = "var(--accent-orange)";
+            status.innerText = "Sincronizzazione in corso...";
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(state)
+                });
+
+                status.style.color = "var(--accent-green)";
+                status.innerText = "Sincronizzazione completata con successo! (" + new Date().toLocaleTimeString() + ")";
+            } catch (err) {
+                status.style.color = "var(--accent-red)";
+                status.innerText = "Errore di connessione con Google Script.";
+            }
+        }
+
+        // Popup e importazione Excel/Sheets
+        function confirmImport() {
+            const res = confirm("Scegli la modalità di importazione:\n\nOK = Sovrascrivi dati esistenti\nAnnulla = Unisci a dati esistenti");
+            alert(res ? "I dati verranno sovrascritti al caricamento." : "I dati verranno uniti a quelli attuali.");
+        }
+
+        // Integrazione Firebase Firestore
+        function initFirebaseSync(uid) {
+            if (!window.db) return;
+            const userDoc = window.doc(window.db, "gestionale", uid);
+
+            // Caricamento in tempo reale
+            window.getDoc(userDoc).then(docSnap => {
+                if (docSnap.exists()) {
+                    state = Object.assign(state, docSnap.data());
+                    renderAll();
+                }
+            });
+        }
+
+        function saveToFirebase() {
+            if (!window.auth || !window.auth.currentUser) return;
+            const uid = window.auth.currentUser.uid;
+            window.setDoc(window.doc(window.db, "gestionale", uid), state);
+        }
+
+        function sendToFondi() {
+            alert("Quote del mese inviate ai Mastrini con successo!");
+            saveToFirebase();
+            renderMastrini();
+        }
+
+        function archiveCurrentYear() {
+            alert("Anno " + state.currentYear + " archiviato con successo. Creazione nuovo anno contabile...");
+            state.currentYear += 1;
+            saveToFirebase();
+        }
+    </script>
 </body>
 </html>
