@@ -369,18 +369,8 @@
       border-radius: var(--radius);
       padding: 24px;
       width: 100%;
-      max-width: 450px;
+      max-width: 480px;
     }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-      font-size: 0.85rem;
-    }
-
-    th, td { padding: 10px; border-bottom: 1px solid var(--border-color); }
-    th { color: var(--text-muted); font-weight: 600; }
   </style>
 </head>
 <body>
@@ -426,20 +416,14 @@
       <button class="close-btn" id="close-drawer-btn">&times;</button>
     </div>
 
-    <div class="form-group">
-      <label>URL Google Apps Script</label>
-      <input type="url" id="gas-url-input" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
-    </div>
-    <div class="form-group">
-      <label>Link Google Fogli da Importare</label>
-      <input type="url" id="gsheet-url-input" class="form-control" placeholder="https://docs.google.com/spreadsheets/d/...">
-    </div>
-    
-    <button class="btn btn-secondary" id="btn-import-gsheet">
-      <i class="fa-solid fa-file-import"></i> Importa da Google Fogli
+    <!-- TASTO 1: APRE SCHERMATA IMPORTAZIONE GOOGLE DOCS / SHEETS -->
+    <button class="btn btn-secondary nav-item-btn" data-target="sec-import-gsheet" style="border: 1px solid var(--accent-blue);">
+      <i class="fa-solid fa-file-import" style="color: var(--accent-blue);"></i> Importa da Google Fogli
     </button>
-    <button class="btn btn-secondary" id="btn-sync-gas">
-      <i class="fa-solid fa-rotate"></i> Sincronizza con Google Sheets
+
+    <!-- TASTO 2: APRE SCHERMATA SINCRONIZZAZIONE GOOGLE SCRIPT -->
+    <button class="btn btn-secondary nav-item-btn" data-target="sec-sync-gas" style="border: 1px solid var(--accent-green);">
+      <i class="fa-solid fa-rotate" style="color: var(--accent-green);"></i> Sincronizzazione Google Script
     </button>
     
     <hr style="border-color: var(--border-color); margin: 15px 0;">
@@ -530,6 +514,46 @@
       </div>
     </section>
 
+    <!-- SCHERMATA: IMPORTAZIONE GOOGLE FOGLI -->
+    <section id="sec-import-gsheet" class="view-section">
+      <div class="card">
+        <div class="card-title">
+          <span><i class="fa-solid fa-file-import"></i> Importazione Saldi Mastrini da Google Fogli</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+          Incolla il link del tuo Foglio Google condiviso. Il foglio verrà letto secondo la struttura a blocchi di colonne affiancate separate da colonne vuote.
+        </p>
+        <div class="form-group">
+          <label>Link Google Fogli / Documents</label>
+          <input type="url" id="gsheet-url-input" class="form-control" placeholder="https://docs.google.com/spreadsheets/d/...">
+        </div>
+        <button class="btn btn-primary" id="btn-start-import-gsheet">
+          <i class="fa-solid fa-download"></i> Avvia Importazione Dati
+        </button>
+        <div id="import-status" style="margin-top: 15px; font-size: 0.85rem; font-weight: 600;"></div>
+      </div>
+    </section>
+
+    <!-- SCHERMATA: SINCRONIZZAZIONE GOOGLE SCRIPT -->
+    <section id="sec-sync-gas" class="view-section">
+      <div class="card">
+        <div class="card-title">
+          <span><i class="fa-solid fa-rotate"></i> Sincronizzazione / Trascrizione Google Script</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+          Inserisci l'URL dell'applicazione Web registrata su Google Apps Script per trascrivere i movimenti su un nuovo foglio Google.
+        </p>
+        <div class="form-group">
+          <label>URL Google Apps Script Web App</label>
+          <input type="url" id="gas-url-input" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
+        </div>
+        <button class="btn btn-success" id="btn-execute-sync-gas">
+          <i class="fa-solid fa-cloud-arrow-up"></i> Sincronizza Movimenti su Google Sheets
+        </button>
+        <div id="sync-status" style="margin-top: 15px; font-size: 0.85rem; font-weight: 600;"></div>
+      </div>
+    </section>
+
     <!-- GESTIONE MENSILE -->
     <section id="sec-mensile" class="view-section">
       <div class="card">
@@ -556,16 +580,7 @@
           <div style="font-size: 0.7rem; color: var(--text-muted);">Esclusi: Investimenti e Fondo Pensione.</div>
         </div>
 
-        <div class="mastrini-grid" id="mastrini-container">
-          <div class="mastrino-card">
-            <div style="font-weight:700;">Fondo Emergenza</div>
-            <div class="mastrino-balance">€ 0.00</div>
-          </div>
-          <div class="mastrino-card">
-            <div style="font-weight:700;">Svago / Uscite</div>
-            <div class="mastrino-balance">€ 0.00</div>
-          </div>
-        </div>
+        <div class="mastrini-grid" id="mastrini-container"></div>
       </div>
     </section>
 
@@ -621,6 +636,27 @@
 
   </main>
 
+  <!-- POPUP DI CONFERMA MODALITÀ IMPORTAZIONE GOOGLE SHEETS -->
+  <div class="modal" id="import-mode-modal">
+    <div class="modal-content">
+      <h3 style="margin-bottom:15px; font-weight:700; color: var(--accent-blue);">Scegli Modalità Importazione</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">
+        Sono stati rilevati i dati dal Foglio Google. Come vuoi procedere con l'importazione nel gestionale?
+      </p>
+      <button class="btn btn-danger" id="btn-import-overwrite">
+        <i class="fa-solid fa-rotate-left"></i> Sostituisci / Sovrascrivi Dati Esistenti
+      </button>
+      <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px; margin-top: -6px;">Azzera e resetta i dati attuali per sostituirli con quelli del foglio.</p>
+      
+      <button class="btn btn-primary" id="btn-import-merge">
+        <i class="fa-solid fa-code-merge"></i> Magazzino / Unisci (Mantieni Esistenti)
+      </button>
+      <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 20px; margin-top: -6px;">Conserva i mastrini attuali e aggiunge nuove voci e fondi.</p>
+
+      <button class="btn btn-secondary" id="btn-import-cancel">Annulla</button>
+    </div>
+  </div>
+
   <!-- MODALE MODIFICA DATE SETTIMANA -->
   <div class="modal" id="edit-week-modal">
     <div class="modal-content">
@@ -642,7 +678,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
     // CONFIGURAZIONE FIREBASE
     const firebaseConfig = {
@@ -712,9 +748,17 @@
       });
     });
 
-    // --- LOGICA CICLO MENSILE 15-15 & SETTIMANE ---
+    // --- DATI DI STATO ---
     let expenses = JSON.parse(localStorage.getItem('expenses_data')) || [];
     let customWeekRanges = JSON.parse(localStorage.getItem('custom_week_ranges')) || {};
+    let mastriniData = JSON.parse(localStorage.getItem('mastrini_data')) || [
+      { name: "Fondo Emergenza", items: [{ note: "Saldo Iniziale", amount: 0 }] },
+      { name: "Svago / Uscite", items: [{ note: "Saldo Iniziale", amount: 0 }] }
+    ];
+
+    // Carica URL salvati
+    document.getElementById('gsheet-url-input').value = localStorage.getItem('gsheet_url') || "";
+    document.getElementById('gas-url-input').value = localStorage.getItem('gas_url') || "";
 
     const monthsNames = [
       "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
@@ -723,22 +767,14 @@
 
     const monthSelect = document.getElementById('select-month-cycle');
 
-    // Mese d'imputazione X va dal 15 del mese X+1 al 15 del mese X+2
-    // Es. Mese di Luglio (idx 6): dal 15/08 al 15/09
     function getMonthDateRange(monthIndex, baseYear = 2026) {
       let startM = monthIndex + 1;
       let endM = monthIndex + 2;
       let startY = baseYear;
       let endY = baseYear;
 
-      if (startM > 11) {
-        startM = startM - 12;
-        startY++;
-      }
-      if (endM > 11) {
-        endM = endM - 12;
-        endY++;
-      }
+      if (startM > 11) { startM = startM - 12; startY++; }
+      if (endM > 11) { endM = endM - 12; endY++; }
 
       const startDate = new Date(startY, startM, 15);
       const endDate = new Date(endY, endM, 15);
@@ -754,10 +790,8 @@
 
     function initMonthDropdown() {
       monthSelect.innerHTML = "";
-      
       monthsNames.forEach((mName, idx) => {
         const { startDate, endDate } = getMonthDateRange(idx);
-        
         const startStr = `${String(startDate.getDate()).padStart(2,'0')}/${String(startDate.getMonth()+1).padStart(2,'0')}`;
         const endStr = `${String(endDate.getDate()).padStart(2,'0')}/${String(endDate.getMonth()+1).padStart(2,'0')}`;
 
@@ -767,21 +801,17 @@
         monthSelect.appendChild(opt);
       });
 
-      // Seleziona di default il mese di competenza in base ad oggi (es. 7 Settembre -> Mese di Luglio 15/08-15/09)
       const today = new Date();
-      const currentMonthIdx = getTargetMonthIndex(today);
-      monthSelect.value = currentMonthIdx;
+      monthSelect.value = getTargetMonthIndex(today);
     }
 
     function getTargetMonthIndex(targetDate) {
       const d = new Date(targetDate);
       for (let i = 0; i < 12; i++) {
         const { startDate, endDate } = getMonthDateRange(i);
-        if (d >= startDate && d <= endDate) {
-          return i;
-        }
+        if (d >= startDate && d <= endDate) return i;
       }
-      return 6; // Default a Luglio se fuori range
+      return 6;
     }
 
     function generateWeeks(monthIndex) {
@@ -822,10 +852,8 @@
       const weeks = generateWeeks(monthIdx);
 
       weeks.forEach((w, i) => {
-        // Confronto stringhe YYYY-MM-DD
         const wExpenses = expenses.filter(e => e.date >= w.start && e.date <= w.end);
         const wTotal = wExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
-
         const containsHighlight = highlightExpenseId && wExpenses.some(e => e.id === highlightExpenseId);
 
         const formatD = (dStr) => {
@@ -838,7 +866,7 @@
         weekEl.innerHTML = `
           <div class="week-header">
             <span>Settimana ${i + 1} (${formatD(w.start)} - ${formatD(w.end)}) 
-              <button class="edit-date-btn" data-m="${monthIdx}" data-w="${i}" title="Modifica intervallo date"><i class="fa-solid fa-pen"></i></button>
+              <button class="edit-date-btn" data-m="${monthIdx}" data-w="${i}" title="Modifica date"><i class="fa-solid fa-pen"></i></button>
             </span>
             <span style="color:var(--accent-red);">- € ${wTotal.toFixed(2)}</span>
           </div>
@@ -864,21 +892,12 @@
         container.appendChild(weekEl);
       });
 
-      // Event Listener Modifica Date
       document.querySelectorAll('.edit-date-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const m = btn.dataset.m;
-          const w = btn.dataset.w;
-          openEditWeekModal(m, w);
-        });
+        btn.addEventListener('click', () => openEditWeekModal(btn.dataset.m, btn.dataset.w));
       });
 
-      // Event Listener Elimina Spesa
       document.querySelectorAll('.delete-exp-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const id = parseInt(btn.dataset.id);
-          deleteExpense(id);
-        });
+        btn.addEventListener('click', () => deleteExpense(parseInt(btn.dataset.id)));
       });
 
       renderRecentExpenses();
@@ -897,10 +916,9 @@
 
       container.innerHTML = recent.map(e => {
         const parts = e.date.split('-');
-        const dateFormatted = `${parts[2]}/${parts[1]}/${parts[0]}`;
         return `
           <div class="expense-item">
-            <span><b>${e.desc}</b> (${dateFormatted})</span>
+            <span><b>${e.desc}</b> (${parts[2]}/${parts[1]}/${parts[0]})</span>
             <div>
               <span style="color:var(--accent-red); font-weight:600;">- € ${parseFloat(e.amount).toFixed(2)}</span>
               <button class="delete-exp-btn" data-id="${e.id}"><i class="fa-solid fa-trash"></i></button>
@@ -910,10 +928,7 @@
       }).join('');
 
       container.querySelectorAll('.delete-exp-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const id = parseInt(btn.dataset.id);
-          deleteExpense(id);
-        });
+        btn.addEventListener('click', () => deleteExpense(parseInt(btn.dataset.id)));
       });
     }
 
@@ -923,7 +938,34 @@
       renderMonthlyView();
     }
 
-    // Modal per personalizzazione date
+    function renderMastriniView() {
+      const container = document.getElementById('mastrini-container');
+      const totalEl = document.getElementById('totale-mastrini-liquidita');
+      if (!container) return;
+
+      container.innerHTML = "";
+      let grandTotal = 0;
+
+      mastriniData.forEach(m => {
+        const mTotal = m.items.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+        grandTotal += mTotal;
+
+        const card = document.createElement('div');
+        card.className = 'mastrino-card';
+        card.innerHTML = `
+          <div style="font-weight:700; color:var(--text-main); font-size:1rem;">${m.name}</div>
+          <div class="mastrino-balance">€ ${mTotal.toFixed(2)}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted);">
+            ${m.items.map(i => `<div>${i.note}: € ${(parseFloat(i.amount)||0).toFixed(2)}</div>`).join('')}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      if (totalEl) totalEl.textContent = `€ ${grandTotal.toFixed(2)}`;
+    }
+
+    // Modal Edit Week
     let activeEdit = null;
     function openEditWeekModal(mIdx, wIdx) {
       activeEdit = { mIdx, wIdx };
@@ -967,28 +1009,186 @@
       expenses.push(newExpense);
       localStorage.setItem('expenses_data', JSON.stringify(expenses));
 
-      // Seleziona in automatico il mese di competenza della spesa appena inserita
       const expDate = new Date(date);
-      const targetMonthIdx = getTargetMonthIndex(expDate);
-      monthSelect.value = targetMonthIdx;
+      monthSelect.value = getTargetMonthIndex(expDate);
 
       document.getElementById('quick-amount').value = "";
       document.getElementById('quick-desc').value = "";
       
       renderMonthlyView(newExpense.id);
 
-      // Naviga direttamente alla vista mensile per mostrare subito la spesa
       document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
       document.getElementById('sec-mensile').classList.add('active');
     });
 
     monthSelect.addEventListener('change', () => renderMonthlyView());
 
-    // Inizializzazioni Date & Viste
+    // --- SEZIONE 1: IMPORTAZIONE DA GOOGLE FOGLI (PARSING A BLOCCHI & POPUP) ---
+    let tempParsedMastrini = null;
+
+    document.getElementById('btn-start-import-gsheet').addEventListener('click', async () => {
+      const url = document.getElementById('gsheet-url-input').value.trim();
+      const status = document.getElementById('import-status');
+      
+      if (!url) {
+        status.style.color = "var(--accent-red)";
+        status.textContent = "Inserisci un link valido di Google Fogli.";
+        return;
+      }
+
+      localStorage.setItem('gsheet_url', url);
+      status.style.color = "var(--accent-blue)";
+      status.textContent = "Download e analisi del foglio in corso...";
+
+      try {
+        // Conversione URL in export CSV
+        let csvUrl = url;
+        if (url.includes('/edit')) {
+          csvUrl = url.replace(/\/edit.*$/, '/export?format=csv');
+        } else if (!url.endsWith('/export?format=csv')) {
+          csvUrl = url.replace(/\/$/, '') + '/export?format=csv';
+        }
+
+        const res = await fetch(csvUrl);
+        if (!res.ok) throw new Error("Impossibile accedere al foglio. Verificare che il link sia pubblico o condiviso.");
+        
+        const csvText = await res.text();
+        tempParsedMastrini = parseBlockCsv(csvText);
+
+        if (tempParsedMastrini.length === 0) {
+          throw new Error("Nessun blocco dati / mastrino valido trovato nel foglio.");
+        }
+
+        status.textContent = `Trovati ${tempParsedMastrini.length} mastrini. Scegli la modalità dal popup.`;
+        document.getElementById('import-mode-modal').classList.add('open');
+
+      } catch (err) {
+        status.style.color = "var(--accent-red)";
+        status.textContent = "Errore durante l'importazione: " + err.message;
+      }
+    });
+
+    // Funzione di Parsing della Griglia a Blocchi (Colonna vuota di separazione)
+    function parseBlockCsv(csv) {
+      const lines = csv.split(/\r?\n/).map(line => {
+        // Gestione base dei campi CSV
+        return line.split(',').map(cell => cell.replace(/^"(.*)"$/, '$1').trim());
+      });
+
+      if (lines.length === 0) return [];
+
+      const parsedMastrini = [];
+      const numCols = Math.max(...lines.map(row => row.length));
+
+      // Troviamo tutti i blocchi di colonne (coppie Nota/Importo separati da colonna vuota)
+      for (let c = 0; c < numCols; c += 3) {
+        const title = lines[0] && lines[0][c] ? lines[0][c] : "";
+        if (!title) continue;
+
+        const items = [];
+        for (let r = 2; r < lines.length; r++) {
+          const note = lines[r][c] || "";
+          const rawAmt = lines[r][c + 1] || "";
+          const amt = parseFloat(rawAmt.replace('€', '').replace('.', '').replace(',', '.').trim());
+
+          if (note || !isNaN(amt)) {
+            items.push({ note: note || "Saldo", amount: isNaN(amt) ? 0 : amt });
+          }
+        }
+
+        if (items.length > 0 || title) {
+          parsedMastrini.push({ name: title, items });
+        }
+      }
+
+      return parsedMastrini;
+    }
+
+    // Gestione Scelte Popup Importazione
+    document.getElementById('btn-import-overwrite').addEventListener('click', () => {
+      if (!tempParsedMastrini) return;
+      mastriniData = tempParsedMastrini;
+      localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
+      finishImport("Dati sostituiti e sovrascritti con successo!");
+    });
+
+    document.getElementById('btn-import-merge').addEventListener('click', () => {
+      if (!tempParsedMastrini) return;
+      
+      tempParsedMastrini.forEach(newM => {
+        const existing = mastriniData.find(m => m.name.toLowerCase() === newM.name.toLowerCase());
+        if (existing) {
+          existing.items.push(...newM.items);
+        } else {
+          mastriniData.push(newM);
+        }
+      });
+
+      localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
+      finishImport("Dati uniti e aggiornati con successo!");
+    });
+
+    document.getElementById('btn-import-cancel').addEventListener('click', () => {
+      document.getElementById('import-mode-modal').classList.remove('open');
+      document.getElementById('import-status').textContent = "Importazione annullata dall'utente.";
+    });
+
+    function finishImport(msg) {
+      document.getElementById('import-mode-modal').classList.remove('open');
+      const status = document.getElementById('import-status');
+      status.style.color = "var(--accent-green)";
+      status.textContent = msg;
+      renderMastriniView();
+
+      setTimeout(() => {
+        document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+        document.getElementById('sec-mastrini').classList.add('active');
+      }, 1000);
+    }
+
+    // --- SEZIONE 2: SINCRONIZZAZIONE CON GOOGLE APPS SCRIPT ---
+    document.getElementById('btn-execute-sync-gas').addEventListener('click', async () => {
+      const gasUrl = document.getElementById('gas-url-input').value.trim();
+      const status = document.getElementById('sync-status');
+
+      if (!gasUrl) {
+        status.style.color = "var(--accent-red)";
+        status.textContent = "Inserisci un URL Google Apps Script valido.";
+        return;
+      }
+
+      localStorage.setItem('gas_url', gasUrl);
+      status.style.color = "var(--accent-blue)";
+      status.textContent = "Trascrizione dei movimenti su Google Sheets in corso...";
+
+      try {
+        const payload = {
+          expenses: expenses,
+          mastrini: mastriniData,
+          timestamp: new Date().toISOString()
+        };
+
+        const res = await fetch(gasUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        status.style.color = "var(--accent-green)";
+        status.textContent = "Sincronizzazione inviata correttamente a Google Apps Script!";
+      } catch (err) {
+        status.style.color = "var(--accent-red)";
+        status.textContent = "Errore durante la sincronizzazione: " + err.message;
+      }
+    });
+
+    // Inizializzazione applicazione
     document.getElementById('quick-date').value = formatDateToYMD(new Date());
     document.getElementById('bank-date').value = formatDateToYMD(new Date());
     initMonthDropdown();
     renderMonthlyView();
+    renderMastriniView();
   </script>
 </body>
 </html>
