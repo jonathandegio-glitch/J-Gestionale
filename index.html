@@ -298,7 +298,7 @@
     }
 
     .week-content {
-      padding: 12px 16px 16px 28px; /* Struttura sfalsata con rientro */
+      padding: 12px 16px 16px 28px;
       border-top: 1px solid var(--border-color);
       display: none;
       background: rgba(0, 0, 0, 0.15);
@@ -306,7 +306,64 @@
 
     .week-block.open .week-content { display: block; }
 
-    /* Righe stile Excel con linee divisorie */
+    /* Accordion Ripartizione Entrate */
+    .accordion-block {
+      background: var(--card-inner);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .accordion-header {
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1rem;
+      background: rgba(255,255,255,0.03);
+      color: var(--accent-blue);
+    }
+
+    .accordion-content {
+      padding: 16px;
+      border-top: 1px solid var(--border-color);
+      display: none;
+    }
+
+    .accordion-block.open .accordion-content { display: block; }
+
+    /* Sotto Accordion Fondo */
+    .sub-accordion {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+      background: var(--card-bg);
+      overflow: hidden;
+    }
+
+    .sub-accordion-header {
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .sub-accordion-content {
+      padding: 12px 14px;
+      border-top: 1px solid var(--border-color);
+      display: none;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .sub-accordion.open .sub-accordion-content { display: block; }
+
+    /* Righe stile Excel */
     .expense-item {
       display: flex;
       justify-content: space-between;
@@ -368,10 +425,23 @@
       border-radius: var(--radius);
       padding: 24px;
       width: 100%;
-      max-width: 480px;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
-    /* Type Switcher / Toggle */
+    .alert-banner {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--accent-red);
+      color: var(--accent-red);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: none;
+    }
+
     .type-toggle {
       display: flex;
       gap: 10px;
@@ -445,6 +515,10 @@
       <h3 style="font-weight:700;">Menu Navigazione</h3>
       <button class="close-btn" id="close-drawer-btn">&times;</button>
     </div>
+
+    <button class="btn btn-secondary nav-item-btn" id="btn-open-settings-modal" style="border: 1px solid var(--accent-orange); color: var(--accent-orange);">
+      <i class="fa-solid fa-sliders"></i> Setting Fondi Mensili
+    </button>
 
     <button class="btn btn-secondary nav-item-btn" data-target="sec-import-gsheet" style="border: 1px solid var(--accent-blue);">
       <i class="fa-solid fa-file-import" style="color: var(--accent-blue);"></i> Importa da Google Fogli
@@ -595,30 +669,41 @@
           </select>
         </div>
 
-        <div id="weeks-container"></div>
-      </div>
+        <!-- RIPARTIZIONE ENTRATE MENSILE (ACCORDION A TENDINA) -->
+        <div class="accordion-block" id="month-allocation-accordion">
+          <div class="accordion-header" id="month-allocation-header">
+            <span><i class="fa-solid fa-sliders" style="margin-right: 8px;"></i> Ripartizione Entrate Mensili & Fondi</span>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="accordion-content">
+            <div id="salary-over-alert" class="alert-banner">
+              <i class="fa-solid fa-triangle-exclamation"></i> ATTENZIONE: La somma della distribuzione nei fondi supera lo Stipendio Base impostato!
+            </div>
 
-      <!-- SEZIONE DISTRIBUZIONE ENTRATE NEI MASTRINI -->
-      <div class="card">
-        <div class="card-title">
-          <span><i class="fa-solid fa-coins"></i> Ripartizione Entrate Mensili nei Mastrini</span>
-        </div>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
-          Seleziona un fondo per allocare le entrate del mese selezionato. Verrà creata in automatico la voce "da [Mese]".
-        </p>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-          <div class="form-group">
-            <label>Mastrino / Fondo Destinazione</label>
-            <select id="month-target-mastrino" class="form-control"></select>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+              <div class="form-group">
+                <label>Stipendio Base (€)</label>
+                <input type="number" step="0.01" id="m-salary-base" class="form-control" placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label>Stipendio Effettivo (€)</label>
+                <input type="number" step="0.01" id="m-salary-eff" class="form-control" placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label>Extra Calcolato (€)</label>
+                <input type="number" step="0.01" id="m-salary-extra" class="form-control" placeholder="0.00" readonly style="background: rgba(255,255,255,0.05); color: var(--accent-green); font-weight:700;">
+              </div>
+            </div>
+
+            <h4 style="font-size:0.9rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px;">
+              Suddivisione Fondi Mastrini Esistenti:
+            </h4>
+
+            <div id="monthly-funds-allocation-list"></div>
           </div>
-          <div class="form-group">
-            <label>Importo da Inviare (€)</label>
-            <input type="number" step="0.01" id="month-mastrino-amount" class="form-control" placeholder="0.00">
-          </div>
         </div>
-        <button class="btn btn-success" id="btn-send-to-mastrino">
-          <i class="fa-solid fa-paper-plane"></i> Invia ai Mastrini
-        </button>
+
+        <div id="weeks-container"></div>
       </div>
     </section>
 
@@ -693,6 +778,38 @@
     </section>
 
   </main>
+
+  <!-- MODALE SETTING FONDI MENSILI GLOBAL -->
+  <div class="modal" id="settings-funds-modal">
+    <div class="modal-content">
+      <h3 style="margin-bottom:15px; font-weight:700;">Setting Fondi Mensili (Default)</h3>
+      <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:15px;">
+        Imposta gli importi e la ripartizione predefinita per ciascun fondo esistente nella sezione Mastrini.
+      </p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label>Entrata Base Default (€)</label>
+          <input type="number" step="0.01" id="cfg-default-base" class="form-control" placeholder="1500.00">
+        </div>
+        <div class="form-group">
+          <label>Entrata Effettiva Default (€)</label>
+          <input type="number" step="0.01" id="cfg-default-eff" class="form-control" placeholder="1700.00">
+        </div>
+      </div>
+
+      <h4 style="font-size:0.85rem; text-transform:uppercase; color:var(--accent-blue); margin: 15px 0 10px 0;">
+        Ripartizione Base ed Extra sui Mastrini
+      </h4>
+
+      <div id="cfg-mastrini-list"></div>
+
+      <button class="btn btn-primary" id="save-settings-funds-btn" style="margin-top:15px;">
+        <i class="fa-solid fa-floppy-disk"></i> Salva Impostazioni Default
+      </button>
+      <button class="btn btn-secondary" id="close-settings-funds-btn">Annulla</button>
+    </div>
+  </div>
 
   <!-- MODALE MODIFICA/AGGIUNTA MOVIMENTO -->
   <div class="modal" id="edit-expense-modal">
@@ -840,21 +957,28 @@
     document.querySelectorAll('.nav-item-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const target = btn.dataset.target;
-        document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
-        document.getElementById(target).classList.add('active');
-        closeDrawer();
+        if (target) {
+          document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+          document.getElementById(target).classList.add('active');
+          closeDrawer();
+        }
       });
     });
 
-    // --- DATI DI STATO ---
+    // --- DATI DI STATO (NESSUN MASTRINO DI DEFAULT) ---
     let expenses = JSON.parse(localStorage.getItem('expenses_data')) || [];
     let customWeekRanges = JSON.parse(localStorage.getItem('custom_week_ranges')) || {};
-    let mastriniData = JSON.parse(localStorage.getItem('mastrini_data')) || [
-      { name: "Fondo Emergenza", items: [{ date: "2026-01-01", note: "Saldo Iniziale", amount: 0 }] },
-      { name: "Svago / Uscite", items: [{ date: "2026-01-01", note: "Saldo Iniziale", amount: 0 }] }
-    ];
+    let mastriniData = JSON.parse(localStorage.getItem('mastrini_data')) || []; // Vuoto di default
 
-    let currentMovementType = "expense"; // expense o income
+    let settingsFunds = JSON.parse(localStorage.getItem('settings_funds')) || {
+      defaultBase: 0,
+      defaultEff: 0,
+      allocations: {} // { fondoName: { baseAlloc: 0, extraRatio: 0 } }
+    };
+
+    let monthlySalaries = JSON.parse(localStorage.getItem('monthly_salaries')) || {};
+
+    let currentMovementType = "expense";
     let modalMovementType = "expense";
 
     const monthsNames = [
@@ -957,11 +1081,238 @@
       toggleExp.classList.remove('active', 'expense');
     });
 
+    // ACCORDION GESTIONE MENSILE RIPARTIZIONE
+    const allocAccordionHeader = document.getElementById('month-allocation-header');
+    const allocAccordionBlock = document.getElementById('month-allocation-accordion');
+
+    allocAccordionHeader.addEventListener('click', () => {
+      allocAccordionBlock.classList.toggle('open');
+    });
+
+    // SETTING FONDI MENSILI (MODALE GLOBAL)
+    const settingsModal = document.getElementById('settings-funds-modal');
+
+    document.getElementById('btn-open-settings-modal').addEventListener('click', () => {
+      document.getElementById('cfg-default-base').value = settingsFunds.defaultBase || "";
+      document.getElementById('cfg-default-eff').value = settingsFunds.defaultEff || "";
+
+      const listContainer = document.getElementById('cfg-mastrini-list');
+      listContainer.innerHTML = "";
+
+      if (mastriniData.length === 0) {
+        listContainer.innerHTML = '<p style="font-size:0.85rem; color:var(--text-muted);">Nessun mastrino presente. Crea dei fondi prima nella sezione Mastrini.</p>';
+      } else {
+        mastriniData.forEach(m => {
+          const alloc = settingsFunds.allocations[m.name] || { baseAlloc: 0, extraRatio: 0 };
+          const div = document.createElement('div');
+          div.style.marginBottom = "12px";
+          div.style.padding = "10px";
+          div.style.background = "var(--card-inner)";
+          div.style.borderRadius = "var(--radius-sm)";
+          div.style.border = "1px solid var(--border-color)";
+
+          div.innerHTML = `
+            <div style="font-weight:700; font-size:0.9rem; margin-bottom:6px; color:var(--text-main);">${m.name}</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div>
+                <label style="font-size:0.7rem; color:var(--text-muted);">Quota Base Default (€)</label>
+                <input type="number" step="0.01" class="form-control cfg-base-input" data-mastrino="${m.name}" value="${alloc.baseAlloc || 0}">
+              </div>
+              <div>
+                <label style="font-size:0.7rem; color:var(--text-muted);">Quota/Ratio Extra Default (€)</label>
+                <input type="number" step="0.01" class="form-control cfg-extra-input" data-mastrino="${m.name}" value="${alloc.extraRatio || 0}">
+              </div>
+            </div>
+          `;
+          listContainer.appendChild(div);
+        });
+      }
+
+      closeDrawer();
+      settingsModal.classList.add('open');
+    });
+
+    document.getElementById('close-settings-funds-btn').addEventListener('click', () => {
+      settingsModal.classList.remove('open');
+    });
+
+    document.getElementById('save-settings-funds-btn').addEventListener('click', () => {
+      settingsFunds.defaultBase = parseFloat(document.getElementById('cfg-default-base').value) || 0;
+      settingsFunds.defaultEff = parseFloat(document.getElementById('cfg-default-eff').value) || 0;
+
+      const baseInputs = document.querySelectorAll('.cfg-base-input');
+      const extraInputs = document.querySelectorAll('.cfg-extra-input');
+
+      baseInputs.forEach(input => {
+        const mName = input.dataset.mastrino;
+        if (!settingsFunds.allocations[mName]) settingsFunds.allocations[mName] = {};
+        settingsFunds.allocations[mName].baseAlloc = parseFloat(input.value) || 0;
+      });
+
+      extraInputs.forEach(input => {
+        const mName = input.dataset.mastrino;
+        if (!settingsFunds.allocations[mName]) settingsFunds.allocations[mName] = {};
+        settingsFunds.allocations[mName].extraRatio = parseFloat(input.value) || 0;
+      });
+
+      localStorage.setItem('settings_funds', JSON.stringify(settingsFunds));
+      settingsModal.classList.remove('open');
+      renderMonthlyView();
+    });
+
+    // RENDERING RIPARTIZIONE ENTRATE NEL MESE CORRENTE
+    function renderMonthlyFundAllocation() {
+      const monthIdx = parseInt(monthSelect.value);
+      const key = `month_${monthIdx}`;
+
+      if (!monthlySalaries[key]) {
+        monthlySalaries[key] = {
+          base: settingsFunds.defaultBase || 0,
+          eff: settingsFunds.defaultEff || 0,
+          customFundAlloc: {}
+        };
+      }
+
+      const currentSal = monthlySalaries[key];
+      const salBaseInput = document.getElementById('m-salary-base');
+      const salEffInput = document.getElementById('m-salary-eff');
+      const salExtraInput = document.getElementById('m-salary-extra');
+
+      salBaseInput.value = currentSal.base;
+      salEffInput.value = currentSal.eff;
+
+      const extraVal = Math.max(0, (currentSal.eff - currentSal.base));
+      salExtraInput.value = extraVal.toFixed(2);
+
+      const allocationContainer = document.getElementById('monthly-funds-allocation-list');
+      allocationContainer.innerHTML = "";
+
+      if (mastriniData.length === 0) {
+        allocationContainer.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted);">Nessun mastrino disponibile per la ripartizione.</i>';
+        document.getElementById('salary-over-alert').style.display = 'none';
+        return;
+      }
+
+      let totalBaseAllocated = 0;
+
+      mastriniData.forEach((m, mIdx) => {
+        const defaultCfg = settingsFunds.allocations[m.name] || { baseAlloc: 0, extraRatio: 0 };
+        const savedCustom = currentSal.customFundAlloc[m.name];
+
+        const baseShare = savedCustom && savedCustom.base !== undefined ? savedCustom.base : defaultCfg.baseAlloc;
+        const extraShare = savedCustom && savedCustom.extra !== undefined ? savedCustom.extra : defaultCfg.extraRatio;
+
+        totalBaseAllocated += parseFloat(baseShare) || 0;
+        const totalFundSum = (parseFloat(baseShare) || 0) + (parseFloat(extraShare) || 0);
+
+        const subAcc = document.createElement('div');
+        subAcc.className = 'sub-accordion';
+        subAcc.innerHTML = `
+          <div class="sub-accordion-header">
+            <span><i class="fa-solid fa-vault" style="margin-right:6px; color:var(--accent-blue);"></i> <b>${m.name}</b></span>
+            <span style="font-weight:700; color:var(--accent-green);">€ ${totalFundSum.toFixed(2)} <i class="fa-solid fa-chevron-down" style="font-size:0.75rem; margin-left:6px;"></i></span>
+          </div>
+          <div class="sub-accordion-content">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+              <div>
+                <label style="font-size:0.7rem; color:var(--text-muted);">Quota da Base (€)</label>
+                <input type="number" step="0.01" class="form-control m-fund-base-input" data-mastrino="${m.name}" value="${baseShare}">
+              </div>
+              <div>
+                <label style="font-size:0.7rem; color:var(--text-muted);">Quota da Extra (€)</label>
+                <input type="number" step="0.01" class="form-control m-fund-extra-input" data-mastrino="${m.name}" value="${extraShare}">
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+              <span style="font-size:0.8rem; font-weight:600;">Totale da Inviare: € ${totalFundSum.toFixed(2)}</span>
+              <button class="btn btn-success btn-send-single-mastrino" data-idx="${mIdx}" data-amount="${totalFundSum}" style="width:auto; padding:6px 12px; font-size:0.8rem; margin:0;">
+                <i class="fa-solid fa-paper-plane"></i> Invia ai Mastrini
+              </button>
+            </div>
+          </div>
+        `;
+
+        subAcc.querySelector('.sub-accordion-header').addEventListener('click', () => {
+          subAcc.classList.toggle('open');
+        });
+
+        allocationContainer.appendChild(subAcc);
+      });
+
+      // Segnalazione se la somma supera lo stipendio base
+      const alertBanner = document.getElementById('salary-over-alert');
+      if (totalBaseAllocated > currentSal.base && currentSal.base > 0) {
+        alertBanner.style.display = 'block';
+      } else {
+        alertBanner.style.display = 'none';
+      }
+
+      // Handlers aggiornamento quote in tempo reale
+      document.querySelectorAll('.m-fund-base-input, .m-fund-extra-input').forEach(input => {
+        input.addEventListener('change', () => {
+          const mName = input.dataset.mastrino;
+          if (!currentSal.customFundAlloc[mName]) currentSal.customFundAlloc[mName] = {};
+
+          if (input.classList.contains('m-fund-base-input')) {
+            currentSal.customFundAlloc[mName].base = parseFloat(input.value) || 0;
+          } else {
+            currentSal.customFundAlloc[mName].extra = parseFloat(input.value) || 0;
+          }
+
+          monthlySalaries[key] = currentSal;
+          localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
+          renderMonthlyFundAllocation();
+        });
+      });
+
+      // Handlers per Invio Singolo Fondo
+      document.querySelectorAll('.btn-send-single-mastrino').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const mIdx = parseInt(btn.dataset.idx);
+          const amount = parseFloat(btn.dataset.amount);
+          const currentMonthName = monthsNames[monthIdx];
+
+          if (isNaN(amount) || amount <= 0) return;
+
+          const noteText = `da mese ${currentMonthName}`;
+          mastriniData[mIdx].items.push({
+            date: formatDateToYMD(new Date()),
+            note: noteText,
+            amount: amount
+          });
+
+          saveAndRenderMastrini();
+          alert(`€ ${amount.toFixed(2)} inviati a ${mastriniData[mIdx].name} (${noteText})`);
+        });
+      });
+    }
+
+    // Event Listeners Stipendio Base / Effettivo del Mese
+    document.getElementById('m-salary-base').addEventListener('change', (e) => {
+      const monthIdx = parseInt(monthSelect.value);
+      const key = `month_${monthIdx}`;
+      if (!monthlySalaries[key]) monthlySalaries[key] = { customFundAlloc: {} };
+      monthlySalaries[key].base = parseFloat(e.target.value) || 0;
+      localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
+      renderMonthlyFundAllocation();
+    });
+
+    document.getElementById('m-salary-eff').addEventListener('change', (e) => {
+      const monthIdx = parseInt(monthSelect.value);
+      const key = `month_${monthIdx}`;
+      if (!monthlySalaries[key]) monthlySalaries[key] = { customFundAlloc: {} };
+      monthlySalaries[key].eff = parseFloat(e.target.value) || 0;
+      localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
+      renderMonthlyFundAllocation();
+    });
+
     // RENDERING VISTA MENSILE CON STRUTTURA SFALSATA E RIGHE EXCEL
     function renderMonthlyView(highlightExpenseId = null) {
       const monthIdx = parseInt(monthSelect.value);
       const container = document.getElementById('weeks-container');
       container.innerHTML = "";
+
+      renderMonthlyFundAllocation();
 
       const weeks = generateWeeks(monthIdx);
 
@@ -1043,7 +1394,6 @@
       });
 
       renderRecentExpenses();
-      updateMonthMastriniDropdown();
     }
 
     function renderRecentExpenses() {
@@ -1174,40 +1524,44 @@
       container.innerHTML = "";
       let grandTotal = 0;
 
-      mastriniData.forEach((m, mIdx) => {
-        const mTotal = m.items.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
-        grandTotal += mTotal;
+      if (mastriniData.length === 0) {
+        container.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted); grid-column: 1/-1;">Nessun fondo/mastrino presente. Clicca su "+ Nuovo Fondo" per aggiungerne uno.</i>';
+      } else {
+        mastriniData.forEach((m, mIdx) => {
+          const mTotal = m.items.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+          grandTotal += mTotal;
 
-        const card = document.createElement('div');
-        card.className = 'mastrino-card';
-        card.innerHTML = `
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div style="font-weight:700; color:var(--text-main); font-size:1rem;">${m.name}</div>
-            <button class="action-btn delete-btn delete-mastrino-btn" data-m="${mIdx}" title="Elimina Fondo"><i class="fa-solid fa-trash"></i></button>
-          </div>
-          <div class="mastrino-balance">€ ${mTotal.toFixed(2)}</div>
-          <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">
-            ${m.items.map((item, iIdx) => {
-              const dParts = item.date ? item.date.split('-') : [];
-              const dStr = dParts.length === 3 ? ` (${dParts[2]}/${dParts[1]})` : '';
-              return `
-                <div class="expense-item" style="padding:4px 0;">
-                  <span>${item.note}${dStr}</span>
-                  <div>
-                    <b>€ ${(parseFloat(item.amount)||0).toFixed(2)}</b>
-                    <button class="action-btn edit-btn edit-mastrino-item-btn" data-m="${mIdx}" data-i="${iIdx}"><i class="fa-solid fa-pen"></i></button>
-                    <button class="action-btn delete-btn delete-mastrino-item-btn" data-m="${mIdx}" data-i="${iIdx}"><i class="fa-solid fa-xmark"></i></button>
+          const card = document.createElement('div');
+          card.className = 'mastrino-card';
+          card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="font-weight:700; color:var(--text-main); font-size:1rem;">${m.name}</div>
+              <button class="action-btn delete-btn delete-mastrino-btn" data-m="${mIdx}" title="Elimina Fondo"><i class="fa-solid fa-trash"></i></button>
+            </div>
+            <div class="mastrino-balance">€ ${mTotal.toFixed(2)}</div>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">
+              ${m.items.map((item, iIdx) => {
+                const dParts = item.date ? item.date.split('-') : [];
+                const dStr = dParts.length === 3 ? ` (${dParts[2]}/${dParts[1]})` : '';
+                return `
+                  <div class="expense-item" style="padding:4px 0;">
+                    <span>${item.note}${dStr}</span>
+                    <div>
+                      <b>€ ${(parseFloat(item.amount)||0).toFixed(2)}</b>
+                      <button class="action-btn edit-btn edit-mastrino-item-btn" data-m="${mIdx}" data-i="${iIdx}"><i class="fa-solid fa-pen"></i></button>
+                      <button class="action-btn delete-btn delete-mastrino-item-btn" data-m="${mIdx}" data-i="${iIdx}"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
                   </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-          <button class="btn btn-secondary add-mastrino-item-btn" data-m="${mIdx}" style="padding:6px; font-size:0.8rem;">
-            <i class="fa-solid fa-plus"></i> Aggiungi Voce
-          </button>
-        `;
-        container.appendChild(card);
-      });
+                `;
+              }).join('')}
+            </div>
+            <button class="btn btn-secondary add-mastrino-item-btn" data-m="${mIdx}" style="padding:6px; font-size:0.8rem;">
+              <i class="fa-solid fa-plus"></i> Aggiungi Voce
+            </button>
+          `;
+          container.appendChild(card);
+        });
+      }
 
       if (totalEl) totalEl.textContent = `€ ${grandTotal.toFixed(2)}`;
 
@@ -1241,7 +1595,7 @@
     function saveAndRenderMastrini() {
       localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
       renderMastriniView();
-      updateMonthMastriniDropdown();
+      renderMonthlyView();
     }
 
     // Modal Nuovo Mastrino
@@ -1307,39 +1661,6 @@
 
       saveAndRenderMastrini();
       itemMastrinoModal.classList.remove('open');
-    });
-
-    // SEZIONE RIPARTIZIONE ENTRATE NEI MASTRINI (DA MESE X)
-    function updateMonthMastriniDropdown() {
-      const select = document.getElementById('month-target-mastrino');
-      if (!select) return;
-      select.innerHTML = "";
-      mastriniData.forEach((m, idx) => {
-        const opt = document.createElement('option');
-        opt.value = idx;
-        opt.textContent = m.name;
-        select.appendChild(opt);
-      });
-    }
-
-    document.getElementById('btn-send-to-mastrino').addEventListener('click', () => {
-      const mIdx = parseInt(document.getElementById('month-target-mastrino').value);
-      const amount = parseFloat(document.getElementById('month-mastrino-amount').value);
-      const currentMonthIdx = parseInt(monthSelect.value);
-      const currentMonthName = monthsNames[currentMonthIdx];
-
-      if (isNaN(mIdx) || isNaN(amount) || amount <= 0) return;
-
-      const noteText = `da mese ${currentMonthName}`;
-      mastriniData[mIdx].items.push({
-        date: formatDateToYMD(new Date()),
-        note: noteText,
-        amount: amount
-      });
-
-      saveAndRenderMastrini();
-      document.getElementById('month-mastrino-amount').value = "";
-      alert(`€ ${amount.toFixed(2)} inviati con successo a ${mastriniData[mIdx].name} (${noteText})`);
     });
 
     // Inserimento Rapido Form
