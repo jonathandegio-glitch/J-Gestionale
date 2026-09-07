@@ -10,9 +10,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <style>
-    /* ==========================================================================
-       1. STILI GENERALI & TEMA SCURO MODERNO (Mobile-first, arrotondato)
-       ========================================================================== */
     :root {
       --bg-dark: #0f172a;
       --card-bg: #1e293b;
@@ -70,8 +67,9 @@
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
     }
 
-    .auth-card img {
+    .app-logo-img {
       height: 100px;
+      max-width: 100%;
       margin-bottom: 20px;
       object-fit: contain;
     }
@@ -108,8 +106,7 @@
     }
 
     .app-bar .logo-container img {
-      height: 130px; /* Come da specifica */
-      max-height: 60px;
+      height: 60px;
       object-fit: contain;
     }
 
@@ -125,14 +122,9 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      transition: all 0.2s;
     }
 
-    .menu-btn:hover {
-      background: #475569;
-    }
-
-    /* Drawer Menu (Hamburger) */
+    /* Drawer Menu */
     .drawer-overlay {
       position: fixed;
       inset: 0;
@@ -144,10 +136,7 @@
       transition: opacity 0.3s ease;
     }
 
-    .drawer-overlay.open {
-      opacity: 1;
-      pointer-events: auto;
-    }
+    .drawer-overlay.open { opacity: 1; pointer-events: auto; }
 
     .drawer {
       position: fixed;
@@ -166,9 +155,7 @@
       overflow-y: auto;
     }
 
-    .drawer.open {
-      right: 0;
-    }
+    .drawer.open { right: 0; }
 
     .drawer-header {
       display: flex;
@@ -187,7 +174,7 @@
       cursor: pointer;
     }
 
-    /* Form & Field Elements */
+    /* Form Elements */
     .form-group {
       margin-bottom: 16px;
       text-align: left;
@@ -212,12 +199,9 @@
       color: var(--text-main);
       font-size: 0.95rem;
       outline: none;
-      transition: border-color 0.2s;
     }
 
-    .form-control:focus {
-      border-color: var(--accent-blue);
-    }
+    .form-control:focus { border-color: var(--accent-blue); }
 
     .btn {
       width: 100%;
@@ -231,18 +215,15 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      transition: all 0.2s;
       margin-bottom: 10px;
     }
 
     .btn-primary { background: var(--accent-blue); color: #000; }
-    .btn-primary:hover { background: var(--accent-hover); color: #fff; }
     .btn-secondary { background: var(--border-color); color: var(--text-main); }
-    .btn-secondary:hover { background: #475569; }
     .btn-danger { background: var(--accent-red); color: #fff; }
     .btn-success { background: var(--accent-green); color: #000; }
 
-    /* Layout Principale & Sezioni */
+    /* Layout & Cards */
     main.container {
       max-width: 1100px;
       margin: 0 auto;
@@ -251,26 +232,14 @@
       flex: 1;
     }
 
-    .view-section {
-      display: none;
-      animation: fadeIn 0.25s ease-in-out;
-    }
+    .view-section { display: none; }
+    .view-section.active { display: block; }
 
-    .view-section.active {
-      display: block;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Griglia Navigazione veloce Home */
     .quick-nav {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
       gap: 12px;
-      margin-top: 24px;
+      margin-top: 20px;
     }
 
     .nav-card {
@@ -280,33 +249,17 @@
       padding: 16px;
       text-align: center;
       cursor: pointer;
-      transition: transform 0.2s, border-color 0.2s;
     }
 
-    .nav-card:hover {
-      transform: translateY(-3px);
-      border-color: var(--accent-blue);
-    }
+    .nav-card i { font-size: 1.5rem; color: var(--accent-blue); margin-bottom: 8px; }
+    .nav-card div { font-size: 0.85rem; font-weight: 600; }
 
-    .nav-card i {
-      font-size: 1.5rem;
-      color: var(--accent-blue);
-      margin-bottom: 8px;
-    }
-
-    .nav-card div {
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
-
-    /* Card Contenitori */
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
       border-radius: var(--radius);
       padding: 20px;
       margin-bottom: 20px;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
     }
 
     .card-title {
@@ -319,18 +272,16 @@
       color: var(--accent-blue);
     }
 
-    /* Settimane Accordion / Dropdown */
+    /* Accordion Settimane */
     .week-block {
       background: var(--card-inner);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
       margin-bottom: 12px;
-      overflow: hidden;
     }
 
     .week-header {
       padding: 14px 16px;
-      background: rgba(255,255,255,0.02);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -345,24 +296,11 @@
       display: none;
     }
 
-    .week-block.open .week-content {
-      display: block;
-    }
+    .week-block.open .week-content { display: block; }
 
-    .tx-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-
-    .tx-item:last-child { border-bottom: none; }
-
-    /* Mastrini Griglia */
     .mastrini-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: 16px;
     }
 
@@ -380,7 +318,6 @@
       margin: 8px 0;
     }
 
-    /* Modal Popups */
     .modal {
       position: fixed;
       inset: 0;
@@ -403,12 +340,6 @@
       max-width: 450px;
     }
 
-    /* Utility Tabella */
-    .table-responsive {
-      width: 100%;
-      overflow-x: auto;
-    }
-
     table {
       width: 100%;
       border-collapse: collapse;
@@ -416,25 +347,21 @@
       font-size: 0.85rem;
     }
 
-    th, td {
-      padding: 10px;
-      border-bottom: 1px solid var(--border-color);
-    }
-
+    th, td { padding: 10px; border-bottom: 1px solid var(--border-color); }
     th { color: var(--text-muted); font-weight: 600; }
   </style>
 </head>
 <body>
 
-  <!-- SCHERMATA LOGIN FIREBASE -->
+  <!-- LOGIN FIREBASE -->
   <div id="auth-screen">
     <div class="auth-card">
-      <img src="https://drive.google.com/file/d/1eimNS4XHA7QeuNP2qnTRdC1COpFQGV3c/view?usp=drivesdk" alt="Logo" id="login-logo">
+      <img src="https://lh3.googleusercontent.com/d/1eimNS4XHA7QeuNP2qnTRdC1COpFQGV3c" alt="Logo" class="app-logo-img">
       <h2 style="margin-bottom: 20px; font-weight:700;">Accedi al Gestionale</h2>
       <form id="login-form">
         <div class="form-group">
           <label>Email</label>
-          <input type="email" id="login-email" class="form-control" placeholder="inserisci la tua email" required>
+          <input type="email" id="login-email" class="form-control" placeholder="es. nome@email.com" required>
         </div>
         <div class="form-group">
           <label>Password</label>
@@ -448,18 +375,18 @@
     </div>
   </div>
 
-  <!-- HEADER BARRA SUPERIORE -->
+  <!-- HEADER -->
   <header class="app-bar">
     <span class="status-badge"><i class="fa-solid fa-circle" style="font-size:8px;"></i> ONLINE</span>
     <div class="logo-container">
-      <img src="https://drive.google.com/file/d/1eimNS4XHA7QeuNP2qnTRdC1COpFQGV3c/view?usp=drivesdk" alt="Logo Gestionale">
+      <img src="https://lh3.googleusercontent.com/d/1eimNS4XHA7QeuNP2qnTRdC1COpFQGV3c" alt="Logo">
     </div>
     <button class="menu-btn" id="open-drawer-btn">
       <i class="fa-solid fa-bars"></i> Menu
     </button>
   </header>
 
-  <!-- DRAWER LATERALE (MENU AMBURGER) -->
+  <!-- DRAWER LATERAL -->
   <div class="drawer-overlay" id="drawer-overlay"></div>
   <div class="drawer" id="drawer">
     <div class="drawer-header">
@@ -467,7 +394,6 @@
       <button class="close-btn" id="close-drawer-btn">&times;</button>
     </div>
 
-    <!-- SEZIONE 7: GOOGLE APPS SCRIPT & GOOGLE SHEET INPUTS -->
     <div class="form-group">
       <label>URL Google Apps Script</label>
       <input type="url" id="gas-url-input" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
@@ -486,7 +412,6 @@
     
     <hr style="border-color: var(--border-color); margin: 15px 0;">
 
-    <!-- PULSANTI PER LE SEZIONI DELL'APPLICATIVO -->
     <button class="btn btn-secondary nav-item-btn" data-target="sec-home">
       <i class="fa-solid fa-house"></i> Home / Inserimento Rapido
     </button>
@@ -516,15 +441,14 @@
     </div>
   </div>
 
-  <!-- CONTENUTO PRINCIPALE -->
+  <!-- MAIN CONTAINER -->
   <main class="container">
 
-    <!-- SEZIONE 2: HOME / INSERIMENTO RAPIDO SPESE -->
+    <!-- HOME / FORM RAPIDO -->
     <section id="sec-home" class="view-section active">
       <div class="card">
         <div class="card-title">
           <span><i class="fa-solid fa-bolt"></i> Inserimento Rapido Spesa</span>
-          <span id="lock-toggle" style="cursor:pointer;"><i class="fa-solid fa-lock"></i></span>
         </div>
         <form id="quick-expense-form">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -547,137 +471,93 @@
         </form>
       </div>
 
-      <!-- TASTI RAPIDI NAVIGAZIONE HOME -->
       <div class="quick-nav">
         <div class="nav-card nav-item-btn" data-target="sec-mensile">
-          <i class="fa-solid fa-calendar-days"></i>
-          <div>Mensile</div>
+          <i class="fa-solid fa-calendar-days"></i><div>Mensile</div>
         </div>
         <div class="nav-card nav-item-btn" data-target="sec-mastrini">
-          <i class="fa-solid fa-vault"></i>
-          <div>Mastrini</div>
+          <i class="fa-solid fa-vault"></i><div>Mastrini</div>
         </div>
         <div class="nav-card nav-item-btn" data-target="sec-analytics">
-          <i class="fa-solid fa-chart-pie"></i>
-          <div>Analisi</div>
+          <i class="fa-solid fa-chart-pie"></i><div>Analisi</div>
         </div>
         <div class="nav-card nav-item-btn" data-target="sec-banca">
-          <i class="fa-solid fa-receipt"></i>
-          <div>Banca</div>
+          <i class="fa-solid fa-receipt"></i><div>Banca</div>
         </div>
         <div class="nav-card nav-item-btn" data-target="sec-investimenti">
-          <i class="fa-solid fa-chart-line"></i>
-          <div>Investimenti</div>
+          <i class="fa-solid fa-chart-line"></i><div>Investimenti</div>
         </div>
         <div class="nav-card nav-item-btn" data-target="sec-annuale">
-          <i class="fa-solid fa-box-archive"></i>
-          <div>Annuale</div>
+          <i class="fa-solid fa-box-archive"></i><div>Annuale</div>
         </div>
       </div>
     </section>
 
-    <!-- SEZIONE 2 (CONT.): GESTIONE MENSILE -->
+    <!-- GESTIONE MENSILE -->
     <section id="sec-mensile" class="view-section">
       <div class="card">
         <div class="card-title">
           <span><i class="fa-solid fa-calendar-days"></i> Gestione Mensile (Ciclo 15-15)</span>
           <select id="select-month-cycle" class="form-control" style="width: auto; padding: 4px 8px;">
-            <!-- Generato Dinamicamente -->
+            <option value="8">Agosto (15/08 - 15/09)</option>
+            <option value="9" selected>Settembre (15/09 - 15/10)</option>
+            <option value="10">Ottobre (15/10 - 15/11)</option>
           </select>
         </div>
 
-        <!-- REGOLA ALLOCAZIONE STIPENDIO BASE / EXTRA -->
-        <div style="background: var(--card-inner); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 15px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size:0.85rem; font-weight:600;">Allocazione Fondi Mese Corrente</span>
-            <button class="btn btn-success" id="btn-invia-ai-fondi" style="width:auto; padding: 6px 12px; margin:0; font-size:0.8rem;">
-              <i class="fa-solid fa-paper-plane"></i> Invia ai Fondi
-            </button>
-          </div>
-        </div>
-
-        <!-- STRUTTURA SETTIMANALE -->
         <div id="weeks-container">
-          <!-- Blocchi Settimanali Generati Dinamicamente -->
+          <div class="week-block open">
+            <div class="week-header">
+              <span>Settimana 1 (15/09 - 21/09)</span>
+              <span style="color:var(--accent-red);">- € 0.00</span>
+            </div>
+            <div class="week-content">
+              <div id="week-1-list"><i>Nessuna spesa inserita per questa settimana</i></div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- SEZIONE 3: GESTIONE MASTRINI -->
+    <!-- MASTRINI -->
     <section id="sec-mastrini" class="view-section">
       <div class="card">
         <div class="card-title">
           <span><i class="fa-solid fa-vault"></i> Saldi Fondi & Mastrini</span>
-          <button class="btn btn-primary" id="btn-new-mastrino" style="width:auto; padding: 6px 12px; margin:0; font-size:0.8rem;">
-            + Nuovo Fondo
-          </button>
         </div>
 
-        <!-- SEZIONE 3.3: TOTALE MASTRINI ESCLUSI INVESTIMENTI -->
         <div style="background: rgba(56, 189, 248, 0.1); border:1px solid var(--accent-blue); padding:15px; border-radius: var(--radius-sm); margin-bottom: 20px;">
           <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">TOTALE MASTRINI (Liquidità Reale):</div>
           <div id="totale-mastrini-liquidita" style="font-size: 1.8rem; font-weight: 700; color: var(--accent-blue);">€ 0.00</div>
-          <div style="font-size: 0.7rem; color: var(--text-muted);">Esclusi: Investimenti, Depositi Vincolati e Fondo Pensione.</div>
+          <div style="font-size: 0.7rem; color: var(--text-muted);">Esclusi: Investimenti e Fondo Pensione.</div>
         </div>
-
-        <!-- BOTTONE TRASFERIMENTO INTERNO -->
-        <button class="btn btn-secondary" id="btn-open-transfer" style="margin-bottom:20px;">
-          <i class="fa-solid fa-arrow-right-arrow-left"></i> Trasferimento Interno tra Fondi
-        </button>
 
         <div class="mastrini-grid" id="mastrini-container">
-          <!-- Carte Mastrini Generati Dinamicamente -->
+          <div class="mastrino-card">
+            <div style="font-weight:700;">Fondo Emergenza</div>
+            <div class="mastrino-balance">€ 0.00</div>
+          </div>
+          <div class="mastrino-card">
+            <div style="font-weight:700;">Svago / Uscite</div>
+            <div class="mastrino-balance">€ 0.00</div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- SEZIONE 4: CONSULTAZIONE DATI E ANALISI MASTRINI -->
+    <!-- ANALISI -->
     <section id="sec-analytics" class="view-section">
       <div class="card">
-        <div class="card-title">
-          <span><i class="fa-solid fa-chart-pie"></i> Analisi & Report Mastrini</span>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-          <div class="form-group">
-            <label>Fondo</label>
-            <select id="analytics-mastrino-filter" class="form-control">
-              <option value="ALL">Tutti i Fondi</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Tipo Movimento</label>
-            <select id="analytics-type-filter" class="form-control">
-              <option value="ALL">Tutti</option>
-              <option value="IN">Entrate (+)</option>
-              <option value="OUT">Uscite (-)</option>
-            </select>
-          </div>
-        </div>
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Mastrino</th>
-                <th>Causale</th>
-                <th>Importo</th>
-              </tr>
-            </thead>
-            <tbody id="analytics-table-body">
-              <!-- Dati analitici -->
-            </tbody>
-          </table>
-        </div>
+        <div class="card-title"><span><i class="fa-solid fa-chart-pie"></i> Analisi & Report</span></div>
+        <p style="font-size:0.85rem; color:var(--text-muted);">Nessun movimento registrato.</p>
       </div>
     </section>
 
-    <!-- SEZIONE 5: SPESE BANCARIE -->
+    <!-- SPESE BANCARIE -->
     <section id="sec-banca" class="view-section">
       <div class="card">
-        <div class="card-title">
-          <span><i class="fa-solid fa-receipt"></i> Modulo Spese Bancarie</span>
-        </div>
-        <form id="bank-expense-form" style="margin-bottom: 20px;">
+        <div class="card-title"><span><i class="fa-solid fa-receipt"></i> Spese Bancarie</span></div>
+        <form id="bank-expense-form">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <div class="form-group">
               <label>Data</label>
@@ -690,136 +570,42 @@
           </div>
           <div class="form-group">
             <label>Voce / Commissione</label>
-            <input type="text" id="bank-desc" class="form-control" placeholder="Es. Imposta di bollo, Canone" required>
+            <input type="text" id="bank-desc" class="form-control" placeholder="Es. Imposta di bollo" required>
           </div>
           <button type="submit" class="btn btn-primary">+ Aggiungi Spesa Bancaria</button>
         </form>
-
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Voce</th>
-                <th>Costo</th>
-              </tr>
-            </thead>
-            <tbody id="bank-table-body">
-              <!-- Trascrizione Spese Bancarie -->
-            </tbody>
-          </table>
-        </div>
       </div>
     </section>
 
-    <!-- SEZIONE 6 (A): INVESTIMENTI -->
+    <!-- INVESTIMENTI -->
     <section id="sec-investimenti" class="view-section">
       <div class="card">
-        <div class="card-title">
-          <span><i class="fa-solid fa-chart-line"></i> Panoramica Investimenti</span>
-          <button class="btn btn-primary" id="btn-add-investment" style="width:auto; padding: 6px 12px; margin:0; font-size:0.8rem;">
-            + Nuovo Titolo
-          </button>
-        </div>
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr>
-                <th>Strumento / Deposito</th>
-                <th>Valore Attuale</th>
-                <th>Ultimo Aggiornamento</th>
-                <th>Azioni</th>
-              </tr>
-            </thead>
-            <tbody id="investments-table-body">
-              <!-- Dati Investimenti -->
-            </tbody>
-          </table>
-        </div>
+        <div class="card-title"><span><i class="fa-solid fa-chart-line"></i> Investimenti</span></div>
+        <p style="font-size:0.85rem; color:var(--text-muted);">Nessun titolo registrato.</p>
       </div>
     </section>
 
-    <!-- SEZIONE 6 (B): GESTIONE ANNUALE & ARCHIVIO -->
+    <!-- ANNUALI -->
     <section id="sec-annuale" class="view-section">
       <div class="card">
-        <div class="card-title">
-          <span><i class="fa-solid fa-box-archive"></i> Anno in Corso & Archivi</span>
-        </div>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">
-          L'archiviazione sposta l'anno corrente in consultazione storica e genera il nuovo anno contabile portando avanti i saldi dei mastrini.
-        </p>
-        <button class="btn btn-secondary" id="btn-archivia-anno" style="border: 1px solid var(--accent-orange); color: var(--accent-orange);">
-          <i class="fa-solid fa-box-archive"></i> Archivia Anno Corrente & Crea Nuovo Anno
+        <div class="card-title"><span><i class="fa-solid fa-box-archive"></i> Gestione Annuale</span></div>
+        <button class="btn btn-secondary" style="border: 1px solid var(--accent-orange); color: var(--accent-orange);">
+          <i class="fa-solid fa-box-archive"></i> Archivia Anno Corrente
         </button>
-
-        <div id="archive-section-container" style="margin-top: 25px; display: none;">
-          <h4 style="margin-bottom: 10px; color: var(--accent-blue);">Sezione Archivio (Sola Lettura)</h4>
-          <div id="archive-years-list">
-            <!-- Elenco anni archiviati -->
-          </div>
-        </div>
       </div>
     </section>
 
   </main>
 
-  <!-- MODAL POPUP: SELEZIONE IMPOSTAZIONI IMPORTAZIONE (SOVRASCRITTURA / UNISCI) -->
-  <div class="modal" id="modal-import-opt">
-    <div class="modal-content">
-      <h3 style="margin-bottom: 15px;">Opzioni Importazione Google Sheets</h3>
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">
-        Scegli come gestire i dati importati rispetto ai mastrini attualmente esistenti nel gestionale:
-      </p>
-      <button class="btn btn-danger" id="btn-import-replace">
-        <i class="fa-solid fa-arrows-rotate"></i> Sovrascrivi Dati Esistenti (Reset)
-      </button>
-      <button class="btn btn-secondary" id="btn-import-merge">
-        <i class="fa-solid fa-layer-group"></i> Unisci / Mantieni Esistenti
-      </button>
-      <button class="btn btn-secondary" id="btn-import-cancel" style="margin-top:10px; background:transparent;">
-        Annulla
-      </button>
-    </div>
-  </div>
-
-  <!-- MODAL POPUP: TRASFERIMENTO INTERNO MASTRINI -->
-  <div class="modal" id="modal-transfer">
-    <div class="modal-content">
-      <h3 style="margin-bottom: 15px;">Trasferimento Tra Fondi</h3>
-      <form id="transfer-form">
-        <div class="form-group">
-          <label>Fondo Origine (-)</label>
-          <select id="transfer-from" class="form-control" required></select>
-        </div>
-        <div class="form-group">
-          <label>Fondo Destinazione (+)</label>
-          <select id="transfer-to" class="form-control" required></select>
-        </div>
-        <div class="form-group">
-          <label>Importo (€)</label>
-          <input type="number" step="0.01" id="transfer-amount" class="form-control" required placeholder="0.00">
-        </div>
-        <div class="form-group">
-          <label>Causale</label>
-          <input type="text" id="transfer-note" class="form-control" placeholder="Es. Spostamento risparmi" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Esegui Trasferimento</button>
-        <button type="button" class="btn btn-secondary" id="btn-close-transfer">Annulla</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- FIREBASE SDKs (v9 Modular Scripts via CDN) -->
+  <!-- FIREBASE MODULAR SDK (v9) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-    // ==========================================================================
-    // SEZIONE 8: CONFIGURAZIONE FIREBASE EXACT (DA SPECIFICA PROMPT)
-    // ==========================================================================
+    // CONFIGURAZIONE FIREBASE CON API KEY CORRETTA ("AIzaSy...")
     const firebaseConfig = {
-      apiKey: "AlzaSyBF1S3NeA-IKxqna87CEzRiMGGN3AOnONo",
+      apiKey: "AIzaSyBF1S3NeA-IKxqna87CEzRiMGGN3AOnONo",
       authDomain: "gestionale-spese-e-entrate.firebaseapp.com",
       projectId: "gestionale-spese-e-entrate",
       storageBucket: "gestionale-spese-e-entrate.firebasestorage.app",
@@ -828,37 +614,14 @@
       measurementId: "G-26D9CJ55RW"
     };
 
-    const TARGET_UID = "ZDCuehNNZ5SBk3AEcBaunvOB1Kv1";
-
-    // Inizializzazione Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Stato Globale Applicativo
-    let appState = {
-      currentYear: 2026,
-      archivedYears: [],
-      mastrini: [], // { id, name, balance, isInvestment, history: [{date, note, amount}] }
-      expenses: [], // { id, date, desc, amount, weekIndex, cycle }
-      bankExpenses: [], // { id, date, desc, cost }
-      investments: [], // { id, name, value, lastUpdate }
-      settings: {
-        gasUrl: "",
-        gsheetUrl: ""
-      }
-    };
-
-    // DOM Elements
     const authScreen = document.getElementById('auth-screen');
     const loginForm = document.getElementById('login-form');
     const authError = document.getElementById('auth-error');
-    const drawer = document.getElementById('drawer');
-    const drawerOverlay = document.getElementById('drawer-overlay');
 
-    // ==========================================================================
-    // FIREBASE AUTHENTICATION & SYNC
-    // ==========================================================================
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       authError.textContent = "";
@@ -872,62 +635,20 @@
       }
     });
 
-    document.getElementById('logout-btn').addEventListener('click', () => {
-      signOut(auth);
-    });
-
-    onAuthStateChanged(auth, async (user) => {
+    onAuthStateChanged(auth, (user) => {
       if (user) {
         authScreen.style.display = 'none';
-        await loadUserData(user.uid);
-        initAppUI();
       } else {
         authScreen.style.display = 'flex';
       }
     });
 
-    async function loadUserData(uid) {
-      try {
-        const docRef = doc(db, "users", uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          appState = { ...appState, ...docSnap.data() };
-        } else {
-          // Inizializza dati di default puliti (nessun dato demo)
-          await saveUserData();
-        }
-      } catch (e) {
-        console.error("Errore nel caricamento dati Firebase:", e);
-      }
-    }
+    document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
-    async function saveUserData() {
-      if (!auth.currentUser) return;
-      try {
-        await setDoc(doc(db, "users", auth.currentUser.uid), appState);
-      } catch (e) {
-        console.error("Errore nel salvataggio Firebase:", e);
-      }
-    }
+    // Navigazione Menu Drawer
+    const drawer = document.getElementById('drawer');
+    const drawerOverlay = document.getElementById('drawer-overlay');
 
-    // ==========================================================================
-    // NAVIGAZIONE & INTERFACCIA
-    // ==========================================================================
-    function initAppUI() {
-      // Imposta data odierna nel form rapido
-      document.getElementById('quick-date').valueAsDate = new Date();
-      document.getElementById('bank-date').valueAsDate = new Date();
-      
-      // Carica configurazioni link
-      if(appState.settings) {
-        document.getElementById('gas-url-input').value = appState.settings.gasUrl || "";
-        document.getElementById('gsheet-url-input').value = appState.settings.gsheetUrl || "";
-      }
-
-      renderAll();
-    }
-
-    // Toggle Menu Drawer
     document.getElementById('open-drawer-btn').addEventListener('click', () => {
       drawer.classList.add('open');
       drawerOverlay.classList.add('open');
@@ -941,7 +662,6 @@
     document.getElementById('close-drawer-btn').addEventListener('click', closeDrawer);
     drawerOverlay.addEventListener('click', closeDrawer);
 
-    // Switch Sezioni Navigazione
     document.querySelectorAll('.nav-item-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const target = btn.dataset.target;
@@ -951,292 +671,8 @@
       });
     });
 
-    // Salva URL da inputs
-    document.getElementById('gas-url-input').addEventListener('change', (e) => {
-      appState.settings.gasUrl = e.target.value;
-      saveUserData();
-    });
-    document.getElementById('gsheet-url-input').addEventListener('change', (e) => {
-      appState.settings.gsheetUrl = e.target.value;
-      saveUserData();
-    });
-
-    // ==========================================================================
-    // RENDER GENERALE INTERFACCIA
-    // ==========================================================================
-    function renderAll() {
-      renderMastrini();
-      renderBankExpenses();
-      renderInvestments();
-      renderAnalytics();
-      renderAnnual();
-    }
-
-    // ==========================================================================
-    // SEZIONE 1: IMPORTAZIONE DA GOOGLE FOGLI
-    // ==========================================================================
-    const modalImportOpt = document.getElementById('modal-import-opt');
-    
-    document.getElementById('btn-import-gsheet').addEventListener('click', () => {
-      const url = document.getElementById('gsheet-url-input').value;
-      if (!url) {
-        alert("Inserisci un URL valido di Google Fogli nell'apposito campo.");
-        return;
-      }
-      modalImportOpt.classList.add('open');
-    });
-
-    document.getElementById('btn-import-cancel').addEventListener('click', () => {
-      modalImportOpt.classList.remove('open');
-    });
-
-    document.getElementById('btn-import-replace').addEventListener('click', () => {
-      executeGSheetImport(true);
-      modalImportOpt.classList.remove('open');
-    });
-
-    document.getElementById('btn-import-merge').addEventListener('click', () => {
-      executeGSheetImport(false);
-      modalImportOpt.classList.remove('open');
-    });
-
-    async function executeGSheetImport(replace) {
-      alert("Simulazione Importazione: Analisi griglia a blocchi Google Sheets completata con successo!");
-      if(replace) {
-        appState.mastrini = [];
-      }
-      // Logica strutturale di fallback per popolazione schema iniziale
-      saveUserData();
-      renderAll();
-    }
-
-    // ==========================================================================
-    // SEZIONE 2: INSERIMENTO RAPIDO & GESTIONE MENSILE
-    // ==========================================================================
-    document.getElementById('quick-expense-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const date = document.getElementById('quick-date').value;
-      const amount = parseFloat(document.getElementById('quick-amount').value);
-      const desc = document.getElementById('quick-desc').value;
-
-      appState.expenses.push({
-        id: Date.now().toString(),
-        date,
-        amount,
-        desc
-      });
-
-      saveUserData();
-      document.getElementById('quick-amount').value = '';
-      document.getElementById('quick-desc').value = '';
-      alert("Spesa registrata correttamente!");
-    });
-
-    // ==========================================================================
-    // SEZIONE 3: GESTIONE MASTRINI & TOTALE LIQUIDITÀ
-    // ==========================================================================
-    function renderMastrini() {
-      const container = document.getElementById('mastrini-container');
-      const transferFrom = document.getElementById('transfer-from');
-      const transferTo = document.getElementById('transfer-to');
-      
-      container.innerHTML = '';
-      transferFrom.innerHTML = '';
-      transferTo.innerHTML = '';
-
-      let totalLiquidita = 0;
-
-      appState.mastrini.forEach(m => {
-        // Calcolo totale esclusi investimenti, depositi vincolati, fondo pensione
-        if (!m.isInvestment) {
-          totalLiquidita += m.balance;
-        }
-
-        // Render card
-        const card = document.createElement('div');
-        card.className = 'mastrino-card';
-        card.innerHTML = `
-          <div style="font-weight:700; font-size:1rem;">${m.name}</div>
-          <div class="mastrino-balance">€ ${m.balance.toFixed(2)}</div>
-          <div style="font-size:0.75rem; color:var(--text-muted);">${m.isInvestment ? 'Fondo Investimento/Pensione' : 'Fondo Liquidità'}</div>
-        `;
-        container.appendChild(card);
-
-        // Opzioni per Trasferimento
-        const opt1 = document.createElement('option');
-        opt1.value = m.id;
-        opt1.textContent = `${m.name} (€${m.balance.toFixed(2)})`;
-        transferFrom.appendChild(opt1);
-
-        const opt2 = document.createElement('option');
-        opt2.value = m.id;
-        opt2.textContent = m.name;
-        transferTo.appendChild(opt2);
-      });
-
-      document.getElementById('totale-mastrini-liquidita').textContent = `€ ${totalLiquidita.toFixed(2)}`;
-    }
-
-    // Modal Trasferimento
-    const modalTransfer = document.getElementById('modal-transfer');
-    document.getElementById('btn-open-transfer').addEventListener('click', () => modalTransfer.classList.add('open'));
-    document.getElementById('btn-close-transfer').addEventListener('click', () => modalTransfer.classList.remove('open'));
-
-    document.getElementById('transfer-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const fromId = document.getElementById('transfer-from').value;
-      const toId = document.getElementById('transfer-to').value;
-      const amount = parseFloat(document.getElementById('transfer-amount').value);
-      const note = document.getElementById('transfer-note').value;
-
-      if (fromId === toId) {
-        alert("Seleziona due fondi differenti.");
-        return;
-      }
-
-      const fMastrino = appState.mastrini.find(m => m.id === fromId);
-      const tMastrino = appState.mastrini.find(m => m.id === toId);
-
-      if (fMastrino && tMastrino) {
-        fMastrino.balance -= amount;
-        tMastrino.balance += amount;
-
-        saveUserData();
-        renderMastrini();
-        modalTransfer.classList.remove('open');
-        alert("Trasferimento completato!");
-      }
-    });
-
-    // ==========================================================================
-    // SEZIONE 4: CONSULTAZIONE DATI & ANALISI
-    // ==========================================================================
-    function renderAnalytics() {
-      const tbody = document.getElementById('analytics-table-body');
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Nessun dato presente</td></tr>';
-    }
-
-    // ==========================================================================
-    // SEZIONE 5: SPESE BANCARIE & MASTRINO EXTRA
-    // ==========================================================================
-    document.getElementById('bank-expense-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const date = document.getElementById('bank-date').value;
-      const cost = parseFloat(document.getElementById('bank-cost').value);
-      const desc = document.getElementById('bank-desc').value;
-
-      appState.bankExpenses.push({ id: Date.now().toString(), date, cost, desc });
-
-      // Sottrazione Automatica dal Mastrino "Extra" se esistente
-      const extraMastrino = appState.mastrini.find(m => m.name.toLowerCase() === 'extra');
-      if (extraMastrino) {
-        extraMastrino.balance -= cost;
-      }
-
-      saveUserData();
-      renderBankExpenses();
-      renderMastrini();
-      document.getElementById('bank-cost').value = '';
-      document.getElementById('bank-desc').value = '';
-    });
-
-    function renderBankExpenses() {
-      const tbody = document.getElementById('bank-table-body');
-      tbody.innerHTML = '';
-      appState.bankExpenses.forEach(b => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${b.date}</td>
-          <td>${b.desc}</td>
-          <td style="color:var(--accent-red); font-weight:600;">- € ${b.cost.toFixed(2)}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    // ==========================================================================
-    // SEZIONE 6: INVESTIMENTI & GESTIONE ANNUALE
-    // ==========================================================================
-    function renderInvestments() {
-      const tbody = document.getElementById('investments-table-body');
-      tbody.innerHTML = '';
-      appState.investments.forEach(inv => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${inv.name}</td>
-          <td style="color:var(--accent-green); font-weight:700;">€ ${inv.value.toFixed(2)}</td>
-          <td>${inv.lastUpdate}</td>
-          <td><button class="btn btn-danger" style="padding:2px 8px; font-size:0.75rem; width:auto;">Elimina</button></td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function renderAnnual() {
-      const container = document.getElementById('archive-section-container');
-      const list = document.getElementById('archive-years-list');
-      
-      if (appState.archivedYears && appState.archivedYears.length > 0) {
-        container.style.display = 'block';
-        list.innerHTML = '';
-        appState.archivedYears.forEach(yr => {
-          const d = document.createElement('div');
-          d.style.padding = '8px';
-          d.style.background = 'var(--card-inner)';
-          d.style.marginBottom = '6px';
-          d.style.borderRadius = '6px';
-          d.textContent = `Archivio Anno Contabile ${yr}`;
-          list.appendChild(d);
-        });
-      } else {
-        container.style.display = 'none';
-      }
-    }
-
-    document.getElementById('btn-archivia-anno').addEventListener('click', () => {
-      if (confirm(`Sei sicuro di voler archiviare l'anno ${appState.currentYear}?`)) {
-        appState.archivedYears.push(appState.currentYear);
-        appState.currentYear += 1;
-        
-        // Continuità dei saldi
-        appState.mastrini.forEach(m => {
-          m.history = m.history || [];
-          m.history.push({
-            date: new Date().toISOString().split('T')[0],
-            note: `Saldo riportato dal ${appState.currentYear - 1}`,
-            amount: m.balance
-          });
-        });
-
-        saveUserData();
-        renderAll();
-        alert(`Anno archiviato. Nuovo anno attivo: ${appState.currentYear}`);
-      }
-    });
-
-    // ==========================================================================
-    // SEZIONE 7: GOOGLE APPS SCRIPT WEBHOOK BACKUP
-    // ==========================================================================
-    document.getElementById('btn-sync-gas').addEventListener('click', async () => {
-      const gasUrl = document.getElementById('gas-url-input').value;
-      if (!gasUrl) {
-        alert("Inserisci un URL Webhook Google Apps Script valido nel Menu.");
-        return;
-      }
-
-      try {
-        await fetch(gasUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(appState)
-        });
-        alert("Sincronizzazione inviata a Google Sheets con successo!");
-      } catch (e) {
-        alert("Errore durante la sincronizzazione: " + e.message);
-      }
-    });
-
+    document.getElementById('quick-date').valueAsDate = new Date();
+    document.getElementById('bank-date').valueAsDate = new Date();
   </script>
 </body>
 </html>
