@@ -274,12 +274,13 @@
       gap: 10px;
     }
 
-    /* Accordion Settimane */
+    /* Struttura Sfalsata e Accordion Settimane */
     .week-block {
       background: var(--card-inner);
       border: 1px solid var(--border-color);
+      border-left: 4px solid var(--accent-blue);
       border-radius: var(--radius-sm);
-      margin-bottom: 12px;
+      margin-bottom: 16px;
       overflow: hidden;
     }
 
@@ -289,50 +290,48 @@
       justify-content: space-between;
       align-items: center;
       cursor: pointer;
-      font-weight: 600;
-      font-size: 0.9rem;
-      background: rgba(255,255,255,0.02);
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: rgba(255,255,255,0.03);
     }
 
     .week-content {
-      padding: 14px;
+      padding: 12px 16px 16px 28px; /* Struttura sfalsata con rientro */
       border-top: 1px solid var(--border-color);
       display: none;
+      background: rgba(0, 0, 0, 0.15);
     }
 
     .week-block.open .week-content { display: block; }
 
+    /* Righe stile Excel con linee divisorie */
     .expense-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      font-size: 0.85rem;
+      padding: 10px 6px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.88rem;
     }
 
     .expense-item:last-child { border-bottom: none; }
 
-    .edit-date-btn {
+    .action-btn {
       background: none;
       border: none;
-      color: var(--accent-blue);
       cursor: pointer;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       margin-left: 8px;
     }
 
-    .delete-exp-btn {
-      background: none;
-      border: none;
-      color: var(--accent-red);
-      cursor: pointer;
-      margin-left: 10px;
-    }
+    .edit-btn { color: var(--accent-blue); }
+    .delete-btn { color: var(--accent-red); }
 
     .mastrini-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 16px;
     }
 
@@ -370,6 +369,37 @@
       padding: 24px;
       width: 100%;
       max-width: 480px;
+    }
+
+    /* Type Switcher / Toggle */
+    .type-toggle {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .type-btn {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--card-inner);
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .type-btn.active.expense {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--accent-red);
+      border-color: var(--accent-red);
+    }
+
+    .type-btn.active.income {
+      background: rgba(34, 197, 94, 0.2);
+      color: var(--accent-green);
+      border-color: var(--accent-green);
     }
   </style>
 </head>
@@ -416,12 +446,10 @@
       <button class="close-btn" id="close-drawer-btn">&times;</button>
     </div>
 
-    <!-- TASTO 1: APRE SCHERMATA IMPORTAZIONE GOOGLE DOCS / SHEETS -->
     <button class="btn btn-secondary nav-item-btn" data-target="sec-import-gsheet" style="border: 1px solid var(--accent-blue);">
       <i class="fa-solid fa-file-import" style="color: var(--accent-blue);"></i> Importa da Google Fogli
     </button>
 
-    <!-- TASTO 2: APRE SCHERMATA SINCRONIZZAZIONE GOOGLE SCRIPT -->
     <button class="btn btn-secondary nav-item-btn" data-target="sec-sync-gas" style="border: 1px solid var(--accent-green);">
       <i class="fa-solid fa-rotate" style="color: var(--accent-green);"></i> Sincronizzazione Google Script
     </button>
@@ -464,9 +492,13 @@
     <section id="sec-home" class="view-section active">
       <div class="card">
         <div class="card-title">
-          <span><i class="fa-solid fa-bolt"></i> Inserimento Rapido Spesa</span>
+          <span><i class="fa-solid fa-bolt"></i> Inserimento Rapido Movimento</span>
         </div>
         <form id="quick-expense-form">
+          <div class="type-toggle">
+            <div class="type-btn active expense" id="toggle-expense-btn"><i class="fa-solid fa-minus"></i> Spesa</div>
+            <div class="type-btn income" id="toggle-income-btn"><i class="fa-solid fa-plus"></i> Entrata</div>
+          </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <div class="form-group">
               <label>Data</label>
@@ -478,17 +510,17 @@
             </div>
           </div>
           <div class="form-group">
-            <label>Nome / Descrizione Spesa</label>
-            <input type="text" id="quick-desc" class="form-control" placeholder="Es. Pranzo, Spesa, Caffe" required>
+            <label>Nome / Descrizione</label>
+            <input type="text" id="quick-desc" class="form-control" placeholder="Es. Stipendio, Pranzo, Caffe" required>
           </div>
-          <button type="submit" class="btn btn-primary">
-            <i class="fa-solid fa-plus"></i> Salva Spesa
+          <button type="submit" class="btn btn-primary" id="quick-submit-btn">
+            <i class="fa-solid fa-plus"></i> Salva Movimento
           </button>
         </form>
       </div>
 
       <div class="card">
-        <div class="card-title"><span><i class="fa-solid fa-clock-rotate-left"></i> Ultime Spese Inserite</span></div>
+        <div class="card-title"><span><i class="fa-solid fa-clock-rotate-left"></i> Ultimi Movimenti Inseriti</span></div>
         <div id="recent-expenses-list"></div>
       </div>
 
@@ -514,14 +546,14 @@
       </div>
     </section>
 
-    <!-- SCHERMATA: IMPORTAZIONE GOOGLE FOGLI -->
+    <!-- IMPORTAZIONE GOOGLE FOGLI -->
     <section id="sec-import-gsheet" class="view-section">
       <div class="card">
         <div class="card-title">
           <span><i class="fa-solid fa-file-import"></i> Importazione Saldi Mastrini da Google Fogli</span>
         </div>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
-          Incolla il link del tuo Foglio Google condiviso. Il foglio verrà letto secondo la struttura a blocchi di colonne affiancate separate da colonne vuote.
+          Incolla il link del tuo Foglio Google condiviso per importare i saldi iniziali dei fondi.
         </p>
         <div class="form-group">
           <label>Link Google Fogli / Documents</label>
@@ -534,14 +566,14 @@
       </div>
     </section>
 
-    <!-- SCHERMATA: SINCRONIZZAZIONE GOOGLE SCRIPT -->
+    <!-- SINCRONIZZAZIONE GOOGLE SCRIPT -->
     <section id="sec-sync-gas" class="view-section">
       <div class="card">
         <div class="card-title">
           <span><i class="fa-solid fa-rotate"></i> Sincronizzazione / Trascrizione Google Script</span>
         </div>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
-          Inserisci l'URL dell'applicazione Web registrata su Google Apps Script per trascrivere i movimenti su un nuovo foglio Google.
+          Inserisci l'URL di Google Apps Script per trascrivere i movimenti su un nuovo foglio.
         </p>
         <div class="form-group">
           <label>URL Google Apps Script Web App</label>
@@ -565,6 +597,29 @@
 
         <div id="weeks-container"></div>
       </div>
+
+      <!-- SEZIONE DISTRIBUZIONE ENTRATE NEI MASTRINI -->
+      <div class="card">
+        <div class="card-title">
+          <span><i class="fa-solid fa-coins"></i> Ripartizione Entrate Mensili nei Mastrini</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+          Seleziona un fondo per allocare le entrate del mese selezionato. Verrà creata in automatico la voce "da [Mese]".
+        </p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label>Mastrino / Fondo Destinazione</label>
+            <select id="month-target-mastrino" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label>Importo da Inviare (€)</label>
+            <input type="number" step="0.01" id="month-mastrino-amount" class="form-control" placeholder="0.00">
+          </div>
+        </div>
+        <button class="btn btn-success" id="btn-send-to-mastrino">
+          <i class="fa-solid fa-paper-plane"></i> Invia ai Mastrini
+        </button>
+      </div>
     </section>
 
     <!-- MASTRINI -->
@@ -572,6 +627,9 @@
       <div class="card">
         <div class="card-title">
           <span><i class="fa-solid fa-vault"></i> Saldi Fondi & Mastrini</span>
+          <button class="btn btn-primary" id="btn-open-add-mastrino" style="width:auto; padding: 6px 14px; font-size: 0.85rem;">
+            <i class="fa-solid fa-plus"></i> Nuovo Fondo
+          </button>
         </div>
 
         <div style="background: rgba(56, 189, 248, 0.1); border:1px solid var(--accent-blue); padding:15px; border-radius: var(--radius-sm); margin-bottom: 20px;">
@@ -636,24 +694,65 @@
 
   </main>
 
-  <!-- POPUP DI CONFERMA MODALITÀ IMPORTAZIONE GOOGLE SHEETS -->
-  <div class="modal" id="import-mode-modal">
+  <!-- MODALE MODIFICA/AGGIUNTA MOVIMENTO -->
+  <div class="modal" id="edit-expense-modal">
     <div class="modal-content">
-      <h3 style="margin-bottom:15px; font-weight:700; color: var(--accent-blue);">Scegli Modalità Importazione</h3>
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">
-        Sono stati rilevati i dati dal Foglio Google. Come vuoi procedere con l'importazione nel gestionale?
-      </p>
-      <button class="btn btn-danger" id="btn-import-overwrite">
-        <i class="fa-solid fa-rotate-left"></i> Sostituisci / Sovrascrivi Dati Esistenti
-      </button>
-      <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px; margin-top: -6px;">Azzera e resetta i dati attuali per sostituirli con quelli del foglio.</p>
-      
-      <button class="btn btn-primary" id="btn-import-merge">
-        <i class="fa-solid fa-code-merge"></i> Magazzino / Unisci (Mantieni Esistenti)
-      </button>
-      <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 20px; margin-top: -6px;">Conserva i mastrini attuali e aggiunge nuove voci e fondi.</p>
+      <h3 style="margin-bottom:15px; font-weight:700;" id="expense-modal-title">Modifica Movimento</h3>
+      <input type="hidden" id="edit-exp-id">
+      <div class="type-toggle">
+        <div class="type-btn active expense" id="modal-toggle-expense"><i class="fa-solid fa-minus"></i> Spesa</div>
+        <div class="type-btn income" id="modal-toggle-income"><i class="fa-solid fa-plus"></i> Entrata</div>
+      </div>
+      <div class="form-group">
+        <label>Data</label>
+        <input type="date" id="modal-exp-date" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>Nome / Descrizione</label>
+        <input type="text" id="modal-exp-desc" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>Importo (€)</label>
+        <input type="number" step="0.01" id="modal-exp-amount" class="form-control">
+      </div>
+      <button class="btn btn-primary" id="save-expense-btn">Salva Modifiche</button>
+      <button class="btn btn-secondary" id="close-expense-modal-btn">Annulla</button>
+    </div>
+  </div>
 
-      <button class="btn btn-secondary" id="btn-import-cancel">Annulla</button>
+  <!-- MODALE AGGIUNGI FONDO MASTRINO -->
+  <div class="modal" id="add-mastrino-modal">
+    <div class="modal-content">
+      <h3 style="margin-bottom:15px; font-weight:700;">Crea Nuovo Fondo</h3>
+      <div class="form-group">
+        <label>Nome Fondo / Mastrino</label>
+        <input type="text" id="new-mastrino-name" class="form-control" placeholder="Es. Vacanze, Auto">
+      </div>
+      <button class="btn btn-primary" id="save-new-mastrino-btn">Crea Fondo</button>
+      <button class="btn btn-secondary" id="close-add-mastrino-btn">Annulla</button>
+    </div>
+  </div>
+
+  <!-- MODALE AGGIUNGI/MODIFICA VOCE MASTRINO -->
+  <div class="modal" id="item-mastrino-modal">
+    <div class="modal-content">
+      <h3 style="margin-bottom:15px; font-weight:700;" id="mastrino-item-modal-title">Aggiungi Voce Fondo</h3>
+      <input type="hidden" id="mastrino-target-idx">
+      <input type="hidden" id="mastrino-item-idx">
+      <div class="form-group">
+        <label>Data</label>
+        <input type="date" id="mastrino-item-date" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>Nome / Nota Voce</label>
+        <input type="text" id="mastrino-item-note" class="form-control" placeholder="Es. Versamento Iniziale">
+      </div>
+      <div class="form-group">
+        <label>Importo (€)</label>
+        <input type="number" step="0.01" id="mastrino-item-amount" class="form-control" placeholder="0.00">
+      </div>
+      <button class="btn btn-primary" id="save-mastrino-item-btn">Salva Voce</button>
+      <button class="btn btn-secondary" id="close-item-mastrino-btn">Annulla</button>
     </div>
   </div>
 
@@ -680,7 +779,6 @@
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
     import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-    // CONFIGURAZIONE FIREBASE
     const firebaseConfig = {
       apiKey: "AIzaSyBF1S3NeA-IKxqna87CEzRiMGGN3AOnONo",
       authDomain: "gestionale-spese-e-entrate.firebaseapp.com",
@@ -752,13 +850,12 @@
     let expenses = JSON.parse(localStorage.getItem('expenses_data')) || [];
     let customWeekRanges = JSON.parse(localStorage.getItem('custom_week_ranges')) || {};
     let mastriniData = JSON.parse(localStorage.getItem('mastrini_data')) || [
-      { name: "Fondo Emergenza", items: [{ note: "Saldo Iniziale", amount: 0 }] },
-      { name: "Svago / Uscite", items: [{ note: "Saldo Iniziale", amount: 0 }] }
+      { name: "Fondo Emergenza", items: [{ date: "2026-01-01", note: "Saldo Iniziale", amount: 0 }] },
+      { name: "Svago / Uscite", items: [{ date: "2026-01-01", note: "Saldo Iniziale", amount: 0 }] }
     ];
 
-    // Carica URL salvati
-    document.getElementById('gsheet-url-input').value = localStorage.getItem('gsheet_url') || "";
-    document.getElementById('gas-url-input').value = localStorage.getItem('gas_url') || "";
+    let currentMovementType = "expense"; // expense o income
+    let modalMovementType = "expense";
 
     const monthsNames = [
       "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
@@ -844,6 +941,23 @@
       return weeks;
     }
 
+    // TOGGLE SPESA / ENTRATA RAPIDO
+    const toggleExp = document.getElementById('toggle-expense-btn');
+    const toggleInc = document.getElementById('toggle-income-btn');
+
+    toggleExp.addEventListener('click', () => {
+      currentMovementType = "expense";
+      toggleExp.classList.add('active', 'expense');
+      toggleInc.classList.remove('active', 'income');
+    });
+
+    toggleInc.addEventListener('click', () => {
+      currentMovementType = "income";
+      toggleInc.classList.add('active', 'income');
+      toggleExp.classList.remove('active', 'expense');
+    });
+
+    // RENDERING VISTA MENSILE CON STRUTTURA SFALSATA E RIGHE EXCEL
     function renderMonthlyView(highlightExpenseId = null) {
       const monthIdx = parseInt(monthSelect.value);
       const container = document.getElementById('weeks-container');
@@ -853,7 +967,10 @@
 
       weeks.forEach((w, i) => {
         const wExpenses = expenses.filter(e => e.date >= w.start && e.date <= w.end);
-        const wTotal = wExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
+        const wTotalExpenses = wExpenses.filter(e => e.type !== 'income').reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
+        const wTotalIncomes = wExpenses.filter(e => e.type === 'income').reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
+        const wNetTotal = wTotalIncomes - wTotalExpenses;
+
         const containsHighlight = highlightExpenseId && wExpenses.some(e => e.id === highlightExpenseId);
 
         const formatD = (dStr) => {
@@ -865,35 +982,60 @@
         weekEl.className = `week-block ${(i === 0 || containsHighlight) ? 'open' : ''}`;
         weekEl.innerHTML = `
           <div class="week-header">
-            <span>Settimana ${i + 1} (${formatD(w.start)} - ${formatD(w.end)}) 
-              <button class="edit-date-btn" data-m="${monthIdx}" data-w="${i}" title="Modifica date"><i class="fa-solid fa-pen"></i></button>
+            <span>SETTIMANA ${i + 1} (${formatD(w.start)} - ${formatD(w.end)}) 
+              <button class="action-btn edit-btn edit-week-btn" data-m="${monthIdx}" data-w="${i}" title="Modifica date"><i class="fa-solid fa-pen"></i></button>
             </span>
-            <span style="color:var(--accent-red);">- € ${wTotal.toFixed(2)}</span>
+            <span style="color:${wNetTotal >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'};">
+              ${wNetTotal >= 0 ? '+ ' : ''}€ ${wNetTotal.toFixed(2)}
+            </span>
           </div>
           <div class="week-content">
-            ${wExpenses.length === 0 ? '<i>Nessuna spesa inserita per questa settimana</i>' : 
-              wExpenses.map(e => `
-                <div class="expense-item">
-                  <span><b>${e.desc}</b> (${formatD(e.date)})</span>
-                  <div>
-                    <span style="color:var(--accent-red); font-weight:600;">- € ${parseFloat(e.amount).toFixed(2)}</span>
-                    <button class="delete-exp-btn" data-id="${e.id}"><i class="fa-solid fa-trash"></i></button>
+            <div style="margin-bottom: 12px; text-align: right;">
+              <button class="btn btn-primary add-in-week-btn" data-start="${w.start}" style="width: auto; padding: 4px 10px; font-size: 0.75rem; display: inline-flex;">
+                <i class="fa-solid fa-plus"></i> Aggiungi a Settimana ${i + 1}
+              </button>
+            </div>
+            ${wExpenses.length === 0 ? '<i style="font-size:0.8rem; color:var(--text-muted);">Nessun movimento per questa settimana</i>' : 
+              wExpenses.map(e => {
+                const isInc = e.type === 'income';
+                return `
+                  <div class="expense-item">
+                    <span>
+                      <i class="fa-solid ${isInc ? 'fa-arrow-down' : 'fa-arrow-up'}" style="color:${isInc ? 'var(--accent-green)' : 'var(--accent-red)'}; font-size:0.75rem; margin-right:6px;"></i>
+                      <b>${e.desc}</b> (${formatD(e.date)})
+                    </span>
+                    <div>
+                      <span style="color:${isInc ? 'var(--accent-green)' : 'var(--accent-red)'}; font-weight:600;">
+                        ${isInc ? '+' : '-'} € ${parseFloat(e.amount).toFixed(2)}
+                      </span>
+                      <button class="action-btn edit-btn edit-exp-btn" data-id="${e.id}"><i class="fa-solid fa-pen-to-square"></i></button>
+                      <button class="action-btn delete-btn delete-exp-btn" data-id="${e.id}"><i class="fa-solid fa-trash"></i></button>
+                    </div>
                   </div>
-                </div>
-              `).join('')}
+                `;
+              }).join('')}
           </div>
         `;
 
         weekEl.querySelector('.week-header').addEventListener('click', (e) => {
-          if (e.target.closest('.edit-date-btn')) return;
+          if (e.target.closest('.action-btn')) return;
           weekEl.classList.toggle('open');
         });
 
         container.appendChild(weekEl);
       });
 
-      document.querySelectorAll('.edit-date-btn').forEach(btn => {
+      // Listeners Settimane
+      document.querySelectorAll('.edit-week-btn').forEach(btn => {
         btn.addEventListener('click', () => openEditWeekModal(btn.dataset.m, btn.dataset.w));
+      });
+
+      document.querySelectorAll('.add-in-week-btn').forEach(btn => {
+        btn.addEventListener('click', () => openAddExpenseModal(btn.dataset.start));
+      });
+
+      document.querySelectorAll('.edit-exp-btn').forEach(btn => {
+        btn.addEventListener('click', () => openEditExpenseModal(parseInt(btn.dataset.id)));
       });
 
       document.querySelectorAll('.delete-exp-btn').forEach(btn => {
@@ -901,6 +1043,7 @@
       });
 
       renderRecentExpenses();
+      updateMonthMastriniDropdown();
     }
 
     function renderRecentExpenses() {
@@ -910,22 +1053,30 @@
       const recent = [...expenses].sort((a, b) => b.id - a.id).slice(0, 5);
 
       if (recent.length === 0) {
-        container.innerHTML = '<i>Nessuna spesa recente inserita</i>';
+        container.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted);">Nessun movimento recente inserito</i>';
         return;
       }
 
       container.innerHTML = recent.map(e => {
         const parts = e.date.split('-');
+        const isInc = e.type === 'income';
         return `
           <div class="expense-item">
             <span><b>${e.desc}</b> (${parts[2]}/${parts[1]}/${parts[0]})</span>
             <div>
-              <span style="color:var(--accent-red); font-weight:600;">- € ${parseFloat(e.amount).toFixed(2)}</span>
-              <button class="delete-exp-btn" data-id="${e.id}"><i class="fa-solid fa-trash"></i></button>
+              <span style="color:${isInc ? 'var(--accent-green)' : 'var(--accent-red)'}; font-weight:600;">
+                ${isInc ? '+' : '-'} € ${parseFloat(e.amount).toFixed(2)}
+              </span>
+              <button class="action-btn edit-btn edit-exp-btn" data-id="${e.id}"><i class="fa-solid fa-pen-to-square"></i></button>
+              <button class="action-btn delete-btn delete-exp-btn" data-id="${e.id}"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>
         `;
       }).join('');
+
+      container.querySelectorAll('.edit-exp-btn').forEach(btn => {
+        btn.addEventListener('click', () => openEditExpenseModal(parseInt(btn.dataset.id)));
+      });
 
       container.querySelectorAll('.delete-exp-btn').forEach(btn => {
         btn.addEventListener('click', () => deleteExpense(parseInt(btn.dataset.id)));
@@ -938,6 +1089,83 @@
       renderMonthlyView();
     }
 
+    // MODALE MODIFICA/INSERIMENTO MOVIMENTO
+    const expModal = document.getElementById('edit-expense-modal');
+    const modalExpExpenseBtn = document.getElementById('modal-toggle-expense');
+    const modalExpIncomeBtn = document.getElementById('modal-toggle-income');
+
+    modalExpExpenseBtn.addEventListener('click', () => {
+      modalMovementType = "expense";
+      modalExpExpenseBtn.classList.add('active', 'expense');
+      modalExpIncomeBtn.classList.remove('active', 'income');
+    });
+
+    modalExpIncomeBtn.addEventListener('click', () => {
+      modalMovementType = "income";
+      modalExpIncomeBtn.classList.add('active', 'income');
+      modalExpExpenseBtn.classList.remove('active', 'expense');
+    });
+
+    function openEditExpenseModal(id) {
+      const exp = expenses.find(e => e.id === id);
+      if (!exp) return;
+
+      document.getElementById('expense-modal-title').textContent = "Modifica Movimento";
+      document.getElementById('edit-exp-id').value = exp.id;
+      document.getElementById('modal-exp-date').value = exp.date;
+      document.getElementById('modal-exp-desc').value = exp.desc;
+      document.getElementById('modal-exp-amount').value = exp.amount;
+
+      modalMovementType = exp.type || "expense";
+      if (modalMovementType === 'income') {
+        modalExpIncomeBtn.click();
+      } else {
+        modalExpExpenseBtn.click();
+      }
+
+      expModal.classList.add('open');
+    }
+
+    function openAddExpenseModal(defaultDate) {
+      document.getElementById('expense-modal-title').textContent = "Aggiungi Movimento";
+      document.getElementById('edit-exp-id').value = "";
+      document.getElementById('modal-exp-date').value = defaultDate;
+      document.getElementById('modal-exp-desc').value = "";
+      document.getElementById('modal-exp-amount').value = "";
+      modalExpExpenseBtn.click();
+
+      expModal.classList.add('open');
+    }
+
+    document.getElementById('close-expense-modal-btn').addEventListener('click', () => expModal.classList.remove('open'));
+
+    document.getElementById('save-expense-btn').addEventListener('click', () => {
+      const id = document.getElementById('edit-exp-id').value;
+      const date = document.getElementById('modal-exp-date').value;
+      const desc = document.getElementById('modal-exp-desc').value;
+      const amount = parseFloat(document.getElementById('modal-exp-amount').value);
+
+      if (!date || !desc || isNaN(amount)) return;
+
+      if (id) {
+        const exp = expenses.find(e => e.id === parseInt(id));
+        if (exp) {
+          exp.date = date;
+          exp.desc = desc;
+          exp.amount = amount;
+          exp.type = modalMovementType;
+        }
+      } else {
+        const newExp = { id: Date.now(), date, desc, amount, type: modalMovementType };
+        expenses.push(newExp);
+      }
+
+      localStorage.setItem('expenses_data', JSON.stringify(expenses));
+      expModal.classList.remove('open');
+      renderMonthlyView();
+    });
+
+    // RENDERING E GESTIONE MASTRINI
     function renderMastriniView() {
       const container = document.getElementById('mastrini-container');
       const totalEl = document.getElementById('totale-mastrini-liquidita');
@@ -946,24 +1174,196 @@
       container.innerHTML = "";
       let grandTotal = 0;
 
-      mastriniData.forEach(m => {
+      mastriniData.forEach((m, mIdx) => {
         const mTotal = m.items.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
         grandTotal += mTotal;
 
         const card = document.createElement('div');
         card.className = 'mastrino-card';
         card.innerHTML = `
-          <div style="font-weight:700; color:var(--text-main); font-size:1rem;">${m.name}</div>
-          <div class="mastrino-balance">€ ${mTotal.toFixed(2)}</div>
-          <div style="font-size:0.75rem; color:var(--text-muted);">
-            ${m.items.map(i => `<div>${i.note}: € ${(parseFloat(i.amount)||0).toFixed(2)}</div>`).join('')}
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-weight:700; color:var(--text-main); font-size:1rem;">${m.name}</div>
+            <button class="action-btn delete-btn delete-mastrino-btn" data-m="${mIdx}" title="Elimina Fondo"><i class="fa-solid fa-trash"></i></button>
           </div>
+          <div class="mastrino-balance">€ ${mTotal.toFixed(2)}</div>
+          <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">
+            ${m.items.map((item, iIdx) => {
+              const dParts = item.date ? item.date.split('-') : [];
+              const dStr = dParts.length === 3 ? ` (${dParts[2]}/${dParts[1]})` : '';
+              return `
+                <div class="expense-item" style="padding:4px 0;">
+                  <span>${item.note}${dStr}</span>
+                  <div>
+                    <b>€ ${(parseFloat(item.amount)||0).toFixed(2)}</b>
+                    <button class="action-btn edit-btn edit-mastrino-item-btn" data-m="${mIdx}" data-i="${iIdx}"><i class="fa-solid fa-pen"></i></button>
+                    <button class="action-btn delete-btn delete-mastrino-item-btn" data-m="${mIdx}" data-i="${iIdx}"><i class="fa-solid fa-xmark"></i></button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+          <button class="btn btn-secondary add-mastrino-item-btn" data-m="${mIdx}" style="padding:6px; font-size:0.8rem;">
+            <i class="fa-solid fa-plus"></i> Aggiungi Voce
+          </button>
         `;
         container.appendChild(card);
       });
 
       if (totalEl) totalEl.textContent = `€ ${grandTotal.toFixed(2)}`;
+
+      // Listeners Mastrini
+      document.querySelectorAll('.delete-mastrino-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.m);
+          mastriniData.splice(idx, 1);
+          saveAndRenderMastrini();
+        });
+      });
+
+      document.querySelectorAll('.add-mastrino-item-btn').forEach(btn => {
+        btn.addEventListener('click', () => openMastrinoItemModal(parseInt(btn.dataset.m)));
+      });
+
+      document.querySelectorAll('.edit-mastrino-item-btn').forEach(btn => {
+        btn.addEventListener('click', () => openMastrinoItemModal(parseInt(btn.dataset.m), parseInt(btn.dataset.i)));
+      });
+
+      document.querySelectorAll('.delete-mastrino-item-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const mIdx = parseInt(btn.dataset.m);
+          const iIdx = parseInt(btn.dataset.i);
+          mastriniData[mIdx].items.splice(iIdx, 1);
+          saveAndRenderMastrini();
+        });
+      });
     }
+
+    function saveAndRenderMastrini() {
+      localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
+      renderMastriniView();
+      updateMonthMastriniDropdown();
+    }
+
+    // Modal Nuovo Mastrino
+    document.getElementById('btn-open-add-mastrino').addEventListener('click', () => {
+      document.getElementById('new-mastrino-name').value = "";
+      document.getElementById('add-mastrino-modal').classList.add('open');
+    });
+
+    document.getElementById('close-add-mastrino-btn').addEventListener('click', () => {
+      document.getElementById('add-mastrino-modal').classList.remove('open');
+    });
+
+    document.getElementById('save-new-mastrino-btn').addEventListener('click', () => {
+      const name = document.getElementById('new-mastrino-name').value.trim();
+      if (!name) return;
+      mastriniData.push({ name, items: [] });
+      saveAndRenderMastrini();
+      document.getElementById('add-mastrino-modal').classList.remove('open');
+    });
+
+    // Modal Voce Mastrino
+    const itemMastrinoModal = document.getElementById('item-mastrino-modal');
+    function openMastrinoItemModal(mIdx, iIdx = null) {
+      document.getElementById('mastrino-target-idx').value = mIdx;
+      document.getElementById('mastrino-item-idx').value = iIdx !== null ? iIdx : "";
+
+      if (iIdx !== null) {
+        const item = mastriniData[mIdx].items[iIdx];
+        document.getElementById('mastrino-item-modal-title').textContent = "Modifica Voce Fondo";
+        document.getElementById('mastrino-item-date').value = item.date || formatDateToYMD(new Date());
+        document.getElementById('mastrino-item-note').value = item.note;
+        document.getElementById('mastrino-item-amount').value = item.amount;
+      } else {
+        document.getElementById('mastrino-item-modal-title').textContent = "Aggiungi Voce Fondo";
+        document.getElementById('mastrino-item-date').value = formatDateToYMD(new Date());
+        document.getElementById('mastrino-item-note').value = "";
+        document.getElementById('mastrino-item-amount').value = "";
+      }
+
+      itemMastrinoModal.classList.add('open');
+    }
+
+    document.getElementById('close-item-mastrino-btn').addEventListener('click', () => {
+      itemMastrinoModal.classList.remove('open');
+    });
+
+    document.getElementById('save-mastrino-item-btn').addEventListener('click', () => {
+      const mIdx = parseInt(document.getElementById('mastrino-target-idx').value);
+      const iIdx = document.getElementById('mastrino-item-idx').value;
+      const date = document.getElementById('mastrino-item-date').value;
+      const note = document.getElementById('mastrino-item-note').value.trim();
+      const amount = parseFloat(document.getElementById('mastrino-item-amount').value);
+
+      if (!note || isNaN(amount)) return;
+
+      const newItem = { date, note, amount };
+
+      if (iIdx !== "") {
+        mastriniData[mIdx].items[parseInt(iIdx)] = newItem;
+      } else {
+        mastriniData[mIdx].items.push(newItem);
+      }
+
+      saveAndRenderMastrini();
+      itemMastrinoModal.classList.remove('open');
+    });
+
+    // SEZIONE RIPARTIZIONE ENTRATE NEI MASTRINI (DA MESE X)
+    function updateMonthMastriniDropdown() {
+      const select = document.getElementById('month-target-mastrino');
+      if (!select) return;
+      select.innerHTML = "";
+      mastriniData.forEach((m, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = m.name;
+        select.appendChild(opt);
+      });
+    }
+
+    document.getElementById('btn-send-to-mastrino').addEventListener('click', () => {
+      const mIdx = parseInt(document.getElementById('month-target-mastrino').value);
+      const amount = parseFloat(document.getElementById('month-mastrino-amount').value);
+      const currentMonthIdx = parseInt(monthSelect.value);
+      const currentMonthName = monthsNames[currentMonthIdx];
+
+      if (isNaN(mIdx) || isNaN(amount) || amount <= 0) return;
+
+      const noteText = `da mese ${currentMonthName}`;
+      mastriniData[mIdx].items.push({
+        date: formatDateToYMD(new Date()),
+        note: noteText,
+        amount: amount
+      });
+
+      saveAndRenderMastrini();
+      document.getElementById('month-mastrino-amount').value = "";
+      alert(`€ ${amount.toFixed(2)} inviati con successo a ${mastriniData[mIdx].name} (${noteText})`);
+    });
+
+    // Inserimento Rapido Form
+    document.getElementById('quick-expense-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const date = document.getElementById('quick-date').value;
+      const amount = parseFloat(document.getElementById('quick-amount').value);
+      const desc = document.getElementById('quick-desc').value;
+
+      const newExpense = { id: Date.now(), date, amount, desc, type: currentMovementType };
+      expenses.push(newExpense);
+      localStorage.setItem('expenses_data', JSON.stringify(expenses));
+
+      const expDate = new Date(date);
+      monthSelect.value = getTargetMonthIndex(expDate);
+
+      document.getElementById('quick-amount').value = "";
+      document.getElementById('quick-desc').value = "";
+      
+      renderMonthlyView(newExpense.id);
+
+      document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+      document.getElementById('sec-mensile').classList.add('active');
+    });
 
     // Modal Edit Week
     let activeEdit = null;
@@ -972,7 +1372,7 @@
       const weeks = generateWeeks(parseInt(mIdx));
       const currentW = weeks[wIdx];
 
-      document.getElementById('modal-week-title').textContent = `Modifica Settimana ${parseInt(wIdx) + 1}`;
+      document.getElementById('modal-week-title').textContent = `Modifica SETTIMANA ${parseInt(wIdx) + 1}`;
       document.getElementById('modal-start-date').value = currentW.start;
       document.getElementById('modal-end-date').value = currentW.end;
       document.getElementById('edit-week-modal').classList.add('open');
@@ -998,192 +1398,9 @@
       renderMonthlyView();
     });
 
-    // Inserimento Spesa Rapida
-    document.getElementById('quick-expense-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const date = document.getElementById('quick-date').value;
-      const amount = parseFloat(document.getElementById('quick-amount').value);
-      const desc = document.getElementById('quick-desc').value;
-
-      const newExpense = { id: Date.now(), date, amount, desc };
-      expenses.push(newExpense);
-      localStorage.setItem('expenses_data', JSON.stringify(expenses));
-
-      const expDate = new Date(date);
-      monthSelect.value = getTargetMonthIndex(expDate);
-
-      document.getElementById('quick-amount').value = "";
-      document.getElementById('quick-desc').value = "";
-      
-      renderMonthlyView(newExpense.id);
-
-      document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
-      document.getElementById('sec-mensile').classList.add('active');
-    });
-
     monthSelect.addEventListener('change', () => renderMonthlyView());
 
-    // --- SEZIONE 1: IMPORTAZIONE DA GOOGLE FOGLI (PARSING A BLOCCHI & POPUP) ---
-    let tempParsedMastrini = null;
-
-    document.getElementById('btn-start-import-gsheet').addEventListener('click', async () => {
-      const url = document.getElementById('gsheet-url-input').value.trim();
-      const status = document.getElementById('import-status');
-      
-      if (!url) {
-        status.style.color = "var(--accent-red)";
-        status.textContent = "Inserisci un link valido di Google Fogli.";
-        return;
-      }
-
-      localStorage.setItem('gsheet_url', url);
-      status.style.color = "var(--accent-blue)";
-      status.textContent = "Download e analisi del foglio in corso...";
-
-      try {
-        // Conversione URL in export CSV
-        let csvUrl = url;
-        if (url.includes('/edit')) {
-          csvUrl = url.replace(/\/edit.*$/, '/export?format=csv');
-        } else if (!url.endsWith('/export?format=csv')) {
-          csvUrl = url.replace(/\/$/, '') + '/export?format=csv';
-        }
-
-        const res = await fetch(csvUrl);
-        if (!res.ok) throw new Error("Impossibile accedere al foglio. Verificare che il link sia pubblico o condiviso.");
-        
-        const csvText = await res.text();
-        tempParsedMastrini = parseBlockCsv(csvText);
-
-        if (tempParsedMastrini.length === 0) {
-          throw new Error("Nessun blocco dati / mastrino valido trovato nel foglio.");
-        }
-
-        status.textContent = `Trovati ${tempParsedMastrini.length} mastrini. Scegli la modalità dal popup.`;
-        document.getElementById('import-mode-modal').classList.add('open');
-
-      } catch (err) {
-        status.style.color = "var(--accent-red)";
-        status.textContent = "Errore durante l'importazione: " + err.message;
-      }
-    });
-
-    // Funzione di Parsing della Griglia a Blocchi (Colonna vuota di separazione)
-    function parseBlockCsv(csv) {
-      const lines = csv.split(/\r?\n/).map(line => {
-        // Gestione base dei campi CSV
-        return line.split(',').map(cell => cell.replace(/^"(.*)"$/, '$1').trim());
-      });
-
-      if (lines.length === 0) return [];
-
-      const parsedMastrini = [];
-      const numCols = Math.max(...lines.map(row => row.length));
-
-      // Troviamo tutti i blocchi di colonne (coppie Nota/Importo separati da colonna vuota)
-      for (let c = 0; c < numCols; c += 3) {
-        const title = lines[0] && lines[0][c] ? lines[0][c] : "";
-        if (!title) continue;
-
-        const items = [];
-        for (let r = 2; r < lines.length; r++) {
-          const note = lines[r][c] || "";
-          const rawAmt = lines[r][c + 1] || "";
-          const amt = parseFloat(rawAmt.replace('€', '').replace('.', '').replace(',', '.').trim());
-
-          if (note || !isNaN(amt)) {
-            items.push({ note: note || "Saldo", amount: isNaN(amt) ? 0 : amt });
-          }
-        }
-
-        if (items.length > 0 || title) {
-          parsedMastrini.push({ name: title, items });
-        }
-      }
-
-      return parsedMastrini;
-    }
-
-    // Gestione Scelte Popup Importazione
-    document.getElementById('btn-import-overwrite').addEventListener('click', () => {
-      if (!tempParsedMastrini) return;
-      mastriniData = tempParsedMastrini;
-      localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
-      finishImport("Dati sostituiti e sovrascritti con successo!");
-    });
-
-    document.getElementById('btn-import-merge').addEventListener('click', () => {
-      if (!tempParsedMastrini) return;
-      
-      tempParsedMastrini.forEach(newM => {
-        const existing = mastriniData.find(m => m.name.toLowerCase() === newM.name.toLowerCase());
-        if (existing) {
-          existing.items.push(...newM.items);
-        } else {
-          mastriniData.push(newM);
-        }
-      });
-
-      localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
-      finishImport("Dati uniti e aggiornati con successo!");
-    });
-
-    document.getElementById('btn-import-cancel').addEventListener('click', () => {
-      document.getElementById('import-mode-modal').classList.remove('open');
-      document.getElementById('import-status').textContent = "Importazione annullata dall'utente.";
-    });
-
-    function finishImport(msg) {
-      document.getElementById('import-mode-modal').classList.remove('open');
-      const status = document.getElementById('import-status');
-      status.style.color = "var(--accent-green)";
-      status.textContent = msg;
-      renderMastriniView();
-
-      setTimeout(() => {
-        document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
-        document.getElementById('sec-mastrini').classList.add('active');
-      }, 1000);
-    }
-
-    // --- SEZIONE 2: SINCRONIZZAZIONE CON GOOGLE APPS SCRIPT ---
-    document.getElementById('btn-execute-sync-gas').addEventListener('click', async () => {
-      const gasUrl = document.getElementById('gas-url-input').value.trim();
-      const status = document.getElementById('sync-status');
-
-      if (!gasUrl) {
-        status.style.color = "var(--accent-red)";
-        status.textContent = "Inserisci un URL Google Apps Script valido.";
-        return;
-      }
-
-      localStorage.setItem('gas_url', gasUrl);
-      status.style.color = "var(--accent-blue)";
-      status.textContent = "Trascrizione dei movimenti su Google Sheets in corso...";
-
-      try {
-        const payload = {
-          expenses: expenses,
-          mastrini: mastriniData,
-          timestamp: new Date().toISOString()
-        };
-
-        const res = await fetch(gasUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        status.style.color = "var(--accent-green)";
-        status.textContent = "Sincronizzazione inviata correttamente a Google Apps Script!";
-      } catch (err) {
-        status.style.color = "var(--accent-red)";
-        status.textContent = "Errore durante la sincronizzazione: " + err.message;
-      }
-    });
-
-    // Inizializzazione applicazione
+    // Inizializzazione Applicazione
     document.getElementById('quick-date').value = formatDateToYMD(new Date());
     document.getElementById('bank-date').value = formatDateToYMD(new Date());
     initMonthDropdown();
