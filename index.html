@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestionale Spese & Entrate Cloud</title>
-  <!-- Google Fonts: Inter -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <style>
@@ -44,7 +42,6 @@
       padding-bottom: 30px;
     }
 
-    /* Screen Login */
     #auth-screen {
       position: fixed;
       inset: 0;
@@ -74,7 +71,6 @@
       object-fit: contain;
     }
 
-    /* Top Navigation Bar */
     header.app-bar {
       height: 70px;
       background: rgba(30, 41, 59, 0.8);
@@ -124,7 +120,6 @@
       gap: 8px;
     }
 
-    /* Drawer Menu */
     .drawer-overlay {
       position: fixed;
       inset: 0;
@@ -174,7 +169,6 @@
       cursor: pointer;
     }
 
-    /* Form Elements */
     .form-group {
       margin-bottom: 16px;
       text-align: left;
@@ -221,9 +215,7 @@
     .btn-primary { background: var(--accent-blue); color: #000; }
     .btn-secondary { background: var(--border-color); color: var(--text-main); }
     .btn-danger { background: var(--accent-red); color: #fff; }
-    .btn-success { background: var(--accent-green); color: #000; }
 
-    /* Layout & Cards */
     main.container {
       max-width: 1100px;
       margin: 0 auto;
@@ -270,14 +262,16 @@
       justify-content: space-between;
       align-items: center;
       color: var(--accent-blue);
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
-    /* Accordion Settimane */
     .week-block {
       background: var(--card-inner);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
       margin-bottom: 12px;
+      overflow: hidden;
     }
 
     .week-header {
@@ -288,6 +282,7 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 0.9rem;
+      background: rgba(255,255,255,0.02);
     }
 
     .week-content {
@@ -298,24 +293,24 @@
 
     .week-block.open .week-content { display: block; }
 
-    .mastrini-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 16px;
+    .expense-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 0.85rem;
     }
 
-    .mastrino-card {
-      background: var(--card-inner);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-sm);
-      padding: 16px;
-    }
+    .expense-item:last-child { border-bottom: none; }
 
-    .mastrino-balance {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--accent-green);
-      margin: 8px 0;
+    .edit-date-btn {
+      background: none;
+      border: none;
+      color: var(--accent-blue);
+      cursor: pointer;
+      font-size: 0.8rem;
+      margin-left: 8px;
     }
 
     .modal {
@@ -337,23 +332,12 @@
       border-radius: var(--radius);
       padding: 24px;
       width: 100%;
-      max-width: 450px;
+      max-width: 400px;
     }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-      font-size: 0.85rem;
-    }
-
-    th, td { padding: 10px; border-bottom: 1px solid var(--border-color); }
-    th { color: var(--text-muted); font-weight: 600; }
   </style>
 </head>
 <body>
 
-  <!-- LOGIN FIREBASE -->
   <div id="auth-screen">
     <div class="auth-card">
       <img src="https://lh3.googleusercontent.com/d/1eimNS4XHA7QeuNP2qnTRdC1COpFQGV3c" alt="Logo" class="app-logo-img">
@@ -375,7 +359,6 @@
     </div>
   </div>
 
-  <!-- HEADER -->
   <header class="app-bar">
     <span class="status-badge"><i class="fa-solid fa-circle" style="font-size:8px;"></i> ONLINE</span>
     <div class="logo-container">
@@ -386,7 +369,6 @@
     </button>
   </header>
 
-  <!-- DRAWER LATERAL -->
   <div class="drawer-overlay" id="drawer-overlay"></div>
   <div class="drawer" id="drawer">
     <div class="drawer-header">
@@ -394,44 +376,11 @@
       <button class="close-btn" id="close-drawer-btn">&times;</button>
     </div>
 
-    <div class="form-group">
-      <label>URL Google Apps Script</label>
-      <input type="url" id="gas-url-input" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
-    </div>
-    <div class="form-group">
-      <label>Link Google Fogli da Importare</label>
-      <input type="url" id="gsheet-url-input" class="form-control" placeholder="https://docs.google.com/spreadsheets/d/...">
-    </div>
-    
-    <button class="btn btn-secondary" id="btn-import-gsheet">
-      <i class="fa-solid fa-file-import"></i> Importa da Google Fogli
-    </button>
-    <button class="btn btn-secondary" id="btn-sync-gas">
-      <i class="fa-solid fa-rotate"></i> Sincronizza con Google Sheets
-    </button>
-    
-    <hr style="border-color: var(--border-color); margin: 15px 0;">
-
     <button class="btn btn-secondary nav-item-btn" data-target="sec-home">
       <i class="fa-solid fa-house"></i> Home / Inserimento Rapido
     </button>
     <button class="btn btn-secondary nav-item-btn" data-target="sec-mensile">
       <i class="fa-solid fa-calendar-days"></i> Gestione Mensile
-    </button>
-    <button class="btn btn-secondary nav-item-btn" data-target="sec-mastrini">
-      <i class="fa-solid fa-vault"></i> Gestione Mastrini
-    </button>
-    <button class="btn btn-secondary nav-item-btn" data-target="sec-analytics">
-      <i class="fa-solid fa-chart-pie"></i> Analisi & Report
-    </button>
-    <button class="btn btn-secondary nav-item-btn" data-target="sec-banca">
-      <i class="fa-solid fa-receipt"></i> Spese Bancarie
-    </button>
-    <button class="btn btn-secondary nav-item-btn" data-target="sec-investimenti">
-      <i class="fa-solid fa-chart-line"></i> Investimenti
-    </button>
-    <button class="btn btn-secondary nav-item-btn" data-target="sec-annuale">
-      <i class="fa-solid fa-box-archive"></i> Gestione Annuale
     </button>
 
     <div style="margin-top: auto; padding-top: 20px;">
@@ -441,10 +390,8 @@
     </div>
   </div>
 
-  <!-- MAIN CONTAINER -->
   <main class="container">
 
-    <!-- HOME / FORM RAPIDO -->
     <section id="sec-home" class="view-section active">
       <div class="card">
         <div class="card-title">
@@ -475,135 +422,43 @@
         <div class="nav-card nav-item-btn" data-target="sec-mensile">
           <i class="fa-solid fa-calendar-days"></i><div>Mensile</div>
         </div>
-        <div class="nav-card nav-item-btn" data-target="sec-mastrini">
-          <i class="fa-solid fa-vault"></i><div>Mastrini</div>
-        </div>
-        <div class="nav-card nav-item-btn" data-target="sec-analytics">
-          <i class="fa-solid fa-chart-pie"></i><div>Analisi</div>
-        </div>
-        <div class="nav-card nav-item-btn" data-target="sec-banca">
-          <i class="fa-solid fa-receipt"></i><div>Banca</div>
-        </div>
-        <div class="nav-card nav-item-btn" data-target="sec-investimenti">
-          <i class="fa-solid fa-chart-line"></i><div>Investimenti</div>
-        </div>
-        <div class="nav-card nav-item-btn" data-target="sec-annuale">
-          <i class="fa-solid fa-box-archive"></i><div>Annuale</div>
-        </div>
       </div>
     </section>
 
-    <!-- GESTIONE MENSILE -->
     <section id="sec-mensile" class="view-section">
       <div class="card">
         <div class="card-title">
           <span><i class="fa-solid fa-calendar-days"></i> Gestione Mensile (Ciclo 15-15)</span>
-          <select id="select-month-cycle" class="form-control" style="width: auto; padding: 4px 8px;">
-            <option value="8">Agosto (15/08 - 15/09)</option>
-            <option value="9" selected>Settembre (15/09 - 15/10)</option>
-            <option value="10">Ottobre (15/10 - 15/11)</option>
+          <select id="select-month-cycle" class="form-control" style="width: auto; padding: 6px 10px; font-weight:600;">
           </select>
         </div>
 
-        <div id="weeks-container">
-          <div class="week-block open">
-            <div class="week-header">
-              <span>Settimana 1 (15/09 - 21/09)</span>
-              <span style="color:var(--accent-red);">- € 0.00</span>
-            </div>
-            <div class="week-content">
-              <div id="week-1-list"><i>Nessuna spesa inserita per questa settimana</i></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- MASTRINI -->
-    <section id="sec-mastrini" class="view-section">
-      <div class="card">
-        <div class="card-title">
-          <span><i class="fa-solid fa-vault"></i> Saldi Fondi & Mastrini</span>
-        </div>
-
-        <div style="background: rgba(56, 189, 248, 0.1); border:1px solid var(--accent-blue); padding:15px; border-radius: var(--radius-sm); margin-bottom: 20px;">
-          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">TOTALE MASTRINI (Liquidità Reale):</div>
-          <div id="totale-mastrini-liquidita" style="font-size: 1.8rem; font-weight: 700; color: var(--accent-blue);">€ 0.00</div>
-          <div style="font-size: 0.7rem; color: var(--text-muted);">Esclusi: Investimenti e Fondo Pensione.</div>
-        </div>
-
-        <div class="mastrini-grid" id="mastrini-container">
-          <div class="mastrino-card">
-            <div style="font-weight:700;">Fondo Emergenza</div>
-            <div class="mastrino-balance">€ 0.00</div>
-          </div>
-          <div class="mastrino-card">
-            <div style="font-weight:700;">Svago / Uscite</div>
-            <div class="mastrino-balance">€ 0.00</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ANALISI -->
-    <section id="sec-analytics" class="view-section">
-      <div class="card">
-        <div class="card-title"><span><i class="fa-solid fa-chart-pie"></i> Analisi & Report</span></div>
-        <p style="font-size:0.85rem; color:var(--text-muted);">Nessun movimento registrato.</p>
-      </div>
-    </section>
-
-    <!-- SPESE BANCARIE -->
-    <section id="sec-banca" class="view-section">
-      <div class="card">
-        <div class="card-title"><span><i class="fa-solid fa-receipt"></i> Spese Bancarie</span></div>
-        <form id="bank-expense-form">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div class="form-group">
-              <label>Data</label>
-              <input type="date" id="bank-date" class="form-control" required>
-            </div>
-            <div class="form-group">
-              <label>Costo (€)</label>
-              <input type="number" step="0.01" id="bank-cost" class="form-control" placeholder="0.00" required>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Voce / Commissione</label>
-            <input type="text" id="bank-desc" class="form-control" placeholder="Es. Imposta di bollo" required>
-          </div>
-          <button type="submit" class="btn btn-primary">+ Aggiungi Spesa Bancaria</button>
-        </form>
-      </div>
-    </section>
-
-    <!-- INVESTIMENTI -->
-    <section id="sec-investimenti" class="view-section">
-      <div class="card">
-        <div class="card-title"><span><i class="fa-solid fa-chart-line"></i> Investimenti</span></div>
-        <p style="font-size:0.85rem; color:var(--text-muted);">Nessun titolo registrato.</p>
-      </div>
-    </section>
-
-    <!-- ANNUALI -->
-    <section id="sec-annuale" class="view-section">
-      <div class="card">
-        <div class="card-title"><span><i class="fa-solid fa-box-archive"></i> Gestione Annuale</span></div>
-        <button class="btn btn-secondary" style="border: 1px solid var(--accent-orange); color: var(--accent-orange);">
-          <i class="fa-solid fa-box-archive"></i> Archivia Anno Corrente
-        </button>
+        <div id="weeks-container"></div>
       </div>
     </section>
 
   </main>
 
-  <!-- FIREBASE MODULAR SDK (v9) -->
+  <div class="modal" id="edit-week-modal">
+    <div class="modal-content">
+      <h3 style="margin-bottom:15px;" id="modal-week-title">Personalizza Settimana</h3>
+      <div class="form-group">
+        <label>Data Inizio</label>
+        <input type="date" id="modal-start-date" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>Data Fine</label>
+        <input type="date" id="modal-end-date" class="form-control">
+      </div>
+      <button class="btn btn-primary" id="save-week-dates-btn">Salva Date</button>
+      <button class="btn btn-secondary" id="close-modal-btn">Annulla</button>
+    </div>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-    // CONFIGURAZIONE FIREBASE CON API KEY CORRETTA ("AIzaSy...")
     const firebaseConfig = {
       apiKey: "AIzaSyBF1S3NeA-IKxqna87CEzRiMGGN3AOnONo",
       authDomain: "gestionale-spese-e-entrate.firebaseapp.com",
@@ -616,7 +471,6 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getFirestore(app);
 
     const authScreen = document.getElementById('auth-screen');
     const loginForm = document.getElementById('login-form');
@@ -625,27 +479,206 @@
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       authError.textContent = "";
-      const email = document.getElementById('login-email').value;
-      const pass = document.getElementById('login-pass').value;
-
       try {
-        await signInWithEmailAndPassword(auth, email, pass);
+        await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value);
       } catch (err) {
         authError.textContent = "Errore di accesso: " + err.message;
       }
     });
 
     onAuthStateChanged(auth, (user) => {
-      if (user) {
-        authScreen.style.display = 'none';
-      } else {
-        authScreen.style.display = 'flex';
-      }
+      authScreen.style.display = user ? 'none' : 'flex';
     });
 
     document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
-    // Navigazione Menu Drawer
+    // Gestione Spese e Struttura Mesi
+    let expenses = JSON.parse(localStorage.getItem('expenses_data')) || [];
+    let customWeekRanges = JSON.parse(localStorage.getItem('custom_week_ranges')) || {};
+
+    const months = [
+      "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
+      "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"
+    ];
+
+    const monthSelect = document.getElementById('select-month-cycle');
+
+    function initMonthDropdown() {
+      monthSelect.innerHTML = "";
+      const currentYear = 2026;
+      
+      months.forEach((mName, idx) => {
+        // Regola 15-15: Agosto = 15/09 al 15/10 dello stesso anno
+        let startM = idx + 1;
+        let endM = idx + 2;
+        let startY = currentYear;
+        let endY = currentYear;
+
+        if (startM > 11) {
+          startM = startM % 12;
+          if (idx === 11) { startM = 0; endM = 1; startY++; endY++; }
+        }
+        if (endM > 11) { endM = 0; endY++; }
+
+        const startStr = `15/${String(startM + 1).padStart(2,'0')}`;
+        const endStr = `15/${String(endM + 1).padStart(2,'0')}`;
+
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = `${mName} (${startStr} - ${endStr})`;
+        if (idx === 7) opt.selected = true; // Seleziona Agosto di default
+        monthSelect.appendChild(opt);
+      });
+    }
+
+    function getMonthDateRange(monthIndex, year = 2026) {
+      let startMonth = monthIndex + 1;
+      let endMonth = monthIndex + 2;
+      let startYear = year;
+      let endYear = year;
+
+      if (startMonth > 11) { startMonth = 0; startYear++; }
+      if (endMonth > 11) { endMonth = 0; endYear++; }
+
+      const startDate = new Date(startYear, startMonth, 15);
+      const endDate = new Date(endYear, endMonth, 15);
+      return { startDate, endDate };
+    }
+
+    function generateWeeks(monthIndex) {
+      const key = `month_${monthIndex}`;
+      if (customWeekRanges[key]) return customWeekRanges[key];
+
+      const { startDate, endDate } = getMonthDateRange(monthIndex);
+      const weeks = [];
+      let currStart = new Date(startDate);
+      let weekNum = 1;
+
+      while (currStart < endDate) {
+        let currEnd = new Date(currStart);
+        let dayOfWeek = currEnd.getDay(); 
+        let distToSun = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
+        currEnd.setDate(currEnd.getDate() + distToSun);
+
+        if (currEnd > endDate) currEnd = new Date(endDate);
+
+        weeks.push({
+          id: weekNum,
+          start: currStart.toISOString().split('T')[0],
+          end: currEnd.toISOString().split('T')[0]
+        });
+
+        currStart = new Date(currEnd);
+        currStart.setDate(currStart.getDate() + 1);
+        weekNum++;
+      }
+      return weeks;
+    }
+
+    function renderMonthlyView() {
+      const monthIdx = parseInt(monthSelect.value);
+      const container = document.getElementById('weeks-container');
+      container.innerHTML = "";
+
+      const weeks = generateWeeks(monthIdx);
+
+      weeks.forEach((w, i) => {
+        const wExpenses = expenses.filter(e => e.date >= w.start && e.date <= w.end);
+        const wTotal = wExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
+
+        const formatD = (dStr) => {
+          const parts = dStr.split('-');
+          return `${parts[2]}/${parts[1]}`;
+        };
+
+        const weekEl = document.createElement('div');
+        weekEl.className = `week-block ${i === 0 ? 'open' : ''}`;
+        weekEl.innerHTML = `
+          <div class="week-header">
+            <span>Settimana ${i + 1} (${formatD(w.start)} - ${formatD(w.end)}) 
+              <button class="edit-date-btn" data-m="${monthIdx}" data-w="${i}"><i class="fa-solid fa-pen"></i></button>
+            </span>
+            <span style="color:var(--accent-red);">- € ${wTotal.toFixed(2)}</span>
+          </div>
+          <div class="week-content">
+            ${wExpenses.length === 0 ? '<i>Nessuna spesa inserita per questa settimana</i>' : 
+              wExpenses.map(e => `
+                <div class="expense-item">
+                  <span><b>${e.desc}</b> (${formatD(e.date)})</span>
+                  <span style="color:var(--accent-red);">- € ${parseFloat(e.amount).toFixed(2)}</span>
+                </div>
+              `).join('')}
+          </div>
+        `;
+
+        weekEl.querySelector('.week-header').addEventListener('click', (e) => {
+          if (e.target.closest('.edit-date-btn')) return;
+          weekEl.classList.toggle('open');
+        });
+
+        container.appendChild(weekEl);
+      });
+
+      document.querySelectorAll('.edit-date-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const m = btn.dataset.m;
+          const w = btn.dataset.w;
+          openEditWeekModal(m, w);
+        });
+      });
+    }
+
+    // Gestione Modale Personalizzazione Date
+    let activeEdit = null;
+    function openEditWeekModal(mIdx, wIdx) {
+      activeEdit = { mIdx, wIdx };
+      const weeks = generateWeeks(parseInt(mIdx));
+      const currentW = weeks[wIdx];
+
+      document.getElementById('modal-week-title').textContent = `Modifica Settimana ${parseInt(wIdx) + 1}`;
+      document.getElementById('modal-start-date').value = currentW.start;
+      document.getElementById('modal-end-date').value = currentW.end;
+      document.getElementById('edit-week-modal').classList.add('open');
+    }
+
+    document.getElementById('close-modal-btn').addEventListener('click', () => {
+      document.getElementById('edit-week-modal').classList.remove('open');
+    });
+
+    document.getElementById('save-week-dates-btn').addEventListener('click', () => {
+      if (!activeEdit) return;
+      const { mIdx, wIdx } = activeEdit;
+      const key = `month_${mIdx}`;
+      let weeks = generateWeeks(parseInt(mIdx));
+
+      weeks[wIdx].start = document.getElementById('modal-start-date').value;
+      weeks[wIdx].end = document.getElementById('modal-end-date').value;
+
+      customWeekRanges[key] = weeks;
+      localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
+
+      document.getElementById('edit-week-modal').classList.remove('open');
+      renderMonthlyView();
+    });
+
+    // Inserimento Spesa Rapida
+    document.getElementById('quick-expense-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const date = document.getElementById('quick-date').value;
+      const amount = parseFloat(document.getElementById('quick-amount').value);
+      const desc = document.getElementById('quick-desc').value;
+
+      expenses.push({ id: Date.now(), date, amount, desc });
+      localStorage.setItem('expenses_data', JSON.stringify(expenses));
+
+      document.getElementById('quick-amount').value = "";
+      document.getElementById('quick-desc').value = "";
+      
+      alert("Spesa salvata con successo!");
+      renderMonthlyView();
+    });
+
+    // Drawer e Navigation
     const drawer = document.getElementById('drawer');
     const drawerOverlay = document.getElementById('drawer-overlay');
 
@@ -671,8 +704,12 @@
       });
     });
 
+    monthSelect.addEventListener('change', renderMonthlyView);
+
+    // Inizializzazione
     document.getElementById('quick-date').valueAsDate = new Date();
-    document.getElementById('bank-date').valueAsDate = new Date();
+    initMonthDropdown();
+    renderMonthlyView();
   </script>
 </body>
 </html>
