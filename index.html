@@ -322,6 +322,14 @@
       margin-left: 8px;
     }
 
+    .delete-exp-btn {
+      background: none;
+      border: none;
+      color: var(--accent-red);
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
     .mastrini-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -495,6 +503,11 @@
         </form>
       </div>
 
+      <div class="card">
+        <div class="card-title"><span><i class="fa-solid fa-clock-rotate-left"></i> Ultime Spese Inserite</span></div>
+        <div id="recent-expenses-list"></div>
+      </div>
+
       <div class="quick-nav">
         <div class="nav-card nav-item-btn" data-target="sec-mensile">
           <i class="fa-solid fa-calendar-days"></i><div>Mensile</div>
@@ -560,7 +573,7 @@
     <section id="sec-analytics" class="view-section">
       <div class="card">
         <div class="card-title"><span><i class="fa-solid fa-chart-pie"></i> Analisi & Report</span></div>
-        <p style="font-size:0.85rem; color:var(--text-muted);">Nessun movimento registrato.</p>
+        <p style="font-size:0.85rem; color:var(--text-muted);">In fase di aggiornamento.</p>
       </div>
     </section>
 
@@ -710,46 +723,65 @@
 
     const monthSelect = document.getElementById('select-month-cycle');
 
+    // Mese d'imputazione X va dal 15 del mese X+1 al 15 del mese X+2
+    // Es. Mese di Luglio (idx 6): dal 15/08 al 15/09
+    function getMonthDateRange(monthIndex, baseYear = 2026) {
+      let startM = monthIndex + 1;
+      let endM = monthIndex + 2;
+      let startY = baseYear;
+      let endY = baseYear;
+
+      if (startM > 11) {
+        startM = startM - 12;
+        startY++;
+      }
+      if (endM > 11) {
+        endM = endM - 12;
+        endY++;
+      }
+
+      const startDate = new Date(startY, startM, 15);
+      const endDate = new Date(endY, endM, 15);
+      return { startDate, endDate };
+    }
+
+    function formatDateToYMD(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
     function initMonthDropdown() {
       monthSelect.innerHTML = "";
-      const currentYear = 2026;
       
       monthsNames.forEach((mName, idx) => {
-        // Regola stipendio: il mese d'imputazione (es. Agosto) decorre dal 15 del mese successivo (15/09 - 15/10)
-        let startM = idx + 1;
-        let endM = idx + 2;
-        let startY = currentYear;
-        let endY = currentYear;
-
-        if (startM > 11) {
-          startM = startM % 12;
-          if (idx === 11) { startM = 0; endM = 1; startY++; endY++; }
-        }
-        if (endM > 11) { endM = 0; endY++; }
-
-        const startStr = `15/${String(startM + 1).padStart(2,'0')}`;
-        const endStr = `15/${String(endM + 1).padStart(2,'0')}`;
+        const { startDate, endDate } = getMonthDateRange(idx);
+        
+        const startStr = `${String(startDate.getDate()).padStart(2,'0')}/${String(startDate.getMonth()+1).padStart(2,'0')}`;
+        const endStr = `${String(endDate.getDate()).padStart(2,'0')}/${String(endDate.getMonth()+1).padStart(2,'0')}`;
 
         const opt = document.createElement('option');
         opt.value = idx;
         opt.textContent = `${mName} (${startStr} - ${endStr})`;
-        if (idx === 7) opt.selected = true; // Seleziona Agosto come default
         monthSelect.appendChild(opt);
       });
+
+      // Seleziona di default il mese di competenza in base ad oggi (es. 7 Settembre -> Mese di Luglio 15/08-15/09)
+      const today = new Date();
+      const currentMonthIdx = getTargetMonthIndex(today);
+      monthSelect.value = currentMonthIdx;
     }
 
-    function getMonthDateRange(monthIndex, year = 2026) {
-      let startMonth = monthIndex + 1;
-      let endMonth = monthIndex + 2;
-      let startYear = year;
-      let endYear = year;
-
-      if (startMonth > 11) { startMonth = 0; startYear++; }
-      if (endMonth > 11) { endMonth = 0; endYear++; }
-
-      const startDate = new Date(startYear, startMonth, 15);
-      const endDate = new Date(endYear, endMonth, 15);
-      return { startDate, endDate };
+    function getTargetMonthIndex(targetDate) {
+      const d = new Date(targetDate);
+      for (let i = 0; i < 12; i++) {
+        const { startDate, endDate } = getMonthDateRange(i);
+        if (d >= startDate && d <= endDate) {
+          return i;
+        }
+      }
+      return 6; // Default a Luglio se fuori range
     }
 
     function generateWeeks(monthIndex) {
@@ -771,8 +803,8 @@
 
         weeks.push({
           id: weekNum,
-          start: currStart.toISOString().split('T')[0],
-          end: currEnd.toISOString().split('T')[0]
+          start: formatDateToYMD(currStart),
+          end: formatDateToYMD(currEnd)
         });
 
         currStart = new Date(currEnd);
@@ -782,7 +814,7 @@
       return weeks;
     }
 
-    function renderMonthlyView() {
+    function renderMonthlyView(highlightExpenseId = null) {
       const monthIdx = parseInt(monthSelect.value);
       const container = document.getElementById('weeks-container');
       container.innerHTML = "";
@@ -790,8 +822,11 @@
       const weeks = generateWeeks(monthIdx);
 
       weeks.forEach((w, i) => {
+        // Confronto stringhe YYYY-MM-DD
         const wExpenses = expenses.filter(e => e.date >= w.start && e.date <= w.end);
         const wTotal = wExpenses.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
+
+        const containsHighlight = highlightExpenseId && wExpenses.some(e => e.id === highlightExpenseId);
 
         const formatD = (dStr) => {
           const parts = dStr.split('-');
@@ -799,7 +834,7 @@
         };
 
         const weekEl = document.createElement('div');
-        weekEl.className = `week-block ${i === 0 ? 'open' : ''}`;
+        weekEl.className = `week-block ${(i === 0 || containsHighlight) ? 'open' : ''}`;
         weekEl.innerHTML = `
           <div class="week-header">
             <span>Settimana ${i + 1} (${formatD(w.start)} - ${formatD(w.end)}) 
@@ -812,7 +847,10 @@
               wExpenses.map(e => `
                 <div class="expense-item">
                   <span><b>${e.desc}</b> (${formatD(e.date)})</span>
-                  <span style="color:var(--accent-red);">- € ${parseFloat(e.amount).toFixed(2)}</span>
+                  <div>
+                    <span style="color:var(--accent-red); font-weight:600;">- € ${parseFloat(e.amount).toFixed(2)}</span>
+                    <button class="delete-exp-btn" data-id="${e.id}"><i class="fa-solid fa-trash"></i></button>
+                  </div>
                 </div>
               `).join('')}
           </div>
@@ -826,6 +864,7 @@
         container.appendChild(weekEl);
       });
 
+      // Event Listener Modifica Date
       document.querySelectorAll('.edit-date-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const m = btn.dataset.m;
@@ -833,6 +872,55 @@
           openEditWeekModal(m, w);
         });
       });
+
+      // Event Listener Elimina Spesa
+      document.querySelectorAll('.delete-exp-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = parseInt(btn.dataset.id);
+          deleteExpense(id);
+        });
+      });
+
+      renderRecentExpenses();
+    }
+
+    function renderRecentExpenses() {
+      const container = document.getElementById('recent-expenses-list');
+      if (!container) return;
+
+      const recent = [...expenses].sort((a, b) => b.id - a.id).slice(0, 5);
+
+      if (recent.length === 0) {
+        container.innerHTML = '<i>Nessuna spesa recente inserita</i>';
+        return;
+      }
+
+      container.innerHTML = recent.map(e => {
+        const parts = e.date.split('-');
+        const dateFormatted = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        return `
+          <div class="expense-item">
+            <span><b>${e.desc}</b> (${dateFormatted})</span>
+            <div>
+              <span style="color:var(--accent-red); font-weight:600;">- € ${parseFloat(e.amount).toFixed(2)}</span>
+              <button class="delete-exp-btn" data-id="${e.id}"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.querySelectorAll('.delete-exp-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = parseInt(btn.dataset.id);
+          deleteExpense(id);
+        });
+      });
+    }
+
+    function deleteExpense(id) {
+      expenses = expenses.filter(e => e.id !== id);
+      localStorage.setItem('expenses_data', JSON.stringify(expenses));
+      renderMonthlyView();
     }
 
     // Modal per personalizzazione date
@@ -875,21 +963,30 @@
       const amount = parseFloat(document.getElementById('quick-amount').value);
       const desc = document.getElementById('quick-desc').value;
 
-      expenses.push({ id: Date.now(), date, amount, desc });
+      const newExpense = { id: Date.now(), date, amount, desc };
+      expenses.push(newExpense);
       localStorage.setItem('expenses_data', JSON.stringify(expenses));
+
+      // Seleziona in automatico il mese di competenza della spesa appena inserita
+      const expDate = new Date(date);
+      const targetMonthIdx = getTargetMonthIndex(expDate);
+      monthSelect.value = targetMonthIdx;
 
       document.getElementById('quick-amount').value = "";
       document.getElementById('quick-desc').value = "";
       
-      alert("Spesa salvata con successo!");
-      renderMonthlyView();
+      renderMonthlyView(newExpense.id);
+
+      // Naviga direttamente alla vista mensile per mostrare subito la spesa
+      document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+      document.getElementById('sec-mensile').classList.add('active');
     });
 
-    monthSelect.addEventListener('change', renderMonthlyView);
+    monthSelect.addEventListener('change', () => renderMonthlyView());
 
     // Inizializzazioni Date & Viste
-    document.getElementById('quick-date').valueAsDate = new Date();
-    document.getElementById('bank-date').valueAsDate = new Date();
+    document.getElementById('quick-date').value = formatDateToYMD(new Date());
+    document.getElementById('bank-date').value = formatDateToYMD(new Date());
     initMonthDropdown();
     renderMonthlyView();
   </script>
