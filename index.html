@@ -451,7 +451,7 @@
   </div>
   <!-- HEADER -->
   <header class="app-bar">
-    <span class="status-badge" id="sync-status-badge"><i class="fa-solid fa-circle" style="font-size:8px;"></i> ONLINE</span>
+    <span class="status-badge"><i class="fa-solid fa-circle" style="font-size:8px;"></i> ONLINE</span>
     <div class="logo-container nav-item-btn" data-target="sec-home">
       <img src="https://lh3.googleusercontent.com/d/1eimNS4XHA7QeuNP2qnTRdC1COpFQGV3c" alt="Logo">
     </div>
@@ -842,13 +842,12 @@
       <button class="btn btn-secondary" id="close-modal-btn">Annulla</button>
     </div>
   </div>
-
-  <!-- FIREBASE MODULAR SDK (v9) & CLOUD SYNC LOGIC -->
+  <!-- FIREBASE MODULAR SDK (v9) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+    
     const firebaseConfig = {
       apiKey: "AIzaSyBF1S3NeA-IKxqna87CEzRiMGGN3AOnONo",
       authDomain: "gestionale-spese-e-entrate.firebaseapp.com",
@@ -858,127 +857,10 @@
       appId: "1:129010726048:web:ebabd5819b52743ff505c5",
       measurementId: "G-26D9CJ55RW"
     };
-
+    
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-
-    let currentUser = null;
-    let unsubscribeFirestore = null;
-
-    // Local state data
-    let expenses = JSON.parse(localStorage.getItem('expenses_data')) || [];
-    let customWeekRanges = JSON.parse(localStorage.getItem('custom_week_ranges')) || {};
-    let mastriniData = JSON.parse(localStorage.getItem('mastrini_data')) || [];
-    let settingsFunds = JSON.parse(localStorage.getItem('settings_funds')) || {
-      defaultBase: 0,
-      defaultEff: 0,
-      allocations: {}
-    };
-    let monthlySalaries = JSON.parse(localStorage.getItem('monthly_salaries')) || {};
-    let bankExpenses = JSON.parse(localStorage.getItem('bank_expenses_data')) || [];
-    let bankTargetFund = localStorage.getItem('bank_target_fund') || "";
-
-    // Sync status visual feedback
-    function setSyncStatus(isSyncing, text) {
-      const badge = document.getElementById('sync-status-badge');
-      if (!badge) return;
-      if (isSyncing) {
-        badge.style.background = 'rgba(249, 115, 22, 0.15)';
-        badge.style.color = 'var(--accent-orange)';
-        badge.style.borderColor = 'rgba(249, 115, 22, 0.3)';
-        badge.innerHTML = `<i class="fa-solid fa-rotate fa-spin" style="font-size:8px;"></i> ${text || 'SYNCING...'}`;
-      } else {
-        badge.style.background = 'rgba(34, 197, 94, 0.15)';
-        badge.style.color = 'var(--accent-green)';
-        badge.style.borderColor = 'rgba(34, 197, 94, 0.3)';
-        badge.innerHTML = `<i class="fa-solid fa-circle" style="font-size:8px;"></i> ${text || 'ONLINE'}`;
-      }
-    }
-
-    // Save state both locally and in Firestore Realtime DB
-    async function saveStateToCloud() {
-      localStorage.setItem('expenses_data', JSON.stringify(expenses));
-      localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
-      localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
-      localStorage.setItem('settings_funds', JSON.stringify(settingsFunds));
-      localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
-      localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
-      localStorage.setItem('bank_target_fund', bankTargetFund);
-
-      if (currentUser) {
-        setSyncStatus(true, "SALVATAGGIO...");
-        try {
-          const userDocRef = doc(db, "users", currentUser.uid);
-          await setDoc(userDocRef, {
-            expenses,
-            customWeekRanges,
-            mastriniData,
-            settingsFunds,
-            monthlySalaries,
-            bankExpenses,
-            bankTargetFund,
-            lastUpdated: Date.now()
-          }, { merge: true });
-          setSyncStatus(false, "ONLINE");
-        } catch (err) {
-          console.error("Errore durante il salvataggio Firestore:", err);
-          setSyncStatus(false, "OFFLINE");
-        }
-      }
-    }
-
-    // Load State Realtime Listener
-    function setupRealtimeSync(uid) {
-      if (unsubscribeFirestore) unsubscribeFirestore();
-      const userDocRef = doc(db, "users", uid);
-      
-      unsubscribeFirestore = onSnapshot(userDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data.expenses !== undefined) {
-            expenses = data.expenses;
-            localStorage.setItem('expenses_data', JSON.stringify(expenses));
-          }
-          if (data.customWeekRanges !== undefined) {
-            customWeekRanges = data.customWeekRanges;
-            localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
-          }
-          if (data.mastriniData !== undefined) {
-            mastriniData = data.mastriniData;
-            localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
-          }
-          if (data.settingsFunds !== undefined) {
-            settingsFunds = data.settingsFunds;
-            localStorage.setItem('settings_funds', JSON.stringify(settingsFunds));
-          }
-          if (data.monthlySalaries !== undefined) {
-            monthlySalaries = data.monthlySalaries;
-            localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
-          }
-          if (data.bankExpenses !== undefined) {
-            bankExpenses = data.bankExpenses;
-            localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
-          }
-          if (data.bankTargetFund !== undefined) {
-            bankTargetFund = data.bankTargetFund;
-            localStorage.setItem('bank_target_fund', bankTargetFund);
-          }
-
-          renderMonthlyView();
-          renderMastriniView();
-          renderBankExpensesList();
-          setSyncStatus(false, "ONLINE");
-        } else {
-          saveStateToCloud();
-        }
-      }, (err) => {
-        console.error("Errore listener Firestore:", err);
-        setSyncStatus(false, "OFFLINE");
-      });
-    }
-
-    // AUTH LISTENERS
     const authScreen = document.getElementById('auth-screen');
     const loginForm = document.getElementById('login-form');
     const authError = document.getElementById('auth-error');
@@ -997,19 +879,16 @@
 
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        currentUser = user;
         authScreen.style.display = 'none';
-        setupRealtimeSync(user.uid);
+        initCloudSync(user.uid);
       } else {
-        currentUser = null;
-        if (unsubscribeFirestore) unsubscribeFirestore();
         authScreen.style.display = 'flex';
       }
     });
 
     document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
-    // Drawer Menu Nav
+    // Navigazione Menu Drawer
     const drawer = document.getElementById('drawer');
     const drawerOverlay = document.getElementById('drawer-overlay');
     document.getElementById('open-drawer-btn').addEventListener('click', () => {
@@ -1038,7 +917,6 @@
     const confirmDeleteModal = document.getElementById('confirm-delete-modal');
     const confirmDeleteYesBtn = document.getElementById('confirm-delete-yes-btn');
     const confirmDeleteNoBtn = document.getElementById('confirm-delete-no-btn');
-
     function requestDeleteConfirmation(message, onConfirm) {
       document.getElementById('confirm-delete-msg').textContent = message || "Sei sicuro di voler eliminare questa voce?";
       pendingDeleteCallback = onConfirm;
@@ -1054,7 +932,74 @@
       confirmDeleteModal.classList.remove('open');
     });
 
-    // --- VARIABILI DI STATO LOCALI ---
+    // --- DATI DI STATO E PERSISTENZA CLOUD FIRESTORE ---
+    let expenses = [];
+    let customWeekRanges = {};
+    let mastriniData = [];
+    let settingsFunds = { defaultBase: 0, defaultEff: 0, allocations: {} };
+    let monthlySalaries = {};
+    let bankExpenses = [];
+    let bankTargetFund = "";
+    let currentUserId = null;
+    let isSavingToCloud = false;
+
+    function initCloudSync(userId) {
+      currentUserId = userId;
+      const docRef = doc(db, "users_data", userId);
+
+      // Ascolto in tempo reale (Realtime listener Firestore)
+      onSnapshot(docRef, (docSnap) => {
+        if (isSavingToCloud) return; // Evita loop locali di scrittura
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          expenses = data.expenses || [];
+          customWeekRanges = data.customWeekRanges || {};
+          mastriniData = data.mastriniData || [];
+          settingsFunds = data.settingsFunds || { defaultBase: 0, defaultEff: 0, allocations: {} };
+          monthlySalaries = data.monthlySalaries || {};
+          bankExpenses = data.bankExpenses || [];
+          bankTargetFund = data.bankTargetFund || "";
+        } else {
+          // Se non esistono dati sul cloud, inizializza con localStorage (se presente) o vuoti
+          expenses = JSON.parse(localStorage.getItem('expenses_data')) || [];
+          customWeekRanges = JSON.parse(localStorage.getItem('custom_week_ranges')) || {};
+          mastriniData = JSON.parse(localStorage.getItem('mastrini_data')) || [];
+          settingsFunds = JSON.parse(localStorage.getItem('settings_funds')) || { defaultBase: 0, defaultEff: 0, allocations: {} };
+          monthlySalaries = JSON.parse(localStorage.getItem('monthly_salaries')) || {};
+          bankExpenses = JSON.parse(localStorage.getItem('bank_expenses_data')) || [];
+          bankTargetFund = localStorage.getItem('bank_target_fund') || "";
+          saveToCloud();
+        }
+        
+        // Rirenderizza l'interfaccia con i dati aggiornati dal Cloud
+        initMonthDropdown();
+        renderMonthlyView();
+        renderMastriniView();
+        renderBankExpensesList();
+      });
+    }
+
+    async function saveToCloud() {
+      if (!currentUserId) return;
+      isSavingToCloud = true;
+      try {
+        const docRef = doc(db, "users_data", currentUserId);
+        await setDoc(docRef, {
+          expenses,
+          customWeekRanges,
+          mastriniData,
+          settingsFunds,
+          monthlySalaries,
+          bankExpenses,
+          bankTargetFund
+        });
+      } catch (err) {
+        console.error("Errore di salvataggio su Cloud: ", err);
+      } finally {
+        setTimeout(() => { isSavingToCloud = false; }, 500);
+      }
+    }
+
     let currentMovementType = "expense";
     let modalMovementType = "expense";
     let mastrinoMovementType = "expense";
@@ -1075,15 +1020,14 @@
       const endDate = new Date(endY, endM, 15);
       return { startDate, endDate };
     }
-
     function formatDateToYMD(d) {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
       return `${y}-${m}-${day}`;
     }
-
     function initMonthDropdown() {
+      const currentSelected = monthSelect.value;
       monthSelect.innerHTML = "";
       monthsNames.forEach((mName, idx) => {
         const { startDate, endDate } = getMonthDateRange(idx);
@@ -1094,10 +1038,13 @@
         opt.textContent = `${mName} (${startStr} - ${endStr})`;
         monthSelect.appendChild(opt);
       });
-      const today = new Date();
-      monthSelect.value = getTargetMonthIndex(today);
+      if (currentSelected !== "") {
+        monthSelect.value = currentSelected;
+      } else {
+        const today = new Date();
+        monthSelect.value = getTargetMonthIndex(today);
+      }
     }
-
     function getTargetMonthIndex(targetDate) {
       const d = new Date(targetDate);
       for (let i = 0; i < 12; i++) {
@@ -1106,7 +1053,6 @@
       }
       return 6;
     }
-
     function generateWeeks(monthIndex) {
       const key = `month_${monthIndex}`;
       if (customWeekRanges[key]) return customWeekRanges[key];
@@ -1204,11 +1150,9 @@
       closeDrawer();
       settingsModal.classList.add('open');
     });
-
     document.getElementById('close-settings-funds-btn').addEventListener('click', () => {
       settingsModal.classList.remove('open');
     });
-
     document.getElementById('save-settings-funds-btn').addEventListener('click', () => {
       settingsFunds.defaultBase = parseFloat(document.getElementById('cfg-default-base').value) || 0;
       settingsFunds.defaultEff = parseFloat(document.getElementById('cfg-default-eff').value) || 0;
@@ -1224,8 +1168,7 @@
         if (!settingsFunds.allocations[mName]) settingsFunds.allocations[mName] = {};
         settingsFunds.allocations[mName].extraRatio = parseFloat(input.value) || 0;
       });
-      
-      saveStateToCloud();
+      saveToCloud();
       settingsModal.classList.remove('open');
       renderMonthlyView();
     });
@@ -1302,14 +1245,14 @@
         });
         allocationContainer.appendChild(subAcc);
       });
-      // Segnalazione se la somma supera lo stipendio base
+
       const alertBanner = document.getElementById('salary-over-alert');
       if (totalBaseAllocated > currentSal.base && currentSal.base > 0) {
         alertBanner.style.display = 'block';
       } else {
         alertBanner.style.display = 'none';
       }
-      // Handlers aggiornamento quote in tempo reale
+
       document.querySelectorAll('.m-fund-base-input, .m-fund-extra-input').forEach(input => {
         input.addEventListener('change', () => {
           const mName = input.dataset.mastrino;
@@ -1320,11 +1263,11 @@
             currentSal.customFundAlloc[mName].extra = parseFloat(input.value) || 0;
           }
           monthlySalaries[key] = currentSal;
-          saveStateToCloud();
+          saveToCloud();
           renderMonthlyFundAllocation();
         });
       });
-      // Handlers per Invio Singolo Fondo
+
       document.querySelectorAll('.btn-send-single-mastrino').forEach(btn => {
         btn.addEventListener('click', () => {
           const mIdx = parseInt(btn.dataset.idx);
@@ -1378,13 +1321,12 @@
       alert(`Inviati con successo le quote per ${count} fondi!`);
     });
 
-    // Event Listeners Stipendio Base / Effettivo del Mese
     document.getElementById('m-salary-base').addEventListener('change', (e) => {
       const monthIdx = parseInt(monthSelect.value);
       const key = `month_${monthIdx}`;
       if (!monthlySalaries[key]) monthlySalaries[key] = { customFundAlloc: {} };
       monthlySalaries[key].base = parseFloat(e.target.value) || 0;
-      saveStateToCloud();
+      saveToCloud();
       renderMonthlyFundAllocation();
     });
     document.getElementById('m-salary-eff').addEventListener('change', (e) => {
@@ -1392,7 +1334,7 @@
       const key = `month_${monthIdx}`;
       if (!monthlySalaries[key]) monthlySalaries[key] = { customFundAlloc: {} };
       monthlySalaries[key].eff = parseFloat(e.target.value) || 0;
-      saveStateToCloud();
+      saveToCloud();
       renderMonthlyFundAllocation();
     });
 
@@ -1457,7 +1399,7 @@
         });
         container.appendChild(weekEl);
       });
-      // Listeners Settimane
+
       document.querySelectorAll('.edit-week-btn').forEach(btn => {
         btn.addEventListener('click', () => openEditWeekModal(btn.dataset.m, btn.dataset.w));
       });
@@ -1508,7 +1450,7 @@
     function deleteExpense(id) {
       requestDeleteConfirmation("Sei sicuro di voler eliminare questo movimento di spesa / entrata?", () => {
         expenses = expenses.filter(e => e.id !== id);
-        saveStateToCloud();
+        saveToCloud();
         renderMonthlyView();
       });
     }
@@ -1544,7 +1486,6 @@
       }
       expModal.classList.add('open');
     }
-
     function openAddExpenseModal(defaultDate) {
       document.getElementById('expense-modal-title').textContent = "Aggiungi Movimento";
       document.getElementById('edit-exp-id').value = "";
@@ -1554,7 +1495,6 @@
       modalExpExpenseBtn.click();
       expModal.classList.add('open');
     }
-
     document.getElementById('close-expense-modal-btn').addEventListener('click', () => expModal.classList.remove('open'));
     document.getElementById('save-expense-btn').addEventListener('click', () => {
       const id = document.getElementById('edit-exp-id').value;
@@ -1574,7 +1514,7 @@
         const newExp = { id: Date.now(), date, desc, amount, type: modalMovementType };
         expenses.push(newExp);
       }
-      saveStateToCloud();
+      saveToCloud();
       expModal.classList.remove('open');
       renderMonthlyView();
     });
@@ -1627,7 +1567,6 @@
       if (totalEl) totalEl.textContent = `€ ${grandTotal.toFixed(2)}`;
       renderBankTargetSelect();
 
-      // Listeners Mastrini
       document.querySelectorAll('.delete-mastrino-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const idx = parseInt(btn.dataset.m);
@@ -1662,10 +1601,10 @@
     }
 
     function saveAndRenderMastrini() {
-      syncBankExpensesToFund();
-      saveStateToCloud();
+      saveToCloud();
       renderMastriniView();
       renderMonthlyView();
+      syncBankExpensesToFund();
     }
 
     // Modal Nuovo Mastrino
@@ -1710,11 +1649,9 @@
       }
       itemMastrinoModal.classList.add('open');
     }
-
     document.getElementById('close-item-mastrino-btn').addEventListener('click', () => {
       itemMastrinoModal.classList.remove('open');
     });
-
     document.getElementById('save-mastrino-item-btn').addEventListener('click', () => {
       const mIdx = parseInt(document.getElementById('mastrino-target-idx').value);
       const iIdx = document.getElementById('mastrino-item-idx').value;
@@ -1752,7 +1689,6 @@
         statusDiv.textContent = "Importazione fondi completata con successo!";
       }, 1200);
     });
-
     document.getElementById('btn-start-import-bank-gsheet').addEventListener('click', () => {
       const url = document.getElementById('gsheet-bank-url-input').value.trim();
       const statusDiv = document.getElementById('import-status');
@@ -1782,13 +1718,11 @@
         select.appendChild(opt);
       });
     }
-
     document.getElementById('bank-target-fund').addEventListener('change', (e) => {
       bankTargetFund = e.target.value;
+      saveToCloud();
       syncBankExpensesToFund();
-      saveStateToCloud();
     });
-
     document.getElementById('bank-expense-form').addEventListener('submit', (e) => {
       e.preventDefault();
       const date = document.getElementById('bank-date').value;
@@ -1796,13 +1730,12 @@
       const desc = document.getElementById('bank-desc').value;
       if (!date || isNaN(cost) || !desc) return;
       bankExpenses.push({ id: Date.now(), date, cost, desc });
+      saveToCloud();
       document.getElementById('bank-cost').value = "";
       document.getElementById('bank-desc').value = "";
-      syncBankExpensesToFund();
-      saveStateToCloud();
       renderBankExpensesList();
+      syncBankExpensesToFund();
     });
-
     function renderBankExpensesList() {
       const container = document.getElementById('bank-expenses-list');
       if (!container) return;
@@ -1824,14 +1757,13 @@
           const id = parseInt(btn.dataset.id);
           requestDeleteConfirmation("Sei sicuro di voler eliminare questa spesa bancaria?", () => {
             bankExpenses = bankExpenses.filter(b => b.id !== id);
-            syncBankExpensesToFund();
-            saveStateToCloud();
+            saveToCloud();
             renderBankExpensesList();
+            syncBankExpensesToFund();
           });
         });
       });
     }
-
     function syncBankExpensesToFund() {
       mastriniData.forEach(m => {
         m.items = m.items.filter(item => !item.isAutoBank);
@@ -1848,6 +1780,8 @@
           });
         }
       }
+      saveToCloud();
+      renderMastriniView();
     }
 
     // Inserimento Rapido Form
@@ -1858,9 +1792,7 @@
       const desc = document.getElementById('quick-desc').value;
       const newExpense = { id: Date.now(), date, amount, desc, type: currentMovementType };
       expenses.push(newExpense);
-      
-      saveStateToCloud();
-
+      saveToCloud();
       const expDate = new Date(date);
       monthSelect.value = getTargetMonthIndex(expDate);
       document.getElementById('quick-amount').value = "";
@@ -1882,11 +1814,9 @@
       document.getElementById('modal-end-date').value = currentW.end;
       document.getElementById('edit-week-modal').classList.add('open');
     }
-
     document.getElementById('close-modal-btn').addEventListener('click', () => {
       document.getElementById('edit-week-modal').classList.remove('open');
     });
-
     document.getElementById('save-week-dates-btn').addEventListener('click', () => {
       if (!activeEdit) return;
       const { mIdx, wIdx } = activeEdit;
@@ -1895,20 +1825,16 @@
       weeks[wIdx].start = document.getElementById('modal-start-date').value;
       weeks[wIdx].end = document.getElementById('modal-end-date').value;
       customWeekRanges[key] = weeks;
-      saveStateToCloud();
+      saveToCloud();
       document.getElementById('edit-week-modal').classList.remove('open');
       renderMonthlyView();
     });
 
     monthSelect.addEventListener('change', () => renderMonthlyView());
 
-    // Inizializzazione Applicazione
+    // Inizializzazione date form
     document.getElementById('quick-date').value = formatDateToYMD(new Date());
     document.getElementById('bank-date').value = formatDateToYMD(new Date());
-    initMonthDropdown();
-    renderMonthlyView();
-    renderMastriniView();
-    renderBankExpensesList();
   </script>
 </body>
 </html>
