@@ -846,7 +846,8 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyBF1S3NeA-IKxqna87CEzRiMGGN3AOnONo",
       authDomain: "gestionale-spese-e-entrate.firebaseapp.com",
@@ -859,9 +860,14 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+
     const authScreen = document.getElementById('auth-screen');
     const loginForm = document.getElementById('login-form');
     const authError = document.getElementById('auth-error');
+
+    let currentUser = null;
+    let unsubscribeSnapshot = null;
+
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       authError.textContent = "";
@@ -873,14 +879,21 @@
         authError.textContent = "Errore di accesso: " + err.message;
       }
     });
+
     onAuthStateChanged(auth, (user) => {
       if (user) {
+        currentUser = user;
         authScreen.style.display = 'none';
+        initFirebaseSync();
       } else {
+        currentUser = null;
+        if (unsubscribeSnapshot) unsubscribeSnapshot();
         authScreen.style.display = 'flex';
       }
     });
+
     document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+
     // Navigazione Menu Drawer
     const drawer = document.getElementById('drawer');
     const drawerOverlay = document.getElementById('drawer-overlay');
@@ -904,6 +917,7 @@
         }
       });
     });
+
     // --- UTILITY MODALE DI CONFERMA ELIMINAZIONE GENERALIZZATA ---
     let pendingDeleteCallback = null;
     const confirmDeleteModal = document.getElementById('confirm-delete-modal');
@@ -923,18 +937,59 @@
       pendingDeleteCallback = null;
       confirmDeleteModal.classList.remove('open');
     });
+
     // --- DATI DI STATO ---
-    let expenses = JSON.parse(localStorage.getItem('expenses_data')) || [];
-    let customWeekRanges = JSON.parse(localStorage.getItem('custom_week_ranges')) || {};
-    let mastriniData = JSON.parse(localStorage.getItem('mastrini_data')) || [];
-    let settingsFunds = JSON.parse(localStorage.getItem('settings_funds')) || {
-      defaultBase: 0,
-      defaultEff: 0,
-      allocations: {}
-    };
-    let monthlySalaries = JSON.parse(localStorage.getItem('monthly_salaries')) || {};
-    let bankExpenses = JSON.parse(localStorage.getItem('bank_expenses_data')) || [];
-    let bankTargetFund = localStorage.getItem('bank_target_fund') || "";
+    let expenses = [];
+    let customWeekRanges = {};
+    let mastriniData = [];
+    let settingsFunds = { defaultBase: 0, defaultEff: 0, allocations: {} };
+    let monthlySalaries = {};
+    let bankExpenses = [];
+    let bankTargetFund = "";
+
+    // FUNZIONE PER SALVARE SU FIREBASE
+    async function saveDataToCloud() {
+      if (!currentUser) return;
+      try {
+        const userDocRef = doc(db, "users", currentUser.uid);
+        await setDoc(userDocRef, {
+          expenses: expenses,
+          customWeekRanges: customWeekRanges,
+          mastriniData: mastriniData,
+          settingsFunds: settingsFunds,
+          monthlySalaries: monthlySalaries,
+          bankExpenses: bankExpenses,
+          bankTargetFund: bankTargetFund
+        }, { merge: true });
+      } catch (e) {
+        console.error("Errore durante il salvataggio Cloud: ", e);
+      }
+    }
+
+    // FUNZIONE PER RICEVERE IN TEMPO REALE DA FIREBASE
+    function initFirebaseSync() {
+      if (!currentUser) return;
+      const userDocRef = doc(db, "users", currentUser.uid);
+      unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          expenses = data.expenses || [];
+          customWeekRanges = data.customWeekRanges || {};
+          mastriniData = data.mastriniData || [];
+          settingsFunds = data.settingsFunds || { defaultBase: 0, defaultEff: 0, allocations: {} };
+          monthlySalaries = data.monthlySalaries || {};
+          bankExpenses = data.bankExpenses || [];
+          bankTargetFund = data.bankTargetFund || "";
+          
+          renderMonthlyView();
+          renderMastriniView();
+          renderBankExpensesList();
+        } else {
+          saveDataToCloud();
+        }
+      });
+    }
+
     let currentMovementType = "expense";
     let modalMovementType = "expense";
     let mastrinoMovementType = "expense";
@@ -1093,7 +1148,7 @@
         if (!settingsFunds.allocations[mName]) settingsFunds.allocations[mName] = {};
         settingsFunds.allocations[mName].extraRatio = parseFloat(input.value) || 0;
       });
-      localStorage.setItem('settings_funds', JSON.stringify(settingsFunds));
+      saveDataToCloud();
       settingsModal.classList.remove('open');
       renderMonthlyView();
     });
@@ -1187,7 +1242,7 @@
             currentSal.customFundAlloc[mName].extra = parseFloat(input.value) || 0;
           }
           monthlySalaries[key] = currentSal;
-          localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
+          saveDataToCloud();
           renderMonthlyFundAllocation();
         });
       });
@@ -1209,7 +1264,6 @@
           });
           currentSal.sentFunds[name] = true;
           monthlySalaries[key] = currentSal;
-          localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
           saveAndRenderMastrini();
           alert(`€ ${amount.toFixed(2)} inviati a ${mastriniData[mIdx].name} (${noteText})`);
         });
@@ -1241,7 +1295,6 @@
         }
       });
       monthlySalaries[key] = currentSal;
-      localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
       saveAndRenderMastrini();
       alert(`Inviati con successo le quote per ${count} fondi!`);
     });
@@ -1251,7 +1304,7 @@
       const key = `month_${monthIdx}`;
       if (!monthlySalaries[key]) monthlySalaries[key] = { customFundAlloc: {} };
       monthlySalaries[key].base = parseFloat(e.target.value) || 0;
-      localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
+      saveDataToCloud();
       renderMonthlyFundAllocation();
     });
     document.getElementById('m-salary-eff').addEventListener('change', (e) => {
@@ -1259,7 +1312,7 @@
       const key = `month_${monthIdx}`;
       if (!monthlySalaries[key]) monthlySalaries[key] = { customFundAlloc: {} };
       monthlySalaries[key].eff = parseFloat(e.target.value) || 0;
-      localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
+      saveDataToCloud();
       renderMonthlyFundAllocation();
     });
     // RENDERING VISTA MENSILE CON STRUTTURA SFALSATA E RIGHE EXCEL
@@ -1372,7 +1425,7 @@
     function deleteExpense(id) {
       requestDeleteConfirmation("Sei sicuro di voler eliminare questo movimento di spesa / entrata?", () => {
         expenses = expenses.filter(e => e.id !== id);
-        localStorage.setItem('expenses_data', JSON.stringify(expenses));
+        saveDataToCloud();
         renderMonthlyView();
       });
     }
@@ -1434,7 +1487,7 @@
         const newExp = { id: Date.now(), date, desc, amount, type: modalMovementType };
         expenses.push(newExp);
       }
-      localStorage.setItem('expenses_data', JSON.stringify(expenses));
+      saveDataToCloud();
       expModal.classList.remove('open');
       renderMonthlyView();
     });
@@ -1511,7 +1564,6 @@
             if (deletedItem && deletedItem.monthKey && deletedItem.fundName) {
               if (monthlySalaries[deletedItem.monthKey] && monthlySalaries[deletedItem.monthKey].sentFunds) {
                 delete monthlySalaries[deletedItem.monthKey].sentFunds[deletedItem.fundName];
-                localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
               }
             }
             mastriniData[mIdx].items.splice(iIdx, 1);
@@ -1521,7 +1573,7 @@
       });
     }
     function saveAndRenderMastrini() {
-      localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
+      saveDataToCloud();
       renderMastriniView();
       renderMonthlyView();
       syncBankExpensesToFund();
@@ -1636,7 +1688,7 @@
     }
     document.getElementById('bank-target-fund').addEventListener('change', (e) => {
       bankTargetFund = e.target.value;
-      localStorage.setItem('bank_target_fund', bankTargetFund);
+      saveDataToCloud();
       syncBankExpensesToFund();
     });
     document.getElementById('bank-expense-form').addEventListener('submit', (e) => {
@@ -1646,7 +1698,7 @@
       const desc = document.getElementById('bank-desc').value;
       if (!date || isNaN(cost) || !desc) return;
       bankExpenses.push({ id: Date.now(), date, cost, desc });
-      localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
+      saveDataToCloud();
       document.getElementById('bank-cost').value = "";
       document.getElementById('bank-desc').value = "";
       renderBankExpensesList();
@@ -1673,7 +1725,7 @@
           const id = parseInt(btn.dataset.id);
           requestDeleteConfirmation("Sei sicuro di voler eliminare questa spesa bancaria?", () => {
             bankExpenses = bankExpenses.filter(b => b.id !== id);
-            localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
+            saveDataToCloud();
             renderBankExpensesList();
             syncBankExpensesToFund();
           });
@@ -1698,7 +1750,7 @@
           });
         }
       }
-      localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
+      saveDataToCloud();
       renderMastriniView();
     }
     // Inserimento Rapido Form
@@ -1709,7 +1761,7 @@
       const desc = document.getElementById('quick-desc').value;
       const newExpense = { id: Date.now(), date, amount, desc, type: currentMovementType };
       expenses.push(newExpense);
-      localStorage.setItem('expenses_data', JSON.stringify(expenses));
+      saveDataToCloud();
       const expDate = new Date(date);
       monthSelect.value = getTargetMonthIndex(expDate);
       document.getElementById('quick-amount').value = "";
@@ -1741,7 +1793,7 @@
       weeks[wIdx].start = document.getElementById('modal-start-date').value;
       weeks[wIdx].end = document.getElementById('modal-end-date').value;
       customWeekRanges[key] = weeks;
-      localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
+      saveDataToCloud();
       document.getElementById('edit-week-modal').classList.remove('open');
       renderMonthlyView();
     });
