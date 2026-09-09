@@ -846,121 +846,135 @@
   </div>
 
 //INIZIO BLOCCO FIREBASE************************************
-  <!-- FIREBASE MODULAR SDK (v9) & LOGIC -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    import { getDatabase, ref, set, onValue, off } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+<!-- FIREBASE MODULAR SDK (v9) & LOGIC -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+  import { getDatabase, ref, set, onValue, off } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBF1S3NeA-IKxqna87CEzRiMGGN3AOnONo",
-      authDomain: "gestionale-spese-e-entrate.firebaseapp.com",
-      databaseURL: "https://gestionale-spese-e-entrate-default-rtdb.firebaseio.com",
-      projectId: "gestionale-spese-e-entrate",
-      storageBucket: "gestionale-spese-e-entrate.firebasestorage.app",
-      messagingSenderId: "129010726048",
-      appId: "1:129010726048:web:ebabd5819b52743ff505c5",
-      measurementId: "G-26D9CJ55RW"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyBF1S3NeA-IKxqna87CEzRiMGGN3AOnONo",
+    authDomain: "gestionale-spese-e-entrate.firebaseapp.com",
+    databaseURL: "https://gestionale-spese-e-entrate-default-rtdb.firebaseio.com",
+    projectId: "gestionale-spese-e-entrate",
+    storageBucket: "gestionale-spese-e-entrate.firebasestorage.app",
+    messagingSenderId: "129010726048",
+    appId: "1:129010726048:web:ebabd5819b52743ff505c5",
+    measurementId: "G-26D9CJ55RW"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
 
-    const authScreen = document.getElementById('auth-screen');
-    const loginForm = document.getElementById('login-form');
-    const authError = document.getElementById('auth-error');
+  const authScreen = document.getElementById('auth-screen');
+  const loginForm = document.getElementById('login-form');
+  const authError = document.getElementById('auth-error');
 
-    let currentUser = null;
-    let userDbRef = null;
-    let isRemoteUpdate = false;
+  let currentUser = null;
+  let userDbRef = null;
+  let isRemoteUpdate = false;
 
-    // LOGIN
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      authError.textContent = "";
-      const email = document.getElementById('login-email').value;
-      const pass = document.getElementById('login-pass').value;
-      try {
-        await signInWithEmailAndPassword(auth, email, pass);
-      } catch (err) {
-        authError.textContent = "Errore di accesso: " + err.message;
-      }
-    });
+  // Helper per convertire eventuali oggetti ritornati da Firebase in Array legali
+  const toArray = (val) => {
+    if (!val) return [];
+    if (Array.isArray(val)) return val;
+    return Object.values(val);
+  };
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        currentUser = user;
-        authScreen.style.display = 'none';
-        initCloudSync(user.uid);
-      } else {
-        currentUser = null;
-        if (userDbRef) off(userDbRef);
-        authScreen.style.display = 'flex';
-      }
-    });
+  // LOGIN
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    authError.textContent = "";
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-pass').value;
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+    } catch (err) {
+      authError.textContent = "Errore di accesso: " + err.message;
+    }
+  });
 
-    document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = user;
+      authScreen.style.display = 'none';
+      initCloudSync(user.uid);
+    } else {
+      currentUser = null;
+      if (userDbRef) off(userDbRef);
+      authScreen.style.display = 'flex';
+    }
+  });
 
-    // SINCRONIZZAZIONE FIREBASE REALTIME DATABASE
-    function initCloudSync(uid) {
-      userDbRef = ref(db, 'users/' + uid);
+  document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
-      onValue(userDbRef, (snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          isRemoteUpdate = true;
-          
-          expenses = data.expenses || [];
-          localStorage.setItem('expenses_data', JSON.stringify(expenses));
+  // SINCRONIZZAZIONE FIREBASE REALTIME DATABASE
+  function initCloudSync(uid) {
+    userDbRef = ref(db, 'users/' + uid);
 
-          customWeekRanges = data.customWeekRanges || {};
-          localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
+    onValue(userDbRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        isRemoteUpdate = true;
+        
+        expenses = toArray(data.expenses);
+        localStorage.setItem('expenses_data', JSON.stringify(expenses));
 
-          mastriniData = data.mastriniData || [];
-          localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
+        customWeekRanges = data.customWeekRanges || {};
+        localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
 
-          settingsFunds = data.settingsFunds || { defaultBase: 0, defaultEff: 0, allocations: {} };
-          localStorage.setItem('settings_funds', JSON.stringify(settingsFunds));
+        mastriniData = toArray(data.mastriniData);
+        localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
 
-          monthlySalaries = data.monthlySalaries || {};
-          localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
+        settingsFunds = data.settingsFunds || { defaultBase: 0, defaultEff: 0, allocations: {} };
+        localStorage.setItem('settings_funds', JSON.stringify(settingsFunds));
 
-          bankExpenses = data.bankExpenses || [];
-          localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
+        monthlySalaries = data.monthlySalaries || {};
+        localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
 
-          bankTargetFund = data.bankTargetFund || "";
-          localStorage.setItem('bank_target_fund', bankTargetFund);
-          
+        bankExpenses = toArray(data.bankExpenses);
+        localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
+
+        bankTargetFund = data.bankTargetFund || "";
+        localStorage.setItem('bank_target_fund', bankTargetFund);
+        
+        if (typeof renderAllViews === 'function') {
           renderAllViews();
-          isRemoteUpdate = false;
-        } else {
-          // Se non esistono dati remoti sul Realtime DB, invia quelli locali attuali
-          saveAllDataToCloud();
         }
-      }, (err) => {
-        console.error("Errore Sincronizzazione Realtime Database:", err);
-      });
-    }
 
-    async function saveAllDataToCloud() {
-      if (!currentUser || isRemoteUpdate) return;
-      try {
-        const userRef = ref(db, 'users/' + currentUser.uid);
-        await set(userRef, {
-          expenses: expenses || [],
-          customWeekRanges: customWeekRanges || {},
-          mastriniData: mastriniData || [],
-          settingsFunds: settingsFunds || { defaultBase: 0, defaultEff: 0, allocations: {} },
-          monthlySalaries: monthlySalaries || {},
-          bankExpenses: bankExpenses || [],
-          bankTargetFund: bankTargetFund || "",
-          updatedAt: new Date().toISOString()
-        });
-      } catch (err) {
-        console.error("Errore salvataggio Realtime Database:", err);
+        // Delay per evitare race conditions con gli eventi di input/render
+        setTimeout(() => { isRemoteUpdate = false; }, 100);
+      } else {
+        saveAllDataToCloud();
       }
+    }, (err) => {
+      console.error("Errore Sincronizzazione Realtime Database:", err);
+    });
+  }
+
+  async function saveAllDataToCloud() {
+    if (!currentUser || isRemoteUpdate) return;
+    try {
+      const userRef = ref(db, 'users/' + currentUser.uid);
+      await set(userRef, {
+        expenses: expenses || [],
+        customWeekRanges: customWeekRanges || {},
+        mastriniData: mastriniData || [],
+        settingsFunds: settingsFunds || { defaultBase: 0, defaultEff: 0, allocations: {} },
+        monthlySalaries: monthlySalaries || {},
+        bankExpenses: bankExpenses || [],
+        bankTargetFund: bankTargetFund || "",
+        updatedAt: new Date().toISOString()
+      });
+    } catch (err) {
+      console.error("Errore salvataggio Realtime Database:", err);
     }
+  }
+
+  // ESPOSIZIONE GLOBALE PER GLI SCRIPT ESTERNI
+  window.saveAllDataToCloud = saveAllDataToCloud;
+</script>
 
 //FINE BLOCCO FIREBASE*************
 
