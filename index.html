@@ -848,7 +848,8 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    import { getDatabase } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyBF1S3NeA-IKxqna87CEzRiMGGN3AOnONo",
       authDomain: "gestionale-spese-e-entrate.firebaseapp.com",
@@ -859,12 +860,17 @@
       appId: "1:129010726048:web:ebabd5819b52743ff505c5",
       measurementId: "G-26D9CJ55RW"
     };
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
+
+    let currentUser = null;
+
     const authScreen = document.getElementById('auth-screen');
     const loginForm = document.getElementById('login-form');
     const authError = document.getElementById('auth-error');
+
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       authError.textContent = "";
@@ -876,14 +882,20 @@
         authError.textContent = "Errore di accesso: " + err.message;
       }
     });
+
     onAuthStateChanged(auth, (user) => {
       if (user) {
+        currentUser = user;
         authScreen.style.display = 'none';
+        initRealtimeDatabaseSync();
       } else {
+        currentUser = null;
         authScreen.style.display = 'flex';
       }
     });
+
     document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+
     // Navigazione Menu Drawer
     const drawer = document.getElementById('drawer');
     const drawerOverlay = document.getElementById('drawer-overlay');
@@ -946,6 +958,59 @@
     let currentMovementType = "expense";
     let modalMovementType = "expense";
     let mastrinoMovementType = "expense";
+
+    // --- REALTIME DATABASE SYNC ---
+    function saveAllDataToRealtimeDB() {
+      localStorage.setItem('expenses_data', JSON.stringify(expenses));
+      localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
+      localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
+      localStorage.setItem('settings_funds', JSON.stringify(settingsFunds));
+      localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
+      localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
+      localStorage.setItem('bank_target_fund', bankTargetFund);
+
+      if (currentUser) {
+        const userRef = ref(db, 'users/' + currentUser.uid);
+        set(userRef, {
+          expenses: expenses,
+          customWeekRanges: customWeekRanges,
+          mastriniData: mastriniData,
+          settingsFunds: settingsFunds,
+          monthlySalaries: monthlySalaries,
+          bankExpenses: bankExpenses,
+          bankTargetFund: bankTargetFund
+        }).catch(err => console.error("Errore salvataggio Realtime DB:", err));
+      }
+    }
+
+    function initRealtimeDatabaseSync() {
+      if (!currentUser) return;
+      const userRef = ref(db, 'users/' + currentUser.uid);
+      onValue(userRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          expenses = data.expenses || [];
+          customWeekRanges = data.customWeekRanges || {};
+          mastriniData = data.mastriniData || [];
+          settingsFunds = data.settingsFunds || { defaultBase: 0, defaultEff: 0, allocations: {} };
+          monthlySalaries = data.monthlySalaries || {};
+          bankExpenses = data.bankExpenses || [];
+          bankTargetFund = data.bankTargetFund || "";
+
+          localStorage.setItem('expenses_data', JSON.stringify(expenses));
+          localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
+          localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
+          localStorage.setItem('settings_funds', JSON.stringify(settingsFunds));
+          localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
+          localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
+          localStorage.setItem('bank_target_fund', bankTargetFund);
+
+          renderMonthlyView();
+          renderMastriniView();
+          renderBankExpensesList();
+        }
+      });
+    }
 
     const monthsNames = [
       "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
@@ -1104,7 +1169,7 @@
         if (!settingsFunds.allocations[mName]) settingsFunds.allocations[mName] = {};
         settingsFunds.allocations[mName].extraRatio = parseFloat(input.value) || 0;
       });
-      localStorage.setItem('settings_funds', JSON.stringify(settingsFunds));
+      saveAllDataToRealtimeDB();
       settingsModal.classList.remove('open');
       renderMonthlyView();
     });
@@ -1198,7 +1263,7 @@
             currentSal.customFundAlloc[mName].extra = parseFloat(input.value) || 0;
           }
           monthlySalaries[key] = currentSal;
-          localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
+          saveAllDataToRealtimeDB();
           renderMonthlyFundAllocation();
         });
       });
@@ -1220,7 +1285,6 @@
           });
           currentSal.sentFunds[name] = true;
           monthlySalaries[key] = currentSal;
-          localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
           saveAndRenderMastrini();
           alert(`€ ${amount.toFixed(2)} inviati a ${mastriniData[mIdx].name} (${noteText})`);
         });
@@ -1252,7 +1316,6 @@
         }
       });
       monthlySalaries[key] = currentSal;
-      localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
       saveAndRenderMastrini();
       alert(`Inviati con successo le quote per ${count} fondi!`);
     });
@@ -1262,7 +1325,7 @@
       const key = `month_${monthIdx}`;
       if (!monthlySalaries[key]) monthlySalaries[key] = { customFundAlloc: {} };
       monthlySalaries[key].base = parseFloat(e.target.value) || 0;
-      localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
+      saveAllDataToRealtimeDB();
       renderMonthlyFundAllocation();
     });
     document.getElementById('m-salary-eff').addEventListener('change', (e) => {
@@ -1270,7 +1333,7 @@
       const key = `month_${monthIdx}`;
       if (!monthlySalaries[key]) monthlySalaries[key] = { customFundAlloc: {} };
       monthlySalaries[key].eff = parseFloat(e.target.value) || 0;
-      localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
+      saveAllDataToRealtimeDB();
       renderMonthlyFundAllocation();
     });
     // RENDERING VISTA MENSILE CON STRUTTURA SFALSATA E RIGHE EXCEL
@@ -1383,7 +1446,7 @@
     function deleteExpense(id) {
       requestDeleteConfirmation("Sei sicuro di voler eliminare questo movimento di spesa / entrata?", () => {
         expenses = expenses.filter(e => e.id !== id);
-        localStorage.setItem('expenses_data', JSON.stringify(expenses));
+        saveAllDataToRealtimeDB();
         renderMonthlyView();
       });
     }
@@ -1445,7 +1508,7 @@
         const newExp = { id: Date.now(), date, desc, amount, type: modalMovementType };
         expenses.push(newExp);
       }
-      localStorage.setItem('expenses_data', JSON.stringify(expenses));
+      saveAllDataToRealtimeDB();
       expModal.classList.remove('open');
       renderMonthlyView();
     });
@@ -1522,7 +1585,6 @@
             if (deletedItem && deletedItem.monthKey && deletedItem.fundName) {
               if (monthlySalaries[deletedItem.monthKey] && monthlySalaries[deletedItem.monthKey].sentFunds) {
                 delete monthlySalaries[deletedItem.monthKey].sentFunds[deletedItem.fundName];
-                localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
               }
             }
             mastriniData[mIdx].items.splice(iIdx, 1);
@@ -1532,7 +1594,7 @@
       });
     }
     function saveAndRenderMastrini() {
-      localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
+      saveAllDataToRealtimeDB();
       renderMastriniView();
       renderMonthlyView();
       syncBankExpensesToFund();
@@ -1652,7 +1714,7 @@
     }
     document.getElementById('bank-target-fund').addEventListener('change', (e) => {
       bankTargetFund = e.target.value;
-      localStorage.setItem('bank_target_fund', bankTargetFund);
+      saveAllDataToRealtimeDB();
       syncBankExpensesToFund();
     });
     document.getElementById('bank-expense-form').addEventListener('submit', (e) => {
@@ -1662,7 +1724,7 @@
       const desc = document.getElementById('bank-desc').value;
       if (!date || isNaN(cost) || !desc) return;
       bankExpenses.push({ id: Date.now(), date, cost, desc });
-      localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
+      saveAllDataToRealtimeDB();
       document.getElementById('bank-cost').value = "";
       document.getElementById('bank-desc').value = "";
       renderBankExpensesList();
@@ -1689,7 +1751,7 @@
           const id = parseInt(btn.dataset.id);
           requestDeleteConfirmation("Sei sicuro di voler eliminare questa spesa bancaria?", () => {
             bankExpenses = bankExpenses.filter(b => b.id !== id);
-            localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
+            saveAllDataToRealtimeDB();
             renderBankExpensesList();
             syncBankExpensesToFund();
           });
@@ -1714,7 +1776,7 @@
           });
         }
       }
-      localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
+      saveAllDataToRealtimeDB();
       renderMastriniView();
     }
     // Inserimento Rapido Form
@@ -1725,7 +1787,7 @@
       const desc = document.getElementById('quick-desc').value;
       const newExpense = { id: Date.now(), date, amount, desc, type: currentMovementType };
       expenses.push(newExpense);
-      localStorage.setItem('expenses_data', JSON.stringify(expenses));
+      saveAllDataToRealtimeDB();
       const expDate = new Date(date);
       monthSelect.value = getTargetMonthIndex(expDate);
       document.getElementById('quick-amount').value = "";
@@ -1757,7 +1819,7 @@
       weeks[wIdx].start = document.getElementById('modal-start-date').value;
       weeks[wIdx].end = document.getElementById('modal-end-date').value;
       customWeekRanges[key] = weeks;
-      localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
+      saveAllDataToRealtimeDB();
       document.getElementById('edit-week-modal').classList.remove('open');
       renderMonthlyView();
     });
