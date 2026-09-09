@@ -845,15 +845,17 @@
     </div>
   </div>
 
+//INIZIO BLOCCO FIREBASE************************************
   <!-- FIREBASE MODULAR SDK (v9) & LOGIC -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+    import { getDatabase, ref, set, onValue, off } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBF1S3NeA-IKxqna87CEzRiMGGN3AOnONo",
       authDomain: "gestionale-spese-e-entrate.firebaseapp.com",
+      databaseURL: "https://gestionale-spese-e-entrate-default-rtdb.firebaseio.com",
       projectId: "gestionale-spese-e-entrate",
       storageBucket: "gestionale-spese-e-entrate.firebasestorage.app",
       messagingSenderId: "129010726048",
@@ -863,14 +865,14 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getFirestore(app);
+    const db = getDatabase(app);
 
     const authScreen = document.getElementById('auth-screen');
     const loginForm = document.getElementById('login-form');
     const authError = document.getElementById('auth-error');
 
     let currentUser = null;
-    let unsubscribeFirestore = null;
+    let userDbRef = null;
     let isRemoteUpdate = false;
 
     // LOGIN
@@ -893,12 +895,74 @@
         initCloudSync(user.uid);
       } else {
         currentUser = null;
-        if (unsubscribeFirestore) unsubscribeFirestore();
+        if (userDbRef) off(userDbRef);
         authScreen.style.display = 'flex';
       }
     });
 
     document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+
+    // SINCRONIZZAZIONE FIREBASE REALTIME DATABASE
+    function initCloudSync(uid) {
+      userDbRef = ref(db, 'users/' + uid);
+
+      onValue(userDbRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          isRemoteUpdate = true;
+          
+          expenses = data.expenses || [];
+          localStorage.setItem('expenses_data', JSON.stringify(expenses));
+
+          customWeekRanges = data.customWeekRanges || {};
+          localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
+
+          mastriniData = data.mastriniData || [];
+          localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
+
+          settingsFunds = data.settingsFunds || { defaultBase: 0, defaultEff: 0, allocations: {} };
+          localStorage.setItem('settings_funds', JSON.stringify(settingsFunds));
+
+          monthlySalaries = data.monthlySalaries || {};
+          localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
+
+          bankExpenses = data.bankExpenses || [];
+          localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
+
+          bankTargetFund = data.bankTargetFund || "";
+          localStorage.setItem('bank_target_fund', bankTargetFund);
+          
+          renderAllViews();
+          isRemoteUpdate = false;
+        } else {
+          // Se non esistono dati remoti sul Realtime DB, invia quelli locali attuali
+          saveAllDataToCloud();
+        }
+      }, (err) => {
+        console.error("Errore Sincronizzazione Realtime Database:", err);
+      });
+    }
+
+    async function saveAllDataToCloud() {
+      if (!currentUser || isRemoteUpdate) return;
+      try {
+        const userRef = ref(db, 'users/' + currentUser.uid);
+        await set(userRef, {
+          expenses: expenses || [],
+          customWeekRanges: customWeekRanges || {},
+          mastriniData: mastriniData || [],
+          settingsFunds: settingsFunds || { defaultBase: 0, defaultEff: 0, allocations: {} },
+          monthlySalaries: monthlySalaries || {},
+          bankExpenses: bankExpenses || [],
+          bankTargetFund: bankTargetFund || "",
+          updatedAt: new Date().toISOString()
+        });
+      } catch (err) {
+        console.error("Errore salvataggio Realtime Database:", err);
+      }
+    }
+
+//FINE BLOCCO FIREBASE*************
 
     // Navigazione Menu Drawer
     const drawer = document.getElementById('drawer');
