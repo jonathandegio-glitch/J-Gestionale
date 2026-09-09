@@ -908,6 +908,15 @@
 
     // --- SINCRONIZZAZIONE REALTIME FIREBASE ---
     function syncToCloud() {
+      // Salva sempre localmente per riscontro immediato
+      localStorage.setItem('expenses_data', JSON.stringify(expenses));
+      localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
+      localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
+      localStorage.setItem('settings_funds', JSON.stringify(settingsFunds));
+      localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
+      localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
+      localStorage.setItem('bank_target_fund', bankTargetFund);
+
       if (!currentUser) return;
       const userRef = ref(db, 'users/' + currentUser.uid);
       const fullData = {
@@ -920,15 +929,6 @@
         bankTargetFund,
         updatedAt: Date.now()
       };
-      
-      // Salvataggio anche locale per cache instantanea
-      localStorage.setItem('expenses_data', JSON.stringify(expenses));
-      localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
-      localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
-      localStorage.setItem('settings_funds', JSON.stringify(settingsFunds));
-      localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
-      localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
-      localStorage.setItem('bank_target_fund', bankTargetFund);
 
       set(userRef, fullData).catch(err => {
         console.error("Errore sincronizzazione Firebase:", err);
@@ -974,16 +974,10 @@
             localStorage.setItem('bank_target_fund', bankTargetFund);
           }
           
-          if (!isInitialLoadDone) {
-            isInitialLoadDone = true;
-            renderMonthlyView();
-            renderMastriniView();
-            renderBankExpensesList();
-          } else {
-            renderMonthlyView();
-            renderMastriniView();
-            renderBankExpensesList();
-          }
+          isInitialLoadDone = true;
+          renderMonthlyView();
+          renderMastriniView();
+          renderBankExpensesList();
         });
       } else {
         currentUser = null;
@@ -1049,8 +1043,8 @@
     const monthSelect = document.getElementById('select-month-cycle');
 
     function getMonthDateRange(monthIndex, baseYear = 2026) {
-      let startM = monthIndex + 1;
-      let endM = monthIndex + 2;
+      let startM = monthIndex;
+      let endM = monthIndex + 1;
       let startY = baseYear;
       let endY = baseYear;
       if (startM > 11) { startM = startM - 12; startY++; }
@@ -1088,7 +1082,7 @@
         const { startDate, endDate } = getMonthDateRange(i);
         if (d >= startDate && d <= endDate) return i;
       }
-      return 6;
+      return 0;
     }
 
     function generateWeeks(monthIndex) {
@@ -1153,16 +1147,16 @@
 
     // SETTING FONDI MENSILI (MODALE GLOBAL)
     const settingsModal = document.getElementById('settings-funds-modal');
-    document.getElementById('btn-open-settings-modal').addEventListener('click', () => {
+    function openSettingsModal() {
       document.getElementById('cfg-default-base').value = settingsFunds.defaultBase || "";
       document.getElementById('cfg-default-eff').value = settingsFunds.defaultEff || "";
       const listContainer = document.getElementById('cfg-mastrini-list');
       listContainer.innerHTML = "";
-      if (mastriniData.length === 0) {
+      if (!mastriniData || mastriniData.length === 0) {
         listContainer.innerHTML = '<p style="font-size:0.85rem; color:var(--text-muted);">Nessun mastrino presente. Crea dei fondi prima nella sezione Mastrini.</p>';
       } else {
         mastriniData.forEach(m => {
-          const alloc = settingsFunds.allocations[m.name] || { baseAlloc: 0, extraRatio: 0 };
+          const alloc = (settingsFunds.allocations && settingsFunds.allocations[m.name]) || { baseAlloc: 0, extraRatio: 0 };
           const div = document.createElement('div');
           div.style.marginBottom = "12px";
           div.style.padding = "10px";
@@ -1187,13 +1181,16 @@
       }
       closeDrawer();
       settingsModal.classList.add('open');
-    });
+    }
+
+    document.getElementById('btn-open-settings-modal').addEventListener('click', openSettingsModal);
 
     document.getElementById('close-settings-funds-btn').addEventListener('click', () => {
       settingsModal.classList.remove('open');
     });
 
     document.getElementById('save-settings-funds-btn').addEventListener('click', () => {
+      if (!settingsFunds.allocations) settingsFunds.allocations = {};
       settingsFunds.defaultBase = parseFloat(document.getElementById('cfg-default-base').value) || 0;
       settingsFunds.defaultEff = parseFloat(document.getElementById('cfg-default-eff').value) || 0;
       const baseInputs = document.querySelectorAll('.cfg-base-input');
@@ -1226,19 +1223,21 @@
           sentFunds: {}
         };
       }
+      if (!monthlySalaries[key].customFundAlloc) monthlySalaries[key].customFundAlloc = {};
       if (!monthlySalaries[key].sentFunds) monthlySalaries[key].sentFunds = {};
+      
       const currentSal = monthlySalaries[key];
       const salBaseInput = document.getElementById('m-salary-base');
       const salEffInput = document.getElementById('m-salary-eff');
       const salExtraInput = document.getElementById('m-salary-extra');
-      salBaseInput.value = currentSal.base;
-      salEffInput.value = currentSal.eff;
-      const extraVal = Math.max(0, (currentSal.eff - currentSal.base));
+      salBaseInput.value = currentSal.base || 0;
+      salEffInput.value = currentSal.eff || 0;
+      const extraVal = Math.max(0, ((currentSal.eff || 0) - (currentSal.base || 0)));
       salExtraInput.value = extraVal.toFixed(2);
 
       const allocationContainer = document.getElementById('monthly-funds-allocation-list');
       allocationContainer.innerHTML = "";
-      if (mastriniData.length === 0) {
+      if (!mastriniData || mastriniData.length === 0) {
         allocationContainer.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted);">Nessun mastrino disponibile per la ripartizione.</i>';
         document.getElementById('salary-over-alert').style.display = 'none';
         return;
@@ -1246,7 +1245,7 @@
 
       let totalBaseAllocated = 0;
       mastriniData.forEach((m, mIdx) => {
-        const defaultCfg = settingsFunds.allocations[m.name] || { baseAlloc: 0, extraRatio: 0 };
+        const defaultCfg = (settingsFunds.allocations && settingsFunds.allocations[m.name]) || { baseAlloc: 0, extraRatio: 0 };
         const savedCustom = currentSal.customFundAlloc[m.name];
         const baseShare = savedCustom && savedCustom.base !== undefined ? savedCustom.base : defaultCfg.baseAlloc;
         const extraShare = savedCustom && savedCustom.extra !== undefined ? savedCustom.extra : defaultCfg.extraRatio;
@@ -1324,6 +1323,7 @@
           const currentMonthName = monthsNames[monthIdx];
           if (isNaN(amount) || amount <= 0) return;
           const noteText = `da mese ${currentMonthName}`;
+          if (!mastriniData[mIdx].items) mastriniData[mIdx].items = [];
           mastriniData[mIdx].items.push({
             date: formatDateToYMD(new Date()),
             note: noteText,
@@ -1347,12 +1347,13 @@
       if (!currentSal) return;
       let count = 0;
       mastriniData.forEach((m) => {
-        const defaultCfg = settingsFunds.allocations[m.name] || { baseAlloc: 0, extraRatio: 0 };
+        const defaultCfg = (settingsFunds.allocations && settingsFunds.allocations[m.name]) || { baseAlloc: 0, extraRatio: 0 };
         const savedCustom = currentSal.customFundAlloc[m.name];
         const baseShare = savedCustom && savedCustom.base !== undefined ? savedCustom.base : defaultCfg.baseAlloc;
         const extraShare = savedCustom && savedCustom.extra !== undefined ? savedCustom.extra : defaultCfg.extraRatio;
         const totalFundSum = (parseFloat(baseShare) || 0) + (parseFloat(extraShare) || 0);
         if (totalFundSum > 0) {
+          if (!m.items) m.items = [];
           m.items.push({
             date: formatDateToYMD(new Date()),
             note: `da mese ${monthsNames[monthIdx]}`,
@@ -1373,7 +1374,7 @@
     document.getElementById('m-salary-base').addEventListener('change', (e) => {
       const monthIdx = parseInt(monthSelect.value);
       const key = `month_${monthIdx}`;
-      if (!monthlySalaries[key]) monthlySalaries[key] = { customFundAlloc: {} };
+      if (!monthlySalaries[key]) monthlySalaries[key] = { customFundAlloc: {}, sentFunds: {} };
       monthlySalaries[key].base = parseFloat(e.target.value) || 0;
       syncToCloud();
       renderMonthlyFundAllocation();
@@ -1382,7 +1383,7 @@
     document.getElementById('m-salary-eff').addEventListener('change', (e) => {
       const monthIdx = parseInt(monthSelect.value);
       const key = `month_${monthIdx}`;
-      if (!monthlySalaries[key]) monthlySalaries[key] = { customFundAlloc: {} };
+      if (!monthlySalaries[key]) monthlySalaries[key] = { customFundAlloc: {}, sentFunds: {} };
       monthlySalaries[key].eff = parseFloat(e.target.value) || 0;
       syncToCloud();
       renderMonthlyFundAllocation();
@@ -1392,16 +1393,18 @@
     function renderMonthlyView(highlightExpenseId = null) {
       const monthIdx = parseInt(monthSelect.value);
       const container = document.getElementById('weeks-container');
+      if (!container) return;
       container.innerHTML = "";
       renderMonthlyFundAllocation();
       const weeks = generateWeeks(monthIdx);
       weeks.forEach((w, i) => {
         const wExpenses = expenses.filter(e => e.date >= w.start && e.date <= w.end);
-        const wTotalExpenses = wExpenses.filter(e => e.type !== 'income').reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
-        const wTotalIncomes = wExpenses.filter(e => e.type === 'income').reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
+        const wTotalExpenses = wExpenses.filter(e => e.type !== 'income').reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
+        const wTotalIncomes = wExpenses.filter(e => e.type === 'income').reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
         const wNetTotal = wTotalIncomes - wTotalExpenses;
         const containsHighlight = highlightExpenseId && wExpenses.some(e => e.id === highlightExpenseId);
         const formatD = (dStr) => {
+          if (!dStr) return '';
           const parts = dStr.split('-');
           return `${parts[2]}/${parts[1]}`;
         };
@@ -1433,7 +1436,7 @@
                     </span>
                     <div>
                       <span style="color:${isInc ? 'var(--accent-green)' : 'var(--accent-red)'}; font-weight:600;">
-                        ${isInc ? '+' : '-'} € ${parseFloat(e.amount).toFixed(2)}
+                        ${isInc ? '+' : '-'} € ${parseFloat(e.amount || 0).toFixed(2)}
                       </span>
                       <button class="action-btn edit-btn edit-exp-btn" data-id="${e.id}"><i class="fa-solid fa-pen-to-square"></i></button>
                       <button class="action-btn delete-btn delete-exp-btn" data-id="${e.id}"><i class="fa-solid fa-trash"></i></button>
@@ -1475,14 +1478,14 @@
         return;
       }
       container.innerHTML = recent.map(e => {
-        const parts = e.date.split('-');
+        const parts = e.date ? e.date.split('-') : ['','',''];
         const isInc = e.type === 'income';
         return `
           <div class="expense-item">
             <span><b>${e.desc}</b> (${parts[2]}/${parts[1]}/${parts[0]})</span>
             <div>
               <span style="color:${isInc ? 'var(--accent-green)' : 'var(--accent-red)'}; font-weight:600;">
-                ${isInc ? '+' : '-'} € ${parseFloat(e.amount).toFixed(2)}
+                ${isInc ? '+' : '-'} € ${parseFloat(e.amount || 0).toFixed(2)}
               </span>
               <button class="action-btn edit-btn edit-exp-btn" data-id="${e.id}"><i class="fa-solid fa-pen-to-square"></i></button>
               <button class="action-btn delete-btn delete-exp-btn" data-id="${e.id}"><i class="fa-solid fa-trash"></i></button>
@@ -1579,10 +1582,11 @@
       if (!container) return;
       container.innerHTML = "";
       let grandTotal = 0;
-      if (mastriniData.length === 0) {
+      if (!mastriniData || mastriniData.length === 0) {
         container.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted); grid-column: 1/-1;">Nessun fondo/mastrino presente. Clicca su "+ Nuovo Fondo" per aggiungerne uno.</i>';
       } else {
         mastriniData.forEach((m, mIdx) => {
+          if (!m.items) m.items = [];
           const mTotal = m.items.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
           grandTotal += mTotal;
           const card = document.createElement('div');
@@ -1672,6 +1676,7 @@
     document.getElementById('save-new-mastrino-btn').addEventListener('click', () => {
       const name = document.getElementById('new-mastrino-name').value.trim();
       if (!name) return;
+      if (!mastriniData) mastriniData = [];
       mastriniData.push({ name, items: [] });
       saveAndRenderMastrini();
       document.getElementById('add-mastrino-modal').classList.remove('open');
@@ -1686,7 +1691,7 @@
         const item = mastriniData[mIdx].items[iIdx];
         document.getElementById('mastrino-item-modal-title').textContent = "Modifica Voce Fondo";
         document.getElementById('mastrino-item-date').value = item.date || formatDateToYMD(new Date());
-        document.getElementById('mastrino-item-note').value = item.note;
+        document.getElementById('mastrino-item-note').value = item.note || "";
         if (item.amount < 0) {
           document.getElementById('mastrino-item-amount').value = Math.abs(item.amount);
           mastrinoToggleExp.click();
@@ -1719,6 +1724,7 @@
       const amount = mastrinoMovementType === 'expense' ? -Math.abs(rawAmount) : Math.abs(rawAmount);
 
       const newItem = { date, note, amount };
+      if (!mastriniData[mIdx].items) mastriniData[mIdx].items = [];
       if (iIdx !== "") {
         const oldItem = mastriniData[mIdx].items[parseInt(iIdx)];
         if (oldItem && oldItem.monthKey) newItem.monthKey = oldItem.monthKey;
@@ -1829,12 +1835,15 @@
 
     function syncBankExpensesToFund() {
       mastriniData.forEach(m => {
-        m.items = m.items.filter(item => !item.isAutoBank);
+        if (m.items) {
+          m.items = m.items.filter(item => !item.isAutoBank);
+        }
       });
       if (bankTargetFund && bankExpenses.length > 0) {
-        const totalBankCost = bankExpenses.reduce((acc, curr) => acc + parseFloat(curr.cost), 0);
+        const totalBankCost = bankExpenses.reduce((acc, curr) => acc + parseFloat(curr.cost || 0), 0);
         const targetMastrino = mastriniData.find(m => m.name === bankTargetFund);
         if (targetMastrino) {
+          if (!targetMastrino.items) targetMastrino.items = [];
           targetMastrino.items.push({
             date: formatDateToYMD(new Date()),
             note: "Totale Spese Bancarie",
@@ -1853,6 +1862,8 @@
       const date = document.getElementById('quick-date').value;
       const amount = parseFloat(document.getElementById('quick-amount').value);
       const desc = document.getElementById('quick-desc').value;
+      if (!date || isNaN(amount) || !desc) return;
+
       const newExpense = { id: Date.now(), date, amount, desc, type: currentMovementType };
       expenses.push(newExpense);
       
