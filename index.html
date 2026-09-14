@@ -456,7 +456,6 @@
     </div>
   </div>
 
-
   <!-- HEADER -->
   <header class="app-bar">
     <span class="status-badge" id="cloud-status-badge"><i class="fa-solid fa-circle" style="font-size:8px;"></i> ONLINE</span>
@@ -467,7 +466,6 @@
       <i class="fa-solid fa-bars"></i> Menu
     </button>
   </header>
-
 
   <!-- DRAWER LATERAL -->
   <div class="drawer-overlay" id="drawer-overlay"></div>
@@ -484,9 +482,6 @@
     </button>
     <button class="btn btn-secondary nav-item-btn" data-target="sec-sync-gas" style="border: 1px solid var(--accent-green);">
       <i class="fa-solid fa-rotate" style="color: var(--accent-green);"></i> Sincronizzazione Google Script
-    </button>
-    <button class="btn btn-secondary nav-item-btn" id="btn-open-export-modal" style="border: 1px solid var(--accent-orange); color: var(--accent-orange);">
-      <i class="fa-solid fa-file-excel"></i> Esporta Excel
     </button>
     
     <hr style="border-color: var(--border-color); margin: 15px 0;">
@@ -517,7 +512,6 @@
       </button>
     </div>
   </div>
-
 
   <!-- MAIN CONTAINER -->
   <main class="container">
@@ -577,7 +571,6 @@
       </div>
     </section>
 
-
     <!-- IMPORTAZIONE GOOGLE FOGLI -->
     <section id="sec-import-gsheet" class="view-section">
       <div class="card">
@@ -608,7 +601,6 @@
       </div>
     </section>
 
-
     <!-- SINCRONIZZAZIONE GOOGLE SCRIPT -->
     <section id="sec-sync-gas" class="view-section">
       <div class="card">
@@ -628,7 +620,6 @@
         <div id="sync-status" style="margin-top: 15px; font-size: 0.85rem; font-weight: 600;"></div>
       </div>
     </section>
-
 
     <!-- GESTIONE MENSILE -->
     <section id="sec-mensile" class="view-section">
@@ -684,11 +675,7 @@
           <span id="spese-vive-status-text">0.00 / 0.00 €</span>
         </div>
 
-        <!-- CONTENITORE SETTIMANE DEL MESE -->
         <div id="weeks-container"></div>
-        <button class="btn btn-secondary" id="btn-add-week" style="margin-bottom: 20px; border: 1px dashed var(--accent-blue); color: var(--accent-blue);">
-          <i class="fa-solid fa-calendar-plus"></i> Aggiungi Settimana al Mese
-        </button>
 
         <!-- RECAP MENSILE COMPLETO -->
         <div class="card" style="margin-top: 20px; background: var(--card-inner); border: 1px solid var(--border-color);">
@@ -697,7 +684,11 @@
           </div>
           <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.9rem;">
             <div class="expense-item"><span>Totale Spese Mensili:</span><b id="recap-tot-spese">€ 0.00</b></div>
-            <div id="recap-weeks-list"></div>
+            <div class="expense-item" style="padding-left: 15px; font-size: 0.85rem; color: var(--text-muted);"><span>• Settimana 1:</span><span id="recap-w1">€ 0.00</span></div>
+            <div class="expense-item" style="padding-left: 15px; font-size: 0.85rem; color: var(--text-muted);"><span>• Settimana 2:</span><span id="recap-w2">€ 0.00</span></div>
+            <div class="expense-item" style="padding-left: 15px; font-size: 0.85rem; color: var(--text-muted);"><span>• Settimana 3:</span><span id="recap-w3">€ 0.00</span></div>
+            <div class="expense-item" style="padding-left: 15px; font-size: 0.85rem; color: var(--text-muted);"><span>• Settimana 4:</span><span id="recap-w4">€ 0.00</span></div>
+            <div class="expense-item" style="padding-left: 15px; font-size: 0.85rem; color: var(--text-muted);"><span>• Settimana 5+:</span><span id="recap-w5">€ 0.00</span></div>
             <hr style="border-color: var(--border-color); margin: 4px 0;">
             <div class="expense-item"><span>Totale Accantonamenti ai Fondi:</span><b id="recap-tot-fondi" style="color:var(--accent-blue);">€ 0.00</b></div>
             <div class="expense-item" style="padding-left: 15px; font-size: 0.85rem; color: var(--text-muted);"><span>• Totale Fondi da Base:</span><span id="recap-tot-fondi-base">€ 0.00</span></div>
@@ -715,7 +706,6 @@
         </div>
       </div>
     </section>
-
 
     <!-- MASTRINI -->
     <section id="sec-mastrini" class="view-section">
@@ -739,7 +729,6 @@
       </div>
     </section>
 
-
     <!-- ANALISI -->
     <section id="sec-analytics" class="view-section">
       <div class="card">
@@ -747,7 +736,6 @@
         <p style="font-size:0.85rem; color:var(--text-muted);">In fase di aggiornamento.</p>
       </div>
     </section>
-
 
     <!-- SPESE BANCARIE -->
     <section id="sec-banca" class="view-section">
@@ -778,7 +766,6 @@
       </div>
     </section>
 
-
     <!-- INVESTIMENTI -->
     <section id="sec-investimenti" class="view-section">
       <div class="card">
@@ -786,7 +773,6 @@
         <p style="font-size:0.85rem; color:var(--text-muted);">Nessun titolo registrato.</p>
       </div>
     </section>
-
 
     <!-- ANNUALI -->
     <section id="sec-annuale" class="view-section">
@@ -798,7 +784,6 @@
       </div>
     </section>
   </main>
-
 
   <!-- MODALE BANNER DI CONFERMA ELIMINAZIONE GENERALIZZATA -->
   <div class="modal" id="confirm-delete-modal">
@@ -814,7 +799,6 @@
       </div>
     </div>
   </div>
-
 
   <!-- MODALE SETTING FONDI MENSILI GLOBAL -->
   <div class="modal" id="settings-funds-modal">
@@ -848,7 +832,6 @@
     </div>
   </div>
 
-
   <!-- MODALE TRASFERIMENTO TRA FONDI -->
   <div class="modal" id="transfer-fund-modal">
     <div class="modal-content">
@@ -870,31 +853,6 @@
       <button class="btn btn-secondary" id="close-transfer-modal-btn">Annulla</button>
     </div>
   </div>
-
-
-  <!-- MODALE EXPORT EXCEL -->
-  <div class="modal" id="export-modal">
-    <div class="modal-content" style="max-width: 440px;">
-      <h3 style="margin-bottom:15px; font-weight:700;"><i class="fa-solid fa-file-excel" style="color:var(--accent-green); margin-right:8px;"></i> Esporta in Excel</h3>
-      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:20px;">
-        Seleziona il tipo di export desiderato. Il file generato seguirà la struttura grafica e i colori del foglio personalizzato.
-      </p>
-      <button class="btn btn-secondary" id="btn-export-mensile" style="border: 1px solid var(--accent-blue); text-align:left;">
-        <i class="fa-solid fa-calendar-days" style="color:var(--accent-blue);"></i> 1) Export Gestione Mensile (Mese Selezionato)
-      </button>
-      <button class="btn btn-secondary" id="btn-export-mastrini" style="border: 1px solid var(--accent-green); text-align:left;">
-        <i class="fa-solid fa-vault" style="color:var(--accent-green);"></i> 2) Export Mastrini
-      </button>
-      <button class="btn btn-secondary" id="btn-export-banca" style="border: 1px solid var(--accent-orange); text-align:left;">
-        <i class="fa-solid fa-receipt" style="color:var(--accent-orange);"></i> 3) Export Spese Banca
-      </button>
-      <button class="btn btn-primary" id="btn-export-completo" style="margin-top:10px; text-align:left;">
-        <i class="fa-solid fa-file-export"></i> 4) Export Completo dell'Anno (Tutti i Mesi + Mastrini + Banca)
-      </button>
-      <button class="btn btn-secondary" id="close-export-modal-btn" style="margin-top:15px;">Chiudi</button>
-    </div>
-  </div>
-
 
   <!-- MODALE MODIFICA/AGGIUNTA MOVIMENTO -->
   <div class="modal" id="edit-expense-modal">
@@ -922,7 +880,6 @@
     </div>
   </div>
 
-
   <!-- MODALE AGGIUNGI FONDO MASTRINO -->
   <div class="modal" id="add-mastrino-modal">
     <div class="modal-content">
@@ -935,7 +892,6 @@
       <button class="btn btn-secondary" id="close-add-mastrino-btn">Annulla</button>
     </div>
   </div>
-
 
   <!-- MODALE AGGIUNGI/MODIFICA VOCE MASTRINO -->
   <div class="modal" id="item-mastrino-modal">
@@ -964,13 +920,10 @@
     </div>
   </div>
 
-
-  <!-- MODALE MODIFICA/AGGIUNTA SETTIMANA -->
+  <!-- MODALE MODIFICA DATE SETTIMANA -->
   <div class="modal" id="edit-week-modal">
     <div class="modal-content">
       <h3 style="margin-bottom:15px; font-weight:700;" id="modal-week-title">Personalizza Settimana</h3>
-      <input type="hidden" id="modal-week-month-idx">
-      <input type="hidden" id="modal-week-idx">
       <div class="form-group">
         <label>Data Inizio</label>
         <input type="date" id="modal-start-date" class="form-control">
@@ -979,22 +932,16 @@
         <label>Data Fine</label>
         <input type="date" id="modal-end-date" class="form-control">
       </div>
-      <button class="btn btn-primary" id="save-week-dates-btn">Salva Date Settimana</button>
+      <button class="btn btn-primary" id="save-week-dates-btn">Salva Date</button>
       <button class="btn btn-secondary" id="close-modal-btn">Annulla</button>
     </div>
   </div>
-
-
-  <!-- EXCELJS & FILEAVER BUNDLE FOR ADVANCED EXCEL EXPORT -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
   <!-- FIREBASE MODULAR SDK (v9) PER REALTIME DATABASE E AUTH -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
-
 
     const firebaseConfig = {
       apiKey: "AIzaSyBF1S3NeA-IKxqna87CEzRiMGGN3AOnONo",
@@ -1007,18 +954,15 @@
       measurementId: "G-26D9CJ55RW"
     };
 
-
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
-
 
     const authScreen = document.getElementById('auth-screen');
     const loginForm = document.getElementById('login-form');
     const authError = document.getElementById('auth-error');
     let currentUser = null;
     let isInitialLoadDone = false;
-
 
     // --- DATI DI STATO ---
     let expenses = JSON.parse(localStorage.getItem('expenses_data')) || [];
@@ -1034,11 +978,9 @@
     let bankExpenses = JSON.parse(localStorage.getItem('bank_expenses_data')) || [];
     let bankTargetFund = localStorage.getItem('bank_target_fund') || "";
 
-
     let currentMovementType = "expense";
     let modalMovementType = "expense";
     let mastrinoMovementType = "expense";
-
 
     // --- SINCRONIZZAZIONE REALTIME FIREBASE ---
     function syncToCloud() {
@@ -1049,7 +991,6 @@
       localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
       localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
       localStorage.setItem('bank_target_fund', bankTargetFund);
-
 
       if (!currentUser) return;
       const userRef = ref(db, 'users/' + currentUser.uid);
@@ -1064,12 +1005,10 @@
         updatedAt: Date.now()
       };
 
-
       set(userRef, fullData).catch(err => {
         console.error("Errore sincronizzazione Firebase:", err);
       });
     }
-
 
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1082,7 +1021,6 @@
         authError.textContent = "Errore di accesso: " + err.message;
       }
     });
-
 
     onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -1100,7 +1038,6 @@
             monthlySalaries = data.monthlySalaries || {};
             bankExpenses = data.bankExpenses || [];
             bankTargetFund = data.bankTargetFund || "";
-
 
             localStorage.setItem('expenses_data', JSON.stringify(expenses));
             localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
@@ -1123,9 +1060,7 @@
       }
     });
 
-
     document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
-
 
     // Navigazione Menu Drawer
     const drawer = document.getElementById('drawer');
@@ -1135,14 +1070,12 @@
       drawerOverlay.classList.add('open');
     });
 
-
     function closeDrawer() {
       drawer.classList.remove('open');
       drawerOverlay.classList.remove('open');
     }
     document.getElementById('close-drawer-btn').addEventListener('click', closeDrawer);
     drawerOverlay.addEventListener('click', closeDrawer);
-
 
     document.querySelectorAll('.nav-item-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1155,13 +1088,11 @@
       });
     });
 
-
     // --- UTILITY MODALE DI CONFERMA ELIMINAZIONE GENERALIZZATA ---
     let pendingDeleteCallback = null;
     const confirmDeleteModal = document.getElementById('confirm-delete-modal');
     const confirmDeleteYesBtn = document.getElementById('confirm-delete-yes-btn');
     const confirmDeleteNoBtn = document.getElementById('confirm-delete-no-btn');
-
 
     function requestDeleteConfirmation(message, onConfirm) {
       document.getElementById('confirm-delete-msg').textContent = message || "Sei sicuro di voler eliminare questa voce?";
@@ -1169,19 +1100,16 @@
       confirmDeleteModal.classList.add('open');
     }
 
-
     confirmDeleteYesBtn.addEventListener('click', () => {
       if (pendingDeleteCallback) pendingDeleteCallback();
       pendingDeleteCallback = null;
       confirmDeleteModal.classList.remove('open');
     });
 
-
     confirmDeleteNoBtn.addEventListener('click', () => {
       pendingDeleteCallback = null;
       confirmDeleteModal.classList.remove('open');
     });
-
 
     const monthsNames = [
       "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
@@ -1189,10 +1117,9 @@
     ];
     const monthSelect = document.getElementById('select-month-cycle');
 
-
     function getMonthDateRange(monthIndex, baseYear = 2026) {
-      let startM = monthIndex + 1;
-      let endM = monthIndex + 2;
+      let startM = monthIndex;
+      let endM = monthIndex + 1;
       let startY = baseYear;
       let endY = baseYear;
       if (startM > 11) { startM = startM - 12; startY++; }
@@ -1202,14 +1129,12 @@
       return { startDate, endDate };
     }
 
-
     function formatDateToYMD(d) {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
       return `${y}-${m}-${day}`;
     }
-
 
     function initMonthDropdown() {
       monthSelect.innerHTML = "";
@@ -1230,7 +1155,6 @@
       renderMonthlyView();
     });
 
-
     function getTargetMonthIndex(targetDate) {
       const d = new Date(targetDate);
       for (let i = 0; i < 12; i++) {
@@ -1239,7 +1163,6 @@
       }
       return 0;
     }
-
 
     function generateWeeks(monthIndex) {
       const key = `month_${monthIndex}`;
@@ -1263,10 +1186,8 @@
         currStart.setDate(currStart.getDate() + 1);
         weekNum++;
       }
-      customWeekRanges[key] = weeks;
       return weeks;
     }
-
 
     // TOGGLE SPESA / ENTRATA RAPIDO
     const toggleExp = document.getElementById('toggle-expense-btn');
@@ -1282,6 +1203,20 @@
       toggleExp.classList.remove('active', 'expense');
     });
 
+    // INSERIMENTO RAPIDO
+    document.getElementById('quick-expense-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const date = document.getElementById('quick-date').value;
+      const amount = parseFloat(document.getElementById('quick-amount').value);
+      const desc = document.getElementById('quick-desc').value.trim();
+      if (!date || isNaN(amount) || !desc) return;
+      const newExp = { id: Date.now(), date, desc, amount, type: currentMovementType };
+      expenses.push(newExp);
+      syncToCloud();
+      document.getElementById('quick-amount').value = "";
+      document.getElementById('quick-desc').value = "";
+      renderMonthlyView(newExp.id);
+    });
 
     // TOGGLE SPESA / ENTRATA MASTRINI MODAL
     const mastrinoToggleExp = document.getElementById('mastrino-toggle-expense');
@@ -1297,14 +1232,12 @@
       mastrinoToggleExp.classList.remove('active', 'expense');
     });
 
-
     // ACCORDION GESTIONE MENSILE RIPARTIZIONE
     const allocAccordionHeader = document.getElementById('month-allocation-header');
     const allocAccordionBlock = document.getElementById('month-allocation-accordion');
     allocAccordionHeader.addEventListener('click', () => {
       allocAccordionBlock.classList.toggle('open');
     });
-
 
     // SETTING FONDI MENSILI (MODALE GLOBAL)
     const settingsModal = document.getElementById('settings-funds-modal');
@@ -1345,14 +1278,11 @@
       settingsModal.classList.add('open');
     }
 
-
     document.getElementById('btn-open-settings-modal').addEventListener('click', openSettingsModal);
-
 
     document.getElementById('close-settings-funds-btn').addEventListener('click', () => {
       settingsModal.classList.remove('open');
     });
-
 
     document.getElementById('save-settings-funds-btn').addEventListener('click', () => {
       if (!settingsFunds.allocations) settingsFunds.allocations = {};
@@ -1376,7 +1306,6 @@
       settingsModal.classList.remove('open');
       renderMonthlyView();
     });
-
 
     // RENDERING RIPARTIZIONE ENTRATE NEL MESE CORRENTE
     function renderMonthlyFundAllocation() {
@@ -1409,7 +1338,6 @@
       const extraVal = Math.max(0, ((currentSal.eff || 0) - (currentSal.base || 0)));
       salExtraInput.value = extraVal.toFixed(2);
 
-
       const allocationContainer = document.getElementById('monthly-funds-allocation-list');
       allocationContainer.innerHTML = "";
       if (!mastriniData || mastriniData.length === 0) {
@@ -1417,7 +1345,6 @@
         document.getElementById('salary-over-alert').style.display = 'none';
         return;
       }
-
 
       let totalBaseAllocated = 0;
       mastriniData.forEach((m, mIdx) => {
@@ -1427,10 +1354,8 @@
         const extraShare = savedCustom && savedCustom.extra !== undefined ? savedCustom.extra : defaultCfg.extraRatio;
         totalBaseAllocated += parseFloat(baseShare) || 0;
 
-
         const totalFundSum = (parseFloat(baseShare) || 0) + (parseFloat(extraShare) || 0);
         const isSent = currentSal.sentFunds[m.name] || false;
-
 
         const subAcc = document.createElement('div');
         subAcc.className = 'sub-accordion';
@@ -1468,7 +1393,6 @@
         allocationContainer.appendChild(subAcc);
       });
 
-
       const maxAllowed = (currentSal.base || 0) - (currentSal.speseVive || 0);
       const alertBanner = document.getElementById('salary-over-alert');
       const sendAllBtn = document.getElementById('btn-send-all-mastrini');
@@ -1485,7 +1409,6 @@
         sendAllBtn.style.cursor = 'pointer';
       }
 
-
       document.querySelectorAll('.m-fund-base-input, .m-fund-extra-input').forEach(input => {
         input.addEventListener('change', () => {
           const mName = input.dataset.mastrino;
@@ -1501,7 +1424,6 @@
           renderMonthlyView();
         });
       });
-
 
       document.querySelectorAll('.btn-send-single-mastrino').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1530,7 +1452,6 @@
         });
       });
     }
-
 
     // Invio Globale Tutti i Fondi
     document.getElementById('btn-send-all-mastrini').addEventListener('click', () => {
@@ -1578,8 +1499,6 @@
       alert(`Inviati con successo le quote per ${count} fondi!`);
     });
 
-
-    // Event Listeners Stipendio Base / Spese Vive / Effettivo del Mese
     document.getElementById('m-salary-base').addEventListener('change', (e) => {
       const monthIdx = parseInt(monthSelect.value);
       const key = `month_${monthIdx}`;
@@ -1600,7 +1519,6 @@
       renderMonthlyView();
     });
 
-
     document.getElementById('m-salary-eff').addEventListener('change', (e) => {
       const monthIdx = parseInt(monthSelect.value);
       const key = `month_${monthIdx}`;
@@ -1611,8 +1529,7 @@
       renderMonthlyView();
     });
 
-
-    // RENDERING VISTA MENSILE CON SETTIMANE DINAMICHE
+    // RENDERING VISTA MENSILE
     function renderMonthlyView(highlightExpenseId = null) {
       const monthIdx = parseInt(monthSelect.value);
       const key = `month_${monthIdx}`;
@@ -1648,7 +1565,6 @@
           <div class="week-header">
             <span>SETTIMANA ${i + 1} (${formatD(w.start)} - ${formatD(w.end)}) 
               <button class="action-btn edit-btn edit-week-btn" data-m="${monthIdx}" data-w="${i}" title="Modifica date"><i class="fa-solid fa-pen"></i></button>
-              <button class="action-btn delete-btn delete-week-btn" data-m="${monthIdx}" data-w="${i}" title="Rimuovi settimana"><i class="fa-solid fa-trash"></i></button>
             </span>
             <span style="color:${wNetTotal >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'};">
               ${wNetTotal >= 0 ? '+ ' : ''}€ ${wNetTotal.toFixed(2)}
@@ -1688,8 +1604,7 @@
         container.appendChild(weekEl);
       });
 
-
-      // MONITORAGGIO SPESE VIVE (NETTO)
+      // MONITORAGGIO SPESE VIVE
       const currentSal = monthlySalaries[key] || {};
       const budgetSpese = currentSal.speseVive || 0;
       const netSpeseVive = totalMonthlyIncomes - totalMonthlyExpenses;
@@ -1718,18 +1633,14 @@
         statusBox.style.borderColor = 'var(--border-color)';
       }
 
-      // RECAP SETTIMANE NEI RECAP MENSILE
-      const recapWeeksContainer = document.getElementById('recap-weeks-list');
-      if (recapWeeksContainer) {
-        recapWeeksContainer.innerHTML = weekTotals.map((tot, idx) => `
-          <div class="expense-item" style="padding-left: 15px; font-size: 0.85rem; color: var(--text-muted);">
-            <span>• Settimana ${idx + 1}:</span><span>€ ${tot.toFixed(2)}</span>
-          </div>
-        `).join('');
-      }
-
-      // AGGIORNAMENTO RECAP MENSILE
+      // RECAP MENSILE
       document.getElementById('recap-tot-spese').textContent = `€ ${totalMonthlyExpenses.toFixed(2)}`;
+      document.getElementById('recap-w1').textContent = `€ ${(weekTotals[0] || 0).toFixed(2)}`;
+      document.getElementById('recap-w2').textContent = `€ ${(weekTotals[1] || 0).toFixed(2)}`;
+      document.getElementById('recap-w3').textContent = `€ ${(weekTotals[2] || 0).toFixed(2)}`;
+      document.getElementById('recap-w4').textContent = `€ ${(weekTotals[3] || 0).toFixed(2)}`;
+      const w5Total = weekTotals.slice(4).reduce((a, b) => a + b, 0);
+      document.getElementById('recap-w5').textContent = `€ ${w5Total.toFixed(2)}`;
 
       let totalBaseAcc = 0;
       let totalExtraAcc = 0;
@@ -1774,13 +1685,9 @@
       disavanzoEl.textContent = `€ ${disavanzo.toFixed(2)}`;
       disavanzoEl.style.color = disavanzo < 0 ? 'var(--accent-red)' : 'var(--accent-green)';
 
-
-      // Listeners Settimane
+      // Listeners
       document.querySelectorAll('.edit-week-btn').forEach(btn => {
         btn.addEventListener('click', () => openEditWeekModal(btn.dataset.m, btn.dataset.w));
-      });
-      document.querySelectorAll('.delete-week-btn').forEach(btn => {
-        btn.addEventListener('click', () => deleteWeek(btn.dataset.m, parseInt(btn.dataset.w)));
       });
       document.querySelectorAll('.add-in-week-btn').forEach(btn => {
         btn.addEventListener('click', () => openAddExpenseModal(btn.dataset.start));
@@ -1793,93 +1700,6 @@
       });
       renderRecentExpenses();
     }
-
-
-    // AGGIUNTA E MODIFICA DATE SETTIMANA
-    const weekModal = document.getElementById('edit-week-modal');
-
-    function openEditWeekModal(mIdx, wIdx) {
-      const key = `month_${mIdx}`;
-      const weeks = generateWeeks(parseInt(mIdx));
-      const w = weeks[wIdx];
-      
-      document.getElementById('modal-week-title').textContent = `Modifica Settimana ${parseInt(wIdx) + 1}`;
-      document.getElementById('modal-week-month-idx').value = mIdx;
-      document.getElementById('modal-week-idx').value = wIdx;
-      document.getElementById('modal-start-date').value = w ? w.start : "";
-      document.getElementById('modal-end-date').value = w ? w.end : "";
-      
-      weekModal.classList.add('open');
-    }
-
-    function openAddWeekModal() {
-      const mIdx = parseInt(monthSelect.value);
-      const weeks = generateWeeks(mIdx);
-      document.getElementById('modal-week-title').textContent = `Aggiungi Settimana a Mese`;
-      document.getElementById('modal-week-month-idx').value = mIdx;
-      document.getElementById('modal-week-idx').value = -1; // -1 indica nuova settimana
-
-      let defaultStart = "";
-      if (weeks.length > 0) {
-        const lastEnd = new Date(weeks[weeks.length - 1].end);
-        lastEnd.setDate(lastEnd.getDate() + 1);
-        defaultStart = formatDateToYMD(lastEnd);
-      } else {
-        defaultStart = formatDateToYMD(new Date());
-      }
-      
-      document.getElementById('modal-start-date').value = defaultStart;
-      document.getElementById('modal-end-date').value = defaultStart;
-      weekModal.classList.add('open');
-    }
-
-    document.getElementById('btn-add-week').addEventListener('click', openAddWeekModal);
-    document.getElementById('close-modal-btn').addEventListener('click', () => weekModal.classList.remove('open'));
-
-    document.getElementById('save-week-dates-btn').addEventListener('click', () => {
-      const mIdx = document.getElementById('modal-week-month-idx').value;
-      const wIdx = parseInt(document.getElementById('modal-week-idx').value);
-      const start = document.getElementById('modal-start-date').value;
-      const end = document.getElementById('modal-end-date').value;
-
-      if (!start || !end) {
-        alert("Inserisci sia la data di inizio che quella di fine.");
-        return;
-      }
-
-      const key = `month_${mIdx}`;
-      let weeks = generateWeeks(parseInt(mIdx));
-
-      if (wIdx === -1) {
-        // Aggiungi nuova settimana
-        weeks.push({
-          id: weeks.length + 1,
-          start: start,
-          end: end
-        });
-      } else {
-        // Modifica settimana esistente
-        weeks[wIdx].start = start;
-        weeks[wIdx].end = end;
-      }
-
-      customWeekRanges[key] = weeks;
-      syncToCloud();
-      weekModal.classList.remove('open');
-      renderMonthlyView();
-    });
-
-    function deleteWeek(mIdx, wIdx) {
-      requestDeleteConfirmation("Sei sicuro di voler eliminare questa settimana dal mese?", () => {
-        const key = `month_${mIdx}`;
-        let weeks = generateWeeks(parseInt(mIdx));
-        weeks.splice(wIdx, 1);
-        customWeekRanges[key] = weeks;
-        syncToCloud();
-        renderMonthlyView();
-      });
-    }
-
 
     function renderRecentExpenses() {
       const container = document.getElementById('recent-expenses-list');
@@ -1913,7 +1733,6 @@
       });
     }
 
-
     function deleteExpense(id) {
       requestDeleteConfirmation("Sei sicuro di voler eliminare questo movimento di spesa / entrata?", () => {
         expenses = expenses.filter(e => e.id !== id);
@@ -1921,7 +1740,6 @@
         renderMonthlyView();
       });
     }
-
 
     // MODALE MODIFICA/INSERIMENTO MOVIMENTO
     const expModal = document.getElementById('edit-expense-modal');
@@ -1937,7 +1755,6 @@
       modalExpIncomeBtn.classList.add('active', 'income');
       modalExpExpenseBtn.classList.remove('active', 'expense');
     });
-
 
     function openEditExpenseModal(id) {
       const exp = expenses.find(e => e.id === id);
@@ -1956,7 +1773,6 @@
       expModal.classList.add('open');
     }
 
-
     function openAddExpenseModal(defaultDate) {
       document.getElementById('expense-modal-title').textContent = "Aggiungi Movimento";
       document.getElementById('edit-exp-id').value = "";
@@ -1966,7 +1782,6 @@
       modalExpExpenseBtn.click();
       expModal.classList.add('open');
     }
-
 
     document.getElementById('close-expense-modal-btn').addEventListener('click', () => expModal.classList.remove('open'));
     document.getElementById('save-expense-btn').addEventListener('click', () => {
@@ -1992,55 +1807,397 @@
       renderMonthlyView();
     });
 
-    // INSERIMENTO RAPIDO MOVIMENTO DALLA HOME
-    const quickForm = document.getElementById('quick-expense-form');
-    if (quickForm) {
-      document.getElementById('quick-date').value = formatDateToYMD(new Date());
-      quickForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const date = document.getElementById('quick-date').value;
-        const amount = parseFloat(document.getElementById('quick-amount').value);
-        const desc = document.getElementById('quick-desc').value.trim();
-        if (!date || isNaN(amount) || !desc) return;
-
-        const newExp = { id: Date.now(), date, desc, amount, type: currentMovementType };
-        expenses.push(newExp);
-        syncToCloud();
-
-        document.getElementById('quick-amount').value = "";
-        document.getElementById('quick-desc').value = "";
-        
-        renderRecentExpenses();
-        renderMonthlyView(newExp.id);
-        
-        const notification = document.createElement('div');
-        notification.style.position = 'fixed';
-        notification.style.bottom = '20px';
-        notification.style.right = '20px';
-        notification.style.background = 'var(--accent-green)';
-        notification.style.color = '#000';
-        notification.style.padding = '12px 20px';
-        notification.style.borderRadius = 'var(--radius-sm)';
-        notification.style.fontWeight = '700';
-        notification.style.zIndex = '99999';
-        notification.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.3)';
-        notification.innerHTML = `<i class="fa-solid fa-circle-check"></i> Movimento salvato!`;
-        document.body.appendChild(notification);
-        setTimeout(() => notification.remove(), 2500);
-      });
+    // MODALE MODIFICA SETTIMANA
+    const editWeekModal = document.getElementById('edit-week-modal');
+    let editingWeekContext = null;
+    function openEditWeekModal(mIdx, wIdx) {
+      mIdx = parseInt(mIdx);
+      wIdx = parseInt(wIdx);
+      editingWeekContext = { mIdx, wIdx };
+      const weeks = generateWeeks(mIdx);
+      const targetW = weeks[wIdx];
+      document.getElementById('modal-week-title').textContent = `Personalizza Settimana ${wIdx + 1}`;
+      document.getElementById('modal-start-date').value = targetW.start;
+      document.getElementById('modal-end-date').value = targetW.end;
+      editWeekModal.classList.add('open');
     }
-
+    document.getElementById('close-modal-btn').addEventListener('click', () => editWeekModal.classList.remove('open'));
+    document.getElementById('save-week-dates-btn').addEventListener('click', () => {
+      if (!editingWeekContext) return;
+      const { mIdx, wIdx } = editingWeekContext;
+      const key = `month_${mIdx}`;
+      const weeks = generateWeeks(mIdx);
+      weeks[wIdx].start = document.getElementById('modal-start-date').value;
+      weeks[wIdx].end = document.getElementById('modal-end-date').value;
+      customWeekRanges[key] = weeks;
+      syncToCloud();
+      editWeekModal.classList.remove('open');
+      renderMonthlyView();
+    });
 
     // RENDERING E GESTIONE MASTRINI
     function renderMastriniView() {
-      // (Restante codice inalterato)
+      const container = document.getElementById('mastrini-container');
+      const totalEl = document.getElementById('totale-mastrini-liquidita');
+      const searchVal = document.getElementById('search-mastrino-input') ? document.getElementById('search-mastrino-input').value.toLowerCase().trim() : "";
+      if (!container) return;
+      container.innerHTML = "";
+      let grandTotal = 0;
+
+      const filteredMastrini = (mastriniData || []).map((m, originalIdx) => ({ ...m, originalIdx }))
+        .filter(m => m.name.toLowerCase().includes(searchVal));
+
+      if (!mastriniData || mastriniData.length === 0) {
+        container.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted); grid-column: 1/-1;">Nessun fondo/mastrino presente. Clicca su "+ Nuovo Fondo" per aggiungerne uno.</i>';
+      } else if (filteredMastrini.length === 0) {
+        container.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted); grid-column: 1/-1;">Nessun fondo trovato con questo nome.</i>';
+      } else {
+        filteredMastrini.forEach((m) => {
+          const mIdx = m.originalIdx;
+          if (!m.items) m.items = [];
+          const mTotal = m.items.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+          grandTotal += mTotal;
+          const card = document.createElement('div');
+          card.className = 'mastrino-card collapsed';
+          card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" class="mastrino-card-header">
+              <div style="font-weight:700; color:var(--text-main); font-size:1rem; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-chevron-down toggle-icon" style="font-size:0.8rem; color:var(--text-muted);"></i>
+                ${m.name}
+              </div>
+              <div>
+                <button class="action-btn edit-btn transfer-mastrino-btn" data-m="${mIdx}" title="Trasferisci Somma"><i class="fa-solid fa-right-left"></i></button>
+                <button class="action-btn delete-btn delete-mastrino-btn" data-m="${mIdx}" title="Elimina Fondo"><i class="fa-solid fa-trash"></i></button>
+              </div>
+            </div>
+            <div class="mastrino-balance" style="color:${mTotal < 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">€ ${mTotal.toFixed(2)}</div>
+            <div class="mastrino-card-content">
+              <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">
+                ${m.items.map((item, iIdx) => {
+                  const dParts = item.date ? item.date.split('-') : [];
+                  const dStr = dParts.length === 3 ? ` (${dParts[2]}/${dParts[1]})` : '';
+                  const val = parseFloat(item.amount) || 0;
+                  return `
+                    <div class="expense-item" style="padding:4px 0;">
+                      <span>${item.note}${dStr}</span>
+                      <div>
+                        <b style="color:${val < 0 ? 'var(--accent-red)' : 'var(--accent-green)'};">€ ${val.toFixed(2)}</b>
+                        <button class="action-btn edit-btn edit-mastrino-item-btn" data-m="${mIdx}" data-i="${iIdx}"><i class="fa-solid fa-pen"></i></button>
+                        <button class="action-btn delete-btn delete-mastrino-item-btn" data-m="${mIdx}" data-i="${iIdx}"><i class="fa-solid fa-xmark"></i></button>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+              <button class="btn btn-secondary add-mastrino-item-btn" data-m="${mIdx}" style="padding:6px; font-size:0.8rem;">
+                <i class="fa-solid fa-plus"></i> Aggiungi Voce
+              </button>
+            </div>
+          `;
+
+          card.querySelector('.mastrino-card-header').addEventListener('click', (e) => {
+            if (e.target.closest('.action-btn')) return;
+            card.classList.toggle('collapsed');
+            const icon = card.querySelector('.toggle-icon');
+            if (card.classList.contains('collapsed')) {
+              icon.className = 'fa-solid fa-chevron-down toggle-icon';
+            } else {
+              icon.className = 'fa-solid fa-chevron-up toggle-icon';
+            }
+          });
+
+          container.appendChild(card);
+        });
+      }
+      if (totalEl) totalEl.textContent = `€ ${grandTotal.toFixed(2)}`;
+      renderBankTargetSelect();
+
+      // Listeners Mastrini
+      document.querySelectorAll('.delete-mastrino-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.m);
+          requestDeleteConfirmation(`Sei sicuro di voler eliminare il fondo "${mastriniData[idx].name}" e tutte le sue voci?`, () => {
+            mastriniData.splice(idx, 1);
+            saveAndRenderMastrini();
+          });
+        });
+      });
+      document.querySelectorAll('.transfer-mastrino-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          openTransferModal(parseInt(btn.dataset.m));
+        });
+      });
+      document.querySelectorAll('.add-mastrino-item-btn').forEach(btn => {
+        btn.addEventListener('click', () => openMastrinoItemModal(parseInt(btn.dataset.m)));
+      });
+      document.querySelectorAll('.edit-mastrino-item-btn').forEach(btn => {
+        btn.addEventListener('click', () => openMastrinoItemModal(parseInt(btn.dataset.m), parseInt(btn.dataset.i)));
+      });
+      document.querySelectorAll('.delete-mastrino-item-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const mIdx = parseInt(btn.dataset.m);
+          const iIdx = parseInt(btn.dataset.i);
+          deleteMastrinoItemWithLinked(mIdx, iIdx);
+        });
+      });
     }
 
-    function renderBankExpensesList() {
-      // (Restante codice inalterato)
+    // GESTIONE TRASFERIMENTO TRA FONDI
+    const transferModal = document.getElementById('transfer-fund-modal');
+    function openTransferModal(fromIdx) {
+      const fromFund = mastriniData[fromIdx];
+      if (!fromFund) return;
+      document.getElementById('transfer-from-idx').value = fromIdx;
+      document.getElementById('transfer-from-name').value = fromFund.name;
+      document.getElementById('transfer-amount').value = "";
+
+      const toSelect = document.getElementById('transfer-to-select');
+      toSelect.innerHTML = "";
+      mastriniData.forEach((m, idx) => {
+        if (idx !== fromIdx) {
+          const opt = document.createElement('option');
+          opt.value = idx;
+          opt.textContent = m.name;
+          toSelect.appendChild(opt);
+        }
+      });
+
+      if (toSelect.options.length === 0) {
+        alert("Devono esserci almeno due fondi per effettuare un trasferimento.");
+        return;
+      }
+
+      transferModal.classList.add('open');
     }
+
+    document.getElementById('close-transfer-modal-btn').addEventListener('click', () => {
+      transferModal.classList.remove('open');
+    });
+
+    document.getElementById('execute-transfer-btn').addEventListener('click', () => {
+      const fromIdx = parseInt(document.getElementById('transfer-from-idx').value);
+      const toIdx = parseInt(document.getElementById('transfer-to-select').value);
+      const amount = parseFloat(document.getElementById('transfer-amount').value);
+
+      if (isNaN(amount) || amount <= 0 || isNaN(toIdx)) {
+        alert("Inserisci un importo valido e seleziona un fondo di destinazione.");
+        return;
+      }
+
+      const fromFund = mastriniData[fromIdx];
+      const toFund = mastriniData[toIdx];
+      const todayStr = formatDateToYMD(new Date());
+      const pairId = 'trans_' + Date.now();
+
+      if (!fromFund.items) fromFund.items = [];
+      if (!toFund.items) toFund.items = [];
+
+      fromFund.items.push({
+        date: todayStr,
+        note: `a ${toFund.name}`,
+        amount: -amount,
+        transferPairId: pairId
+      });
+
+      toFund.items.push({
+        date: todayStr,
+        note: `da ${fromFund.name}`,
+        amount: amount,
+        transferPairId: pairId
+      });
+
+      transferModal.classList.remove('open');
+      saveAndRenderMastrini();
+    });
+
+    // MODALE VOCE MASTRINO (AGGIUNTA E MODIFICA)
+    const itemMastrinoModal = document.getElementById('item-mastrino-modal');
+    function openMastrinoItemModal(mIdx, iIdx = null) {
+      document.getElementById('mastrino-target-idx').value = mIdx;
+      document.getElementById('mastrino-item-idx').value = iIdx !== null ? iIdx : "";
+      
+      if (iIdx !== null) {
+        const item = mastriniData[mIdx].items[iIdx];
+        document.getElementById('mastrino-item-modal-title').textContent = "Modifica Voce Fondo";
+        document.getElementById('mastrino-item-date').value = item.date || formatDateToYMD(new Date());
+        document.getElementById('mastrino-item-note').value = item.note || "";
+        const rawAmt = parseFloat(item.amount) || 0;
+        document.getElementById('mastrino-item-amount').value = Math.abs(rawAmt);
+        if (rawAmt >= 0) {
+          mastrinoToggleInc.click();
+        } else {
+          mastrinoToggleExp.click();
+        }
+      } else {
+        document.getElementById('mastrino-item-modal-title').textContent = "Aggiungi Voce Fondo";
+        document.getElementById('mastrino-item-date').value = formatDateToYMD(new Date());
+        document.getElementById('mastrino-item-note').value = "";
+        document.getElementById('mastrino-item-amount').value = "";
+        mastrinoToggleExp.click();
+      }
+      itemMastrinoModal.classList.add('open');
+    }
+
+    document.getElementById('close-item-mastrino-btn').addEventListener('click', () => itemMastrinoModal.classList.remove('open'));
+
+    document.getElementById('save-mastrino-item-btn').addEventListener('click', () => {
+      const mIdx = parseInt(document.getElementById('mastrino-target-idx').value);
+      const iIdxStr = document.getElementById('mastrino-item-idx').value;
+      const date = document.getElementById('mastrino-item-date').value;
+      const note = document.getElementById('mastrino-item-note').value.trim();
+      let amount = parseFloat(document.getElementById('mastrino-item-amount').value);
+
+      if (!date || !note || isNaN(amount)) return;
+      if (mastrinoMovementType === "expense") amount = -Math.abs(amount);
+      else amount = Math.abs(amount);
+
+      if (!mastriniData[mIdx].items) mastriniData[mIdx].items = [];
+
+      if (iIdxStr !== "") {
+        const iIdx = parseInt(iIdxStr);
+        mastriniData[mIdx].items[iIdx].date = date;
+        mastriniData[mIdx].items[iIdx].note = note;
+        mastriniData[mIdx].items[iIdx].amount = amount;
+      } else {
+        mastriniData[mIdx].items.push({ date, note, amount });
+      }
+
+      itemMastrinoModal.classList.remove('open');
+      saveAndRenderMastrini();
+    });
+
+    // ELIMINAZIONE VOCE MASTRINO CON COLLEGATE
+    function deleteMastrinoItemWithLinked(mIdx, iIdx) {
+      requestDeleteConfirmation("Sei sicuro di voler eliminare questa voce dal mastrino?", () => {
+        const deletedItem = mastriniData[mIdx].items[iIdx];
+        if (!deletedItem) return;
+
+        if (deletedItem.monthKey && deletedItem.fundName) {
+          if (monthlySalaries[deletedItem.monthKey] && monthlySalaries[deletedItem.monthKey].sentFunds) {
+            delete monthlySalaries[deletedItem.monthKey].sentFunds[deletedItem.fundName];
+          }
+        }
+
+        if (deletedItem.transferPairId) {
+          const pairId = deletedItem.transferPairId;
+          mastriniData.forEach(fund => {
+            if (fund.items) {
+              fund.items = fund.items.filter(it => it.transferPairId !== pairId);
+            }
+          });
+        } else {
+          mastriniData[mIdx].items.splice(iIdx, 1);
+        }
+
+        saveAndRenderMastrini();
+      });
+    }
+
+    // CAMPO DI RICERCA MASTRINI
+    document.getElementById('search-mastrino-input').addEventListener('input', () => {
+      renderMastriniView();
+    });
 
     function saveAndRenderMastrini() {
+      syncToCloud();
+      renderMastriniView();
+      renderMonthlyView();
+      syncBankExpensesToFund();
+    }
+
+    // Modal Nuovo Mastrino
+    document.getElementById('btn-open-add-mastrino').addEventListener('click', () => {
+      document.getElementById('new-mastrino-name').value = "";
+      document.getElementById('add-mastrino-modal').classList.add('open');
+    });
+    document.getElementById('close-add-mastrino-btn').addEventListener('click', () => {
+      document.getElementById('add-mastrino-modal').classList.remove('open');
+    });
+    document.getElementById('save-new-mastrino-btn').addEventListener('click', () => {
+      const name = document.getElementById('new-mastrino-name').value.trim();
+      if (!name) return;
+      if (!mastriniData) mastriniData = [];
+      mastriniData.push({ name, items: [] });
+      saveAndRenderMastrini();
+      document.getElementById('add-mastrino-modal').classList.remove('open');
+    });
+
+    // SPESE BANCARIE & SINCRONIZZAZIONE FONDO
+    function renderBankTargetSelect() {
+      const select = document.getElementById('bank-target-fund');
+      if (!select) return;
+      select.innerHTML = '<option value="">-- Nessun Fondo Collegato --</option>';
+      (mastriniData || []).forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.name;
+        opt.textContent = m.name;
+        if (m.name === bankTargetFund) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    document.getElementById('bank-target-fund').addEventListener('change', (e) => {
+      bankTargetFund = e.target.value;
+      syncToCloud();
+      syncBankExpensesToFund();
+    });
+
+    document.getElementById('bank-expense-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const date = document.getElementById('bank-date').value;
+      const cost = parseFloat(document.getElementById('bank-cost').value);
+      const desc = document.getElementById('bank-desc').value.trim();
+      if (!date || isNaN(cost) || !desc) return;
+      bankExpenses.push({ id: Date.now(), date, cost, desc });
+      syncToCloud();
+      document.getElementById('bank-cost').value = "";
+      document.getElementById('bank-desc').value = "";
+      renderBankExpensesList();
+      syncBankExpensesToFund();
+    });
+
+    function renderBankExpensesList() {
+      const container = document.getElementById('bank-expenses-list');
+      if (!container) return;
+      if (!bankExpenses || bankExpenses.length === 0) {
+        container.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted);">Nessuna spesa bancaria inserita</i>';
+        return;
+      }
+      container.innerHTML = bankExpenses.map(b => `
+        <div class="expense-item">
+          <span><b>${b.desc}</b> (${b.date})</span>
+          <div>
+            <span style="color:var(--accent-red); font-weight:600;">- € ${parseFloat(b.cost).toFixed(2)}</span>
+            <button class="action-btn delete-btn delete-bank-btn" data-id="${b.id}"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>
+      `).join('');
+      container.querySelectorAll('.delete-bank-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = parseInt(btn.dataset.id);
+          requestDeleteConfirmation("Eliminare questa spesa bancaria?", () => {
+            bankExpenses = bankExpenses.filter(x => x.id !== id);
+            syncToCloud();
+            renderBankExpensesList();
+            syncBankExpensesToFund();
+          });
+        });
+      });
+    }
+
+    function syncBankExpensesToFund() {
+      if (!bankTargetFund) return;
+      const targetM = mastriniData.find(m => m.name === bankTargetFund);
+      if (!targetM) return;
+      targetM.items = (targetM.items || []).filter(item => !item.isBankExpense);
+      bankExpenses.forEach(b => {
+        targetM.items.push({
+          date: b.date,
+          note: `[Banca] ${b.desc}`,
+          amount: -Math.abs(parseFloat(b.cost) || 0),
+          isBankExpense: true
+        });
+      });
       syncToCloud();
       renderMastriniView();
     }
