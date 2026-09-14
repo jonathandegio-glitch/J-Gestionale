@@ -352,6 +352,12 @@
       border-radius: var(--radius-sm);
       padding: 16px;
     }
+    .mastrino-card-content {
+      display: block;
+    }
+    .mastrino-card.collapsed .mastrino-card-content {
+      display: none;
+    }
     .mastrino-balance {
       font-size: 1.5rem;
       font-weight: 700;
@@ -450,6 +456,7 @@
     </div>
   </div>
 
+
   <!-- HEADER -->
   <header class="app-bar">
     <span class="status-badge" id="cloud-status-badge"><i class="fa-solid fa-circle" style="font-size:8px;"></i> ONLINE</span>
@@ -460,6 +467,7 @@
       <i class="fa-solid fa-bars"></i> Menu
     </button>
   </header>
+
 
   <!-- DRAWER LATERAL -->
   <div class="drawer-overlay" id="drawer-overlay"></div>
@@ -506,6 +514,7 @@
       </button>
     </div>
   </div>
+
 
   <!-- MAIN CONTAINER -->
   <main class="container">
@@ -565,6 +574,7 @@
       </div>
     </section>
 
+
     <!-- IMPORTAZIONE GOOGLE FOGLI -->
     <section id="sec-import-gsheet" class="view-section">
       <div class="card">
@@ -582,7 +592,9 @@
           <i class="fa-solid fa-download"></i> Importa Fondi
         </button>
 
+
         <hr style="border-color: var(--border-color); margin: 20px 0;">
+
 
         <div class="form-group">
           <label>Link Google Fogli Spese Bancarie</label>
@@ -594,6 +606,7 @@
         <div id="import-status" style="margin-top: 15px; font-size: 0.85rem; font-weight: 600;"></div>
       </div>
     </section>
+
 
     <!-- SINCRONIZZAZIONE GOOGLE SCRIPT -->
     <section id="sec-sync-gas" class="view-section">
@@ -615,6 +628,7 @@
       </div>
     </section>
 
+
     <!-- GESTIONE MENSILE -->
     <section id="sec-mensile" class="view-section">
       <div class="card">
@@ -631,12 +645,16 @@
           </div>
           <div class="accordion-content">
             <div id="salary-over-alert" class="alert-banner">
-              <i class="fa-solid fa-triangle-exclamation"></i> ATTENZIONE: La somma della distribuzione nei fondi supera lo Stipendio Base impostato!
+              <i class="fa-solid fa-triangle-exclamation"></i> ATTENZIONE: La somma della distribuzione nei fondi supera la differenza tra Stipendio Base e Budget Spese Vive!
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px;">
               <div class="form-group">
                 <label>Stipendio Base (€)</label>
                 <input type="number" step="0.01" id="m-salary-base" class="form-control" placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label>Budget Spese Vive (€)</label>
+                <input type="number" step="0.01" id="m-budget-spese-vive" class="form-control" placeholder="0.00">
               </div>
               <div class="form-group">
                 <label>Stipendio Effettivo (€)</label>
@@ -658,9 +676,43 @@
             <div id="monthly-funds-allocation-list"></div>
           </div>
         </div>
+
+        <!-- MONITORAGGIO SPESE VIVE -->
+        <div id="spese-vive-monitor" style="margin-bottom:16px; padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--card-inner); font-weight:700; display:flex; justify-content:space-between; align-items:center;">
+          <span>Monitoraggio Spese Vive:</span>
+          <span id="spese-vive-status-text">0.00 / 0.00 €</span>
+        </div>
+
         <div id="weeks-container"></div>
+
+        <!-- RECAP MENSILE COMPLETO -->
+        <div class="card" style="margin-top: 20px; background: var(--card-inner); border: 1px solid var(--border-color);">
+          <div class="card-title" style="color: var(--accent-blue);">
+            <span><i class="fa-solid fa-calculator"></i> Recap Mensile</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.9rem;">
+            <div class="expense-item"><span>Totale Spese Mensili:</span><b id="recap-tot-spese">€ 0.00</b></div>
+            <div class="expense-item" style="padding-left: 15px; font-size: 0.85rem; color: var(--text-muted);"><span>• Settimana 1:</span><span id="recap-w1">€ 0.00</span></div>
+            <div class="expense-item" style="padding-left: 15px; font-size: 0.85rem; color: var(--text-muted);"><span>• Settimana 2:</span><span id="recap-w2">€ 0.00</span></div>
+            <div class="expense-item" style="padding-left: 15px; font-size: 0.85rem; color: var(--text-muted);"><span>• Settimana 3:</span><span id="recap-w3">€ 0.00</span></div>
+            <div class="expense-item" style="padding-left: 15px; font-size: 0.85rem; color: var(--text-muted);"><span>• Settimana 4:</span><span id="recap-w4">€ 0.00</span></div>
+            <div class="expense-item" style="padding-left: 15px; font-size: 0.85rem; color: var(--text-muted);"><span>• Settimana 5+:</span><span id="recap-w5">€ 0.00</span></div>
+            <hr style="border-color: var(--border-color); margin: 4px 0;">
+            <div class="expense-item"><span>Totale Accantonamenti ai Fondi:</span><b id="recap-tot-fondi" style="color:var(--accent-blue);">€ 0.00</b></div>
+            <div class="expense-item"><span>Rimanenza Stipendio Base:</span><b id="recap-rem-base">€ 0.00</b></div>
+            <div class="expense-item"><span>Rimanenza Extra Stipendio:</span><b id="recap-rem-extra">€ 0.00</b></div>
+            <hr style="border-color: var(--border-color); margin: 4px 0;">
+            <div class="expense-item"><span>Stipendio Base:</span><span id="recap-stip-base">€ 0.00</span></div>
+            <div class="expense-item"><span>Stipendio Extra:</span><span id="recap-stip-extra">€ 0.00</span></div>
+            <div class="expense-item"><span>Totale Entrate Assoluto:</span><b id="recap-tot-entrate" style="color:var(--accent-green);">€ 0.00</b></div>
+            <div class="expense-item"><span>Totale Spese Vive:</span><span id="recap-tot-spese-vive">€ 0.00</span></div>
+            <div class="expense-item"><span>Totale Accantonamento Fondi:</span><span id="recap-tot-accantonamento">€ 0.00</span></div>
+            <div class="expense-item" style="font-size: 1rem; margin-top: 5px;"><span>Eventuale Disavanzo:</span><b id="recap-disavanzo">€ 0.00</b></div>
+          </div>
+        </div>
       </div>
     </section>
+
 
     <!-- MASTRINI -->
     <section id="sec-mastrini" class="view-section">
@@ -671,6 +723,10 @@
             <i class="fa-solid fa-plus"></i> Nuovo Fondo
           </button>
         </div>
+        <div class="form-group" style="margin-bottom: 15px;">
+          <label>Cerca Fondo</label>
+          <input type="text" id="search-mastrino-input" class="form-control" placeholder="Digita il nome del fondo...">
+        </div>
         <div style="background: rgba(56, 189, 248, 0.1); border:1px solid var(--accent-blue); padding:15px; border-radius: var(--radius-sm); margin-bottom: 20px;">
           <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">TOTALE MASTRINI (Liquidità Reale):</div>
           <div id="totale-mastrini-liquidita" style="font-size: 1.8rem; font-weight: 700; color: var(--accent-blue);">€ 0.00</div>
@@ -680,6 +736,7 @@
       </div>
     </section>
 
+
     <!-- ANALISI -->
     <section id="sec-analytics" class="view-section">
       <div class="card">
@@ -687,6 +744,7 @@
         <p style="font-size:0.85rem; color:var(--text-muted);">In fase di aggiornamento.</p>
       </div>
     </section>
+
 
     <!-- SPESE BANCARIE -->
     <section id="sec-banca" class="view-section">
@@ -717,6 +775,7 @@
       </div>
     </section>
 
+
     <!-- INVESTIMENTI -->
     <section id="sec-investimenti" class="view-section">
       <div class="card">
@@ -724,6 +783,7 @@
         <p style="font-size:0.85rem; color:var(--text-muted);">Nessun titolo registrato.</p>
       </div>
     </section>
+
 
     <!-- ANNUALI -->
     <section id="sec-annuale" class="view-section">
@@ -735,6 +795,7 @@
       </div>
     </section>
   </main>
+
 
   <!-- MODALE BANNER DI CONFERMA ELIMINAZIONE GENERALIZZATA -->
   <div class="modal" id="confirm-delete-modal">
@@ -751,6 +812,7 @@
     </div>
   </div>
 
+
   <!-- MODALE SETTING FONDI MENSILI GLOBAL -->
   <div class="modal" id="settings-funds-modal">
     <div class="modal-content">
@@ -758,10 +820,14 @@
       <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:15px;">
         Imposta gli importi e la ripartizione predefinita per ciascun fondo esistente nella sezione Mastrini.
       </p>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
         <div class="form-group">
           <label>Entrata Base Default (€)</label>
           <input type="number" step="0.01" id="cfg-default-base" class="form-control" placeholder="1500.00">
+        </div>
+        <div class="form-group">
+          <label>Budget Spese Vive Default (€)</label>
+          <input type="number" step="0.01" id="cfg-default-spese-vive" class="form-control" placeholder="500.00">
         </div>
         <div class="form-group">
           <label>Entrata Effettiva Default (€)</label>
@@ -778,6 +844,30 @@
       <button class="btn btn-secondary" id="close-settings-funds-btn">Annulla</button>
     </div>
   </div>
+
+
+  <!-- MODALE TRASFERIMENTO TRA FONDI -->
+  <div class="modal" id="transfer-fund-modal">
+    <div class="modal-content">
+      <h3 style="margin-bottom:15px; font-weight:700;">Trasferisci Denaro tra Fondi</h3>
+      <input type="hidden" id="transfer-from-idx">
+      <div class="form-group">
+        <label>Fondo di Provenienza</label>
+        <input type="text" id="transfer-from-name" class="form-control" readonly style="background: rgba(255,255,255,0.05);">
+      </div>
+      <div class="form-group">
+        <label>Fondo di Destinazione</label>
+        <select id="transfer-to-select" class="form-control" required></select>
+      </div>
+      <div class="form-group">
+        <label>Importo (€)</label>
+        <input type="number" step="0.01" id="transfer-amount" class="form-control" placeholder="0.00" required>
+      </div>
+      <button class="btn btn-primary" id="execute-transfer-btn">Esegui Trasferimento</button>
+      <button class="btn btn-secondary" id="close-transfer-modal-btn">Annulla</button>
+    </div>
+  </div>
+
 
   <!-- MODALE MODIFICA/AGGIUNTA MOVIMENTO -->
   <div class="modal" id="edit-expense-modal">
@@ -805,6 +895,7 @@
     </div>
   </div>
 
+
   <!-- MODALE AGGIUNGI FONDO MASTRINO -->
   <div class="modal" id="add-mastrino-modal">
     <div class="modal-content">
@@ -817,6 +908,7 @@
       <button class="btn btn-secondary" id="close-add-mastrino-btn">Annulla</button>
     </div>
   </div>
+
 
   <!-- MODALE AGGIUNGI/MODIFICA VOCE MASTRINO -->
   <div class="modal" id="item-mastrino-modal">
@@ -845,6 +937,7 @@
     </div>
   </div>
 
+
   <!-- MODALE MODIFICA DATE SETTIMANA -->
   <div class="modal" id="edit-week-modal">
     <div class="modal-content">
@@ -862,11 +955,13 @@
     </div>
   </div>
 
+
   <!-- FIREBASE MODULAR SDK (v9) PER REALTIME DATABASE E AUTH -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
     import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+
 
     const firebaseConfig = {
       apiKey: "AIzaSyBF1S3NeA-IKxqna87CEzRiMGGN3AOnONo",
@@ -879,9 +974,11 @@
       measurementId: "G-26D9CJ55RW"
     };
 
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
+
 
     const authScreen = document.getElementById('auth-screen');
     const loginForm = document.getElementById('login-form');
@@ -889,12 +986,14 @@
     let currentUser = null;
     let isInitialLoadDone = false;
 
+
     // --- DATI DI STATO ---
     let expenses = JSON.parse(localStorage.getItem('expenses_data')) || [];
     let customWeekRanges = JSON.parse(localStorage.getItem('custom_week_ranges')) || {};
     let mastriniData = JSON.parse(localStorage.getItem('mastrini_data')) || [];
     let settingsFunds = JSON.parse(localStorage.getItem('settings_funds')) || {
       defaultBase: 0,
+      defaultSpeseVive: 0,
       defaultEff: 0,
       allocations: {}
     };
@@ -902,9 +1001,11 @@
     let bankExpenses = JSON.parse(localStorage.getItem('bank_expenses_data')) || [];
     let bankTargetFund = localStorage.getItem('bank_target_fund') || "";
 
+
     let currentMovementType = "expense";
     let modalMovementType = "expense";
     let mastrinoMovementType = "expense";
+
 
     // --- SINCRONIZZAZIONE REALTIME FIREBASE ---
     function syncToCloud() {
@@ -916,6 +1017,7 @@
       localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
       localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
       localStorage.setItem('bank_target_fund', bankTargetFund);
+
 
       if (!currentUser) return;
       const userRef = ref(db, 'users/' + currentUser.uid);
@@ -930,10 +1032,12 @@
         updatedAt: Date.now()
       };
 
+
       set(userRef, fullData).catch(err => {
         console.error("Errore sincronizzazione Firebase:", err);
       });
     }
+
 
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -946,6 +1050,7 @@
         authError.textContent = "Errore di accesso: " + err.message;
       }
     });
+
 
     onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -960,10 +1065,11 @@
             expenses = data.expenses || [];
             customWeekRanges = data.customWeekRanges || {};
             mastriniData = data.mastriniData || [];
-            settingsFunds = data.settingsFunds || { defaultBase: 0, defaultEff: 0, allocations: {} };
+            settingsFunds = data.settingsFunds || { defaultBase: 0, defaultSpeseVive: 0, defaultEff: 0, allocations: {} };
             monthlySalaries = data.monthlySalaries || {};
             bankExpenses = data.bankExpenses || [];
             bankTargetFund = data.bankTargetFund || "";
+
 
             localStorage.setItem('expenses_data', JSON.stringify(expenses));
             localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
@@ -985,7 +1091,9 @@
       }
     });
 
+
     document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+
 
     // Navigazione Menu Drawer
     const drawer = document.getElementById('drawer');
@@ -995,12 +1103,14 @@
       drawerOverlay.classList.add('open');
     });
 
+
     function closeDrawer() {
       drawer.classList.remove('open');
       drawerOverlay.classList.remove('open');
     }
     document.getElementById('close-drawer-btn').addEventListener('click', closeDrawer);
     drawerOverlay.addEventListener('click', closeDrawer);
+
 
     document.querySelectorAll('.nav-item-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1013,11 +1123,13 @@
       });
     });
 
+
     // --- UTILITY MODALE DI CONFERMA ELIMINAZIONE GENERALIZZATA ---
     let pendingDeleteCallback = null;
     const confirmDeleteModal = document.getElementById('confirm-delete-modal');
     const confirmDeleteYesBtn = document.getElementById('confirm-delete-yes-btn');
     const confirmDeleteNoBtn = document.getElementById('confirm-delete-no-btn');
+
 
     function requestDeleteConfirmation(message, onConfirm) {
       document.getElementById('confirm-delete-msg').textContent = message || "Sei sicuro di voler eliminare questa voce?";
@@ -1025,22 +1137,26 @@
       confirmDeleteModal.classList.add('open');
     }
 
+
     confirmDeleteYesBtn.addEventListener('click', () => {
       if (pendingDeleteCallback) pendingDeleteCallback();
       pendingDeleteCallback = null;
       confirmDeleteModal.classList.remove('open');
     });
 
+
     confirmDeleteNoBtn.addEventListener('click', () => {
       pendingDeleteCallback = null;
       confirmDeleteModal.classList.remove('open');
     });
+
 
     const monthsNames = [
       "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
       "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"
     ];
     const monthSelect = document.getElementById('select-month-cycle');
+
 
     function getMonthDateRange(monthIndex, baseYear = 2026) {
       let startM = monthIndex;
@@ -1054,12 +1170,14 @@
       return { startDate, endDate };
     }
 
+
     function formatDateToYMD(d) {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
       return `${y}-${m}-${day}`;
     }
+
 
     function initMonthDropdown() {
       monthSelect.innerHTML = "";
@@ -1076,6 +1194,7 @@
       monthSelect.value = getTargetMonthIndex(today);
     }
 
+
     function getTargetMonthIndex(targetDate) {
       const d = new Date(targetDate);
       for (let i = 0; i < 12; i++) {
@@ -1084,6 +1203,7 @@
       }
       return 0;
     }
+
 
     function generateWeeks(monthIndex) {
       const key = `month_${monthIndex}`;
@@ -1110,6 +1230,7 @@
       return weeks;
     }
 
+
     // TOGGLE SPESA / ENTRATA RAPIDO
     const toggleExp = document.getElementById('toggle-expense-btn');
     const toggleInc = document.getElementById('toggle-income-btn');
@@ -1123,6 +1244,7 @@
       toggleInc.classList.add('active', 'income');
       toggleExp.classList.remove('active', 'expense');
     });
+
 
     // TOGGLE SPESA / ENTRATA MASTRINI MODAL
     const mastrinoToggleExp = document.getElementById('mastrino-toggle-expense');
@@ -1138,6 +1260,7 @@
       mastrinoToggleExp.classList.remove('active', 'expense');
     });
 
+
     // ACCORDION GESTIONE MENSILE RIPARTIZIONE
     const allocAccordionHeader = document.getElementById('month-allocation-header');
     const allocAccordionBlock = document.getElementById('month-allocation-accordion');
@@ -1145,10 +1268,12 @@
       allocAccordionBlock.classList.toggle('open');
     });
 
+
     // SETTING FONDI MENSILI (MODALE GLOBAL)
     const settingsModal = document.getElementById('settings-funds-modal');
     function openSettingsModal() {
       document.getElementById('cfg-default-base').value = settingsFunds.defaultBase || "";
+      document.getElementById('cfg-default-spese-vive').value = settingsFunds.defaultSpeseVive || "";
       document.getElementById('cfg-default-eff').value = settingsFunds.defaultEff || "";
       const listContainer = document.getElementById('cfg-mastrini-list');
       listContainer.innerHTML = "";
@@ -1183,15 +1308,19 @@
       settingsModal.classList.add('open');
     }
 
+
     document.getElementById('btn-open-settings-modal').addEventListener('click', openSettingsModal);
+
 
     document.getElementById('close-settings-funds-btn').addEventListener('click', () => {
       settingsModal.classList.remove('open');
     });
 
+
     document.getElementById('save-settings-funds-btn').addEventListener('click', () => {
       if (!settingsFunds.allocations) settingsFunds.allocations = {};
       settingsFunds.defaultBase = parseFloat(document.getElementById('cfg-default-base').value) || 0;
+      settingsFunds.defaultSpeseVive = parseFloat(document.getElementById('cfg-default-spese-vive').value) || 0;
       settingsFunds.defaultEff = parseFloat(document.getElementById('cfg-default-eff').value) || 0;
       const baseInputs = document.querySelectorAll('.cfg-base-input');
       const extraInputs = document.querySelectorAll('.cfg-extra-input');
@@ -1211,6 +1340,7 @@
       renderMonthlyView();
     });
 
+
     // RENDERING RIPARTIZIONE ENTRATE NEL MESE CORRENTE
     function renderMonthlyFundAllocation() {
       const monthIdx = parseInt(monthSelect.value);
@@ -1218,6 +1348,7 @@
       if (!monthlySalaries[key]) {
         monthlySalaries[key] = {
           base: settingsFunds.defaultBase || 0,
+          speseVive: settingsFunds.defaultSpeseVive || 0,
           eff: settingsFunds.defaultEff || 0,
           customFundAlloc: {},
           sentFunds: {}
@@ -1225,15 +1356,22 @@
       }
       if (!monthlySalaries[key].customFundAlloc) monthlySalaries[key].customFundAlloc = {};
       if (!monthlySalaries[key].sentFunds) monthlySalaries[key].sentFunds = {};
-      
+      if (monthlySalaries[key].speseVive === undefined) {
+        monthlySalaries[key].speseVive = settingsFunds.defaultSpeseVive || 0;
+      }
+
       const currentSal = monthlySalaries[key];
       const salBaseInput = document.getElementById('m-salary-base');
+      const budgetSpeseViveInput = document.getElementById('m-budget-spese-vive');
       const salEffInput = document.getElementById('m-salary-eff');
       const salExtraInput = document.getElementById('m-salary-extra');
+
       salBaseInput.value = currentSal.base || 0;
+      budgetSpeseViveInput.value = currentSal.speseVive || 0;
       salEffInput.value = currentSal.eff || 0;
       const extraVal = Math.max(0, ((currentSal.eff || 0) - (currentSal.base || 0)));
       salExtraInput.value = extraVal.toFixed(2);
+
 
       const allocationContainer = document.getElementById('monthly-funds-allocation-list');
       allocationContainer.innerHTML = "";
@@ -1243,6 +1381,7 @@
         return;
       }
 
+
       let totalBaseAllocated = 0;
       mastriniData.forEach((m, mIdx) => {
         const defaultCfg = (settingsFunds.allocations && settingsFunds.allocations[m.name]) || { baseAlloc: 0, extraRatio: 0 };
@@ -1251,8 +1390,10 @@
         const extraShare = savedCustom && savedCustom.extra !== undefined ? savedCustom.extra : defaultCfg.extraRatio;
         totalBaseAllocated += parseFloat(baseShare) || 0;
 
+
         const totalFundSum = (parseFloat(baseShare) || 0) + (parseFloat(extraShare) || 0);
         const isSent = currentSal.sentFunds[m.name] || false;
+
 
         const subAcc = document.createElement('div');
         subAcc.className = 'sub-accordion';
@@ -1290,13 +1431,24 @@
         allocationContainer.appendChild(subAcc);
       });
 
-      // Segnalazione se la somma supera lo stipendio base
+
+      // Segnalazione se la somma supera la differenza tra stipendio base e spese vive
+      const maxAllowed = (currentSal.base || 0) - (currentSal.speseVive || 0);
       const alertBanner = document.getElementById('salary-over-alert');
-      if (totalBaseAllocated > currentSal.base && currentSal.base > 0) {
+      const sendAllBtn = document.getElementById('btn-send-all-mastrini');
+      
+      if (totalBaseAllocated > maxAllowed) {
         alertBanner.style.display = 'block';
+        sendAllBtn.disabled = true;
+        sendAllBtn.style.opacity = '0.5';
+        sendAllBtn.style.cursor = 'not-allowed';
       } else {
         alertBanner.style.display = 'none';
+        sendAllBtn.disabled = false;
+        sendAllBtn.style.opacity = '1';
+        sendAllBtn.style.cursor = 'pointer';
       }
+
 
       // Handlers aggiornamento quote in tempo reale
       document.querySelectorAll('.m-fund-base-input, .m-fund-extra-input').forEach(input => {
@@ -1314,9 +1466,14 @@
         });
       });
 
+
       // Handlers per Invio Singolo Fondo
       document.querySelectorAll('.btn-send-single-mastrino').forEach(btn => {
         btn.addEventListener('click', () => {
+          if (totalBaseAllocated > maxAllowed) {
+            alert("Impossibile procedere: la ripartizione supera lo Stipendio Base al netto delle Spese Vive!");
+            return;
+          }
           const mIdx = parseInt(btn.dataset.idx);
           const amount = parseFloat(btn.dataset.amount);
           const name = btn.dataset.name;
@@ -1339,12 +1496,28 @@
       });
     }
 
+
     // Invio Globale Tutti i Fondi
     document.getElementById('btn-send-all-mastrini').addEventListener('click', () => {
       const monthIdx = parseInt(monthSelect.value);
       const key = `month_${monthIdx}`;
       const currentSal = monthlySalaries[key];
       if (!currentSal) return;
+
+      let totalBaseAllocated = 0;
+      mastriniData.forEach(m => {
+        const defaultCfg = (settingsFunds.allocations && settingsFunds.allocations[m.name]) || { baseAlloc: 0 };
+        const savedCustom = currentSal.customFundAlloc[m.name];
+        const baseShare = savedCustom && savedCustom.base !== undefined ? savedCustom.base : defaultCfg.baseAlloc;
+        totalBaseAllocated += parseFloat(baseShare) || 0;
+      });
+
+      const maxAllowed = (currentSal.base || 0) - (currentSal.speseVive || 0);
+      if (totalBaseAllocated > maxAllowed) {
+        alert("Impossibile procedere: la ripartizione supera lo Stipendio Base al netto delle Spese Vive!");
+        return;
+      }
+
       let count = 0;
       mastriniData.forEach((m) => {
         const defaultCfg = (settingsFunds.allocations && settingsFunds.allocations[m.name]) || { baseAlloc: 0, extraRatio: 0 };
@@ -1370,7 +1543,8 @@
       alert(`Inviati con successo le quote per ${count} fondi!`);
     });
 
-    // Event Listeners Stipendio Base / Effettivo del Mese
+
+    // Event Listeners Stipendio Base / Spese Vive / Effettivo del Mese
     document.getElementById('m-salary-base').addEventListener('change', (e) => {
       const monthIdx = parseInt(monthSelect.value);
       const key = `month_${monthIdx}`;
@@ -1379,6 +1553,17 @@
       syncToCloud();
       renderMonthlyFundAllocation();
     });
+
+    document.getElementById('m-budget-spese-vive').addEventListener('change', (e) => {
+      const monthIdx = parseInt(monthSelect.value);
+      const key = `month_${monthIdx}`;
+      if (!monthlySalaries[key]) monthlySalaries[key] = { customFundAlloc: {}, sentFunds: {} };
+      monthlySalaries[key].speseVive = parseFloat(e.target.value) || 0;
+      syncToCloud();
+      renderMonthlyFundAllocation();
+      renderMonthlyView();
+    });
+
 
     document.getElementById('m-salary-eff').addEventListener('change', (e) => {
       const monthIdx = parseInt(monthSelect.value);
@@ -1389,19 +1574,29 @@
       renderMonthlyFundAllocation();
     });
 
+
     // RENDERING VISTA MENSILE CON STRUTTURA SFALSATA E RIGHE EXCEL
     function renderMonthlyView(highlightExpenseId = null) {
       const monthIdx = parseInt(monthSelect.value);
+      const key = `month_${monthIdx}`;
       const container = document.getElementById('weeks-container');
       if (!container) return;
       container.innerHTML = "";
       renderMonthlyFundAllocation();
       const weeks = generateWeeks(monthIdx);
+
+      let weekTotals = [];
+      let totalMonthlyExpenses = 0;
+
       weeks.forEach((w, i) => {
         const wExpenses = expenses.filter(e => e.date >= w.start && e.date <= w.end);
         const wTotalExpenses = wExpenses.filter(e => e.type !== 'income').reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
         const wTotalIncomes = wExpenses.filter(e => e.type === 'income').reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
         const wNetTotal = wTotalIncomes - wTotalExpenses;
+
+        weekTotals.push(wTotalExpenses);
+        totalMonthlyExpenses += wTotalExpenses;
+
         const containsHighlight = highlightExpenseId && wExpenses.some(e => e.id === highlightExpenseId);
         const formatD = (dStr) => {
           if (!dStr) return '';
@@ -1453,6 +1648,77 @@
         container.appendChild(weekEl);
       });
 
+
+      // MONITORAGGIO SPESE VIVE
+      const currentSal = monthlySalaries[key] || {};
+      const budgetSpese = currentSal.speseVive || 0;
+      const statusText = document.getElementById('spese-vive-status-text');
+      const statusBox = document.getElementById('spese-vive-monitor');
+      statusText.textContent = `${totalMonthlyExpenses.toFixed(2)} / ${budgetSpese.toFixed(2)} €`;
+
+      if (budgetSpese > 0) {
+        if (totalMonthlyExpenses > budgetSpese) {
+          statusBox.style.color = 'var(--accent-red)';
+          statusBox.style.borderColor = 'var(--accent-red)';
+        } else if (totalMonthlyExpenses > budgetSpese * 0.75) {
+          statusBox.style.color = 'var(--accent-orange)';
+          statusBox.style.borderColor = 'var(--accent-orange)';
+        } else if (totalMonthlyExpenses > budgetSpese * 0.5) {
+          statusBox.style.color = '#eab308'; // Giallo
+          statusBox.style.borderColor = '#eab308';
+        } else {
+          statusBox.style.color = 'var(--text-main)';
+          statusBox.style.borderColor = 'var(--border-color)';
+        }
+      } else {
+        statusBox.style.color = 'var(--text-main)';
+        statusBox.style.borderColor = 'var(--border-color)';
+      }
+
+      // AGGIORNAMENTO RECAP MENSILE
+      document.getElementById('recap-tot-spese').textContent = `€ ${totalMonthlyExpenses.toFixed(2)}`;
+      document.getElementById('recap-w1').textContent = `€ ${(weekTotals[0] || 0).toFixed(2)}`;
+      document.getElementById('recap-w2').textContent = `€ ${(weekTotals[1] || 0).toFixed(2)}`;
+      document.getElementById('recap-w3').textContent = `€ ${(weekTotals[2] || 0).toFixed(2)}`;
+      document.getElementById('recap-w4').textContent = `€ ${(weekTotals[3] || 0).toFixed(2)}`;
+      const w5Total = weekTotals.slice(4).reduce((a, b) => a + b, 0);
+      document.getElementById('recap-w5').textContent = `€ ${w5Total.toFixed(2)}`;
+
+      let totalBaseAcc = 0;
+      let totalExtraAcc = 0;
+      mastriniData.forEach(m => {
+        const defaultCfg = (settingsFunds.allocations && settingsFunds.allocations[m.name]) || { baseAlloc: 0, extraRatio: 0 };
+        const savedCustom = currentSal.customFundAlloc && currentSal.customFundAlloc[m.name];
+        const baseShare = savedCustom && savedCustom.base !== undefined ? savedCustom.base : defaultCfg.baseAlloc;
+        const extraShare = savedCustom && savedCustom.extra !== undefined ? savedCustom.extra : defaultCfg.extraRatio;
+        totalBaseAcc += parseFloat(baseShare) || 0;
+        totalExtraAcc += parseFloat(extraShare) || 0;
+      });
+
+      const totalAccantonamenti = totalBaseAcc + totalExtraAcc;
+      const stipBase = currentSal.base || 0;
+      const stipEff = currentSal.eff || 0;
+      const stipExtra = Math.max(0, stipEff - stipBase);
+      const remBase = stipBase - totalBaseAcc - totalMonthlyExpenses;
+      const remExtra = stipExtra - totalExtraAcc;
+      const totEntrate = stipEff;
+      const disavanzo = (totEntrate - totalMonthlyExpenses - totalAccantonamenti);
+
+      document.getElementById('recap-tot-fondi').textContent = `€ ${totalAccantonamenti.toFixed(2)}`;
+      document.getElementById('recap-rem-base').textContent = `€ ${remBase.toFixed(2)}`;
+      document.getElementById('recap-rem-extra').textContent = `€ ${remExtra.toFixed(2)}`;
+
+      document.getElementById('recap-stip-base').textContent = `€ ${stipBase.toFixed(2)}`;
+      document.getElementById('recap-stip-extra').textContent = `€ ${stipExtra.toFixed(2)}`;
+      document.getElementById('recap-tot-entrate').textContent = `€ ${totEntrate.toFixed(2)}`;
+      document.getElementById('recap-tot-spese-vive').textContent = `€ ${totalMonthlyExpenses.toFixed(2)}`;
+      document.getElementById('recap-tot-accantonamento').textContent = `€ ${totalAccantonamenti.toFixed(2)}`;
+
+      const disavanzoEl = document.getElementById('recap-disavanzo');
+      disavanzoEl.textContent = `€ ${disavanzo.toFixed(2)}`;
+      disavanzoEl.style.color = disavanzo < 0 ? 'var(--accent-red)' : 'var(--accent-green)';
+
+
       // Listeners Settimane
       document.querySelectorAll('.edit-week-btn').forEach(btn => {
         btn.addEventListener('click', () => openEditWeekModal(btn.dataset.m, btn.dataset.w));
@@ -1468,6 +1734,7 @@
       });
       renderRecentExpenses();
     }
+
 
     function renderRecentExpenses() {
       const container = document.getElementById('recent-expenses-list');
@@ -1501,6 +1768,7 @@
       });
     }
 
+
     function deleteExpense(id) {
       requestDeleteConfirmation("Sei sicuro di voler eliminare questo movimento di spesa / entrata?", () => {
         expenses = expenses.filter(e => e.id !== id);
@@ -1508,6 +1776,7 @@
         renderMonthlyView();
       });
     }
+
 
     // MODALE MODIFICA/INSERIMENTO MOVIMENTO
     const expModal = document.getElementById('edit-expense-modal');
@@ -1523,6 +1792,7 @@
       modalExpIncomeBtn.classList.add('active', 'income');
       modalExpExpenseBtn.classList.remove('active', 'expense');
     });
+
 
     function openEditExpenseModal(id) {
       const exp = expenses.find(e => e.id === id);
@@ -1541,6 +1811,7 @@
       expModal.classList.add('open');
     }
 
+
     function openAddExpenseModal(defaultDate) {
       document.getElementById('expense-modal-title').textContent = "Aggiungi Movimento";
       document.getElementById('edit-exp-id').value = "";
@@ -1550,6 +1821,7 @@
       modalExpExpenseBtn.click();
       expModal.classList.add('open');
     }
+
 
     document.getElementById('close-expense-modal-btn').addEventListener('click', () => expModal.classList.remove('open'));
     document.getElementById('save-expense-btn').addEventListener('click', () => {
@@ -1575,54 +1847,84 @@
       renderMonthlyView();
     });
 
+
     // RENDERING E GESTIONE MASTRINI
     function renderMastriniView() {
       const container = document.getElementById('mastrini-container');
       const totalEl = document.getElementById('totale-mastrini-liquidita');
+      const searchVal = document.getElementById('search-mastrino-input') ? document.getElementById('search-mastrino-input').value.toLowerCase().trim() : "";
       if (!container) return;
       container.innerHTML = "";
       let grandTotal = 0;
+
+      const filteredMastrini = (mastriniData || []).map((m, originalIdx) => ({ ...m, originalIdx }))
+        .filter(m => m.name.toLowerCase().includes(searchVal));
+
       if (!mastriniData || mastriniData.length === 0) {
         container.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted); grid-column: 1/-1;">Nessun fondo/mastrino presente. Clicca su "+ Nuovo Fondo" per aggiungerne uno.</i>';
+      } else if (filteredMastrini.length === 0) {
+        container.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted); grid-column: 1/-1;">Nessun fondo trovato con questo nome.</i>';
       } else {
-        mastriniData.forEach((m, mIdx) => {
+        filteredMastrini.forEach((m) => {
+          const mIdx = m.originalIdx;
           if (!m.items) m.items = [];
           const mTotal = m.items.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
           grandTotal += mTotal;
           const card = document.createElement('div');
-          card.className = 'mastrino-card';
+          card.className = 'mastrino-card collapsed';
           card.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <div style="font-weight:700; color:var(--text-main); font-size:1rem;">${m.name}</div>
-              <button class="action-btn delete-btn delete-mastrino-btn" data-m="${mIdx}" title="Elimina Fondo"><i class="fa-solid fa-trash"></i></button>
+            <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" class="mastrino-card-header">
+              <div style="font-weight:700; color:var(--text-main); font-size:1rem; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-chevron-down toggle-icon" style="font-size:0.8rem; color:var(--text-muted);"></i>
+                ${m.name}
+              </div>
+              <div>
+                <button class="action-btn edit-btn transfer-mastrino-btn" data-m="${mIdx}" title="Trasferisci Somma"><i class="fa-solid fa-right-left"></i></button>
+                <button class="action-btn delete-btn delete-mastrino-btn" data-m="${mIdx}" title="Elimina Fondo"><i class="fa-solid fa-trash"></i></button>
+              </div>
             </div>
             <div class="mastrino-balance" style="color:${mTotal < 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">€ ${mTotal.toFixed(2)}</div>
-            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">
-              ${m.items.map((item, iIdx) => {
-                const dParts = item.date ? item.date.split('-') : [];
-                const dStr = dParts.length === 3 ? ` (${dParts[2]}/${dParts[1]})` : '';
-                const val = parseFloat(item.amount) || 0;
-                return `
-                  <div class="expense-item" style="padding:4px 0;">
-                    <span>${item.note}${dStr}</span>
-                    <div>
-                      <b style="color:${val < 0 ? 'var(--accent-red)' : 'var(--accent-green)'};">€ ${val.toFixed(2)}</b>
-                      <button class="action-btn edit-btn edit-mastrino-item-btn" data-m="${mIdx}" data-i="${iIdx}"><i class="fa-solid fa-pen"></i></button>
-                      <button class="action-btn delete-btn delete-mastrino-item-btn" data-m="${mIdx}" data-i="${iIdx}"><i class="fa-solid fa-xmark"></i></button>
+            <div class="mastrino-card-content">
+              <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">
+                ${m.items.map((item, iIdx) => {
+                  const dParts = item.date ? item.date.split('-') : [];
+                  const dStr = dParts.length === 3 ? ` (${dParts[2]}/${dParts[1]})` : '';
+                  const val = parseFloat(item.amount) || 0;
+                  return `
+                    <div class="expense-item" style="padding:4px 0;">
+                      <span>${item.note}${dStr}</span>
+                      <div>
+                        <b style="color:${val < 0 ? 'var(--accent-red)' : 'var(--accent-green)'};">€ ${val.toFixed(2)}</b>
+                        <button class="action-btn edit-btn edit-mastrino-item-btn" data-m="${mIdx}" data-i="${iIdx}"><i class="fa-solid fa-pen"></i></button>
+                        <button class="action-btn delete-btn delete-mastrino-item-btn" data-m="${mIdx}" data-i="${iIdx}"><i class="fa-solid fa-xmark"></i></button>
+                      </div>
                     </div>
-                  </div>
-                `;
-              }).join('')}
+                  `;
+                }).join('')}
+              </div>
+              <button class="btn btn-secondary add-mastrino-item-btn" data-m="${mIdx}" style="padding:6px; font-size:0.8rem;">
+                <i class="fa-solid fa-plus"></i> Aggiungi Voce
+              </button>
             </div>
-            <button class="btn btn-secondary add-mastrino-item-btn" data-m="${mIdx}" style="padding:6px; font-size:0.8rem;">
-              <i class="fa-solid fa-plus"></i> Aggiungi Voce
-            </button>
           `;
+
+          card.querySelector('.mastrino-card-header').addEventListener('click', (e) => {
+            if (e.target.closest('.action-btn')) return;
+            card.classList.toggle('collapsed');
+            const icon = card.querySelector('.toggle-icon');
+            if (card.classList.contains('collapsed')) {
+              icon.className = 'fa-solid fa-chevron-down toggle-icon';
+            } else {
+              icon.className = 'fa-solid fa-chevron-up toggle-icon';
+            }
+          });
+
           container.appendChild(card);
         });
       }
       if (totalEl) totalEl.textContent = `€ ${grandTotal.toFixed(2)}`;
       renderBankTargetSelect();
+
 
       // Listeners Mastrini
       document.querySelectorAll('.delete-mastrino-btn').forEach(btn => {
@@ -1632,6 +1934,11 @@
             mastriniData.splice(idx, 1);
             saveAndRenderMastrini();
           });
+        });
+      });
+      document.querySelectorAll('.transfer-mastrino-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          openTransferModal(parseInt(btn.dataset.m));
         });
       });
       document.querySelectorAll('.add-mastrino-item-btn').forEach(btn => {
@@ -1644,19 +1951,112 @@
         btn.addEventListener('click', () => {
           const mIdx = parseInt(btn.dataset.m);
           const iIdx = parseInt(btn.dataset.i);
-          requestDeleteConfirmation("Sei sicuro di voler eliminare questa voce dal mastrino?", () => {
-            const deletedItem = mastriniData[mIdx].items[iIdx];
-            if (deletedItem && deletedItem.monthKey && deletedItem.fundName) {
-              if (monthlySalaries[deletedItem.monthKey] && monthlySalaries[deletedItem.monthKey].sentFunds) {
-                delete monthlySalaries[deletedItem.monthKey].sentFunds[deletedItem.fundName];
-              }
-            }
-            mastriniData[mIdx].items.splice(iIdx, 1);
-            saveAndRenderMastrini();
-          });
+          deleteMastrinoItemWithLinked(mIdx, iIdx);
         });
       });
     }
+
+    // ELIMINAZIONE VOCE MASTRINO CON COLLEGATE
+    function deleteMastrinoItemWithLinked(mIdx, iIdx) {
+      requestDeleteConfirmation("Sei sicuro di voler eliminare questa voce dal mastrino?", () => {
+        const deletedItem = mastriniData[mIdx].items[iIdx];
+        if (!deletedItem) return;
+
+        if (deletedItem.monthKey && deletedItem.fundName) {
+          if (monthlySalaries[deletedItem.monthKey] && monthlySalaries[deletedItem.monthKey].sentFunds) {
+            delete monthlySalaries[deletedItem.monthKey].sentFunds[deletedItem.fundName];
+          }
+        }
+
+        // Se fa parte di un trasferimento inter-fondo, elimina anche la voce accoppiata
+        if (deletedItem.transferPairId) {
+          const pairId = deletedItem.transferPairId;
+          mastriniData.forEach(fund => {
+            if (fund.items) {
+              fund.items = fund.items.filter(it => it.transferPairId !== pairId);
+            }
+          });
+        } else {
+          mastriniData[mIdx].items.splice(iIdx, 1);
+        }
+
+        saveAndRenderMastrini();
+      });
+    }
+
+    // GESTIONE TRASFERIMENTO TRA FONDI
+    const transferModal = document.getElementById('transfer-fund-modal');
+    function openTransferModal(fromIdx) {
+      const fromFund = mastriniData[fromIdx];
+      if (!fromFund) return;
+      document.getElementById('transfer-from-idx').value = fromIdx;
+      document.getElementById('transfer-from-name').value = fromFund.name;
+      document.getElementById('transfer-amount').value = "";
+
+      const toSelect = document.getElementById('transfer-to-select');
+      toSelect.innerHTML = "";
+      mastriniData.forEach((m, idx) => {
+        if (idx !== fromIdx) {
+          const opt = document.createElement('option');
+          opt.value = idx;
+          opt.textContent = m.name;
+          toSelect.appendChild(opt);
+        }
+      });
+
+      if (toSelect.options.length === 0) {
+        alert("Devono esserci almeno due fondi per effettuare un trasferimento.");
+        return;
+      }
+
+      transferModal.classList.add('open');
+    }
+
+    document.getElementById('close-transfer-modal-btn').addEventListener('click', () => {
+      transferModal.classList.remove('open');
+    });
+
+    document.getElementById('execute-transfer-btn').addEventListener('click', () => {
+      const fromIdx = parseInt(document.getElementById('transfer-from-idx').value);
+      const toIdx = parseInt(document.getElementById('transfer-to-select').value);
+      const amount = parseFloat(document.getElementById('transfer-amount').value);
+
+      if (isNaN(amount) || amount <= 0 || isNaN(toIdx)) {
+        alert("Inserisci un importo valido e seleziona un fondo di destinazione.");
+        return;
+      }
+
+      const fromFund = mastriniData[fromIdx];
+      const toFund = mastriniData[toIdx];
+      const todayStr = formatDateToYMD(new Date());
+      const pairId = 'trans_' + Date.now();
+
+      if (!fromFund.items) fromFund.items = [];
+      if (!toFund.items) toFund.items = [];
+
+      fromFund.items.push({
+        date: todayStr,
+        note: `a ${toFund.name}`,
+        amount: -amount,
+        transferPairId: pairId
+      });
+
+      toFund.items.push({
+        date: todayStr,
+        note: `da ${fromFund.name}`,
+        amount: amount,
+        transferPairId: pairId
+      });
+
+      transferModal.classList.remove('open');
+      saveAndRenderMastrini();
+    });
+
+    // CAMPO DI RICERCA MASTRINI
+    document.getElementById('search-mastrino-input').addEventListener('input', () => {
+      renderMastriniView();
+    });
+
 
     function saveAndRenderMastrini() {
       syncToCloud();
@@ -1664,6 +2064,7 @@
       renderMonthlyView();
       syncBankExpensesToFund();
     }
+
 
     // Modal Nuovo Mastrino
     document.getElementById('btn-open-add-mastrino').addEventListener('click', () => {
@@ -1681,6 +2082,7 @@
       saveAndRenderMastrini();
       document.getElementById('add-mastrino-modal').classList.remove('open');
     });
+
 
     // Modal Voce Mastrino
     const itemMastrinoModal = document.getElementById('item-mastrino-modal');
@@ -1709,9 +2111,11 @@
       itemMastrinoModal.classList.add('open');
     }
 
+
     document.getElementById('close-item-mastrino-btn').addEventListener('click', () => {
       itemMastrinoModal.classList.remove('open');
     });
+
 
     document.getElementById('save-mastrino-item-btn').addEventListener('click', () => {
       const mIdx = parseInt(document.getElementById('mastrino-target-idx').value);
@@ -1721,7 +2125,9 @@
       let rawAmount = parseFloat(document.getElementById('mastrino-item-amount').value);
       if (!note || isNaN(rawAmount)) return;
 
+
       const amount = mastrinoMovementType === 'expense' ? -Math.abs(rawAmount) : Math.abs(rawAmount);
+
 
       const newItem = { date, note, amount };
       if (!mastriniData[mIdx].items) mastriniData[mIdx].items = [];
@@ -1729,6 +2135,7 @@
         const oldItem = mastriniData[mIdx].items[parseInt(iIdx)];
         if (oldItem && oldItem.monthKey) newItem.monthKey = oldItem.monthKey;
         if (oldItem && oldItem.fundName) newItem.fundName = oldItem.fundName;
+        if (oldItem && oldItem.transferPairId) newItem.transferPairId = oldItem.transferPairId;
         mastriniData[mIdx].items[parseInt(iIdx)] = newItem;
       } else {
         mastriniData[mIdx].items.push(newItem);
@@ -1736,6 +2143,7 @@
       saveAndRenderMastrini();
       itemMastrinoModal.classList.remove('open');
     });
+
 
     // --- IMPORT GOOGLE FOGLI HANDLERS ---
     document.getElementById('btn-start-import-gsheet').addEventListener('click', () => {
@@ -1754,6 +2162,7 @@
       }, 1200);
     });
 
+
     document.getElementById('btn-start-import-bank-gsheet').addEventListener('click', () => {
       const url = document.getElementById('gsheet-bank-url-input').value.trim();
       const statusDiv = document.getElementById('import-status');
@@ -1770,6 +2179,7 @@
       }, 1200);
     });
 
+
     // --- SEZIONE SPESE BANCARIE E TRASFERIMENTO SU FONDI ---
     function renderBankTargetSelect() {
       const select = document.getElementById('bank-target-fund');
@@ -1784,11 +2194,13 @@
       });
     }
 
+
     document.getElementById('bank-target-fund').addEventListener('change', (e) => {
       bankTargetFund = e.target.value;
       syncToCloud();
       syncBankExpensesToFund();
     });
+
 
     document.getElementById('bank-expense-form').addEventListener('submit', (e) => {
       e.preventDefault();
@@ -1803,6 +2215,7 @@
       renderBankExpensesList();
       syncBankExpensesToFund();
     });
+
 
     function renderBankExpensesList() {
       const container = document.getElementById('bank-expenses-list');
@@ -1833,6 +2246,7 @@
       });
     }
 
+
     function syncBankExpensesToFund() {
       mastriniData.forEach(m => {
         if (m.items) {
@@ -1856,6 +2270,7 @@
       renderMastriniView();
     }
 
+
     // Inserimento Rapido Form
     document.getElementById('quick-expense-form').addEventListener('submit', (e) => {
       e.preventDefault();
@@ -1863,6 +2278,7 @@
       const amount = parseFloat(document.getElementById('quick-amount').value);
       const desc = document.getElementById('quick-desc').value;
       if (!date || isNaN(amount) || !desc) return;
+
 
       const newExpense = { id: Date.now(), date, amount, desc, type: currentMovementType };
       expenses.push(newExpense);
@@ -1878,6 +2294,7 @@
       document.getElementById('sec-mensile').classList.add('active');
     });
 
+
     // Modal Edit Week
     let activeEdit = null;
     function openEditWeekModal(mIdx, wIdx) {
@@ -1890,9 +2307,11 @@
       document.getElementById('edit-week-modal').classList.add('open');
     }
 
+
     document.getElementById('close-modal-btn').addEventListener('click', () => {
       document.getElementById('edit-week-modal').classList.remove('open');
     });
+
 
     document.getElementById('save-week-dates-btn').addEventListener('click', () => {
       if (!activeEdit) return;
@@ -1907,7 +2326,9 @@
       renderMonthlyView();
     });
 
+
     monthSelect.addEventListener('change', () => renderMonthlyView());
+
 
     // Inizializzazione Applicazione
     document.getElementById('quick-date').value = formatDateToYMD(new Date());
