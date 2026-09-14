@@ -485,6 +485,9 @@
     <button class="btn btn-secondary nav-item-btn" data-target="sec-sync-gas" style="border: 1px solid var(--accent-green);">
       <i class="fa-solid fa-rotate" style="color: var(--accent-green);"></i> Sincronizzazione Google Script
     </button>
+    <button class="btn btn-secondary nav-item-btn" id="btn-open-export-modal" style="border: 1px solid var(--accent-orange); color: var(--accent-orange);">
+      <i class="fa-solid fa-file-excel"></i> Esporta Excel
+    </button>
     
     <hr style="border-color: var(--border-color); margin: 15px 0;">
     <button class="btn btn-secondary nav-item-btn" data-target="sec-home">
@@ -871,6 +874,30 @@
   </div>
 
 
+  <!-- MODALE EXPORT EXCEL -->
+  <div class="modal" id="export-modal">
+    <div class="modal-content" style="max-width: 440px;">
+      <h3 style="margin-bottom:15px; font-weight:700;"><i class="fa-solid fa-file-excel" style="color:var(--accent-green); margin-right:8px;"></i> Esporta in Excel</h3>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:20px;">
+        Seleziona il tipo di export desiderato. Il file generato seguirà la struttura grafica e i colori del foglio personalizzato.
+      </p>
+      <button class="btn btn-secondary" id="btn-export-mensile" style="border: 1px solid var(--accent-blue); text-align:left;">
+        <i class="fa-solid fa-calendar-days" style="color:var(--accent-blue);"></i> 1) Export Gestione Mensile (Mese Selezionato)
+      </button>
+      <button class="btn btn-secondary" id="btn-export-mastrini" style="border: 1px solid var(--accent-green); text-align:left;">
+        <i class="fa-solid fa-vault" style="color:var(--accent-green);"></i> 2) Export Mastrini
+      </button>
+      <button class="btn btn-secondary" id="btn-export-banca" style="border: 1px solid var(--accent-orange); text-align:left;">
+        <i class="fa-solid fa-receipt" style="color:var(--accent-orange);"></i> 3) Export Spese Banca
+      </button>
+      <button class="btn btn-primary" id="btn-export-completo" style="margin-top:10px; text-align:left;">
+        <i class="fa-solid fa-file-export"></i> 4) Export Completo dell'Anno (Tutti i Mesi + Mastrini + Banca)
+      </button>
+      <button class="btn btn-secondary" id="close-export-modal-btn" style="margin-top:15px;">Chiudi</button>
+    </div>
+  </div>
+
+
   <!-- MODALE MODIFICA/AGGIUNTA MOVIMENTO -->
   <div class="modal" id="edit-expense-modal">
     <div class="modal-content">
@@ -957,6 +984,10 @@
     </div>
   </div>
 
+
+  <!-- EXCELJS & FILEAVER BUNDLE FOR ADVANCED EXCEL EXPORT -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
   <!-- FIREBASE MODULAR SDK (v9) PER REALTIME DATABASE E AUTH -->
   <script type="module">
@@ -1871,6 +1902,44 @@
       renderMonthlyView();
     });
 
+    // INSERIMENTO RAPIDO MOVIMENTO DALLA HOME
+    const quickForm = document.getElementById('quick-expense-form');
+    if (quickForm) {
+      document.getElementById('quick-date').value = formatDateToYMD(new Date());
+      quickForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const date = document.getElementById('quick-date').value;
+        const amount = parseFloat(document.getElementById('quick-amount').value);
+        const desc = document.getElementById('quick-desc').value.trim();
+        if (!date || isNaN(amount) || !desc) return;
+
+        const newExp = { id: Date.now(), date, desc, amount, type: currentMovementType };
+        expenses.push(newExp);
+        syncToCloud();
+
+        document.getElementById('quick-amount').value = "";
+        document.getElementById('quick-desc').value = "";
+        
+        renderRecentExpenses();
+        renderMonthlyView(newExp.id);
+        
+        const notification = document.createElement('div');
+        notification.style.position = 'fixed';
+        notification.style.bottom = '20px';
+        notification.style.right = '20px';
+        notification.style.background = 'var(--accent-green)';
+        notification.style.color = '#000';
+        notification.style.padding = '12px 20px';
+        notification.style.borderRadius = 'var(--radius-sm)';
+        notification.style.fontWeight = '700';
+        notification.style.zIndex = '99999';
+        notification.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.3)';
+        notification.innerHTML = `<i class="fa-solid fa-circle-check"></i> Movimento salvato!`;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 2500);
+      });
+    }
+
 
     // RENDERING E GESTIONE MASTRINI
     function renderMastriniView() {
@@ -2077,9 +2146,12 @@
     });
 
     // CAMPO DI RICERCA MASTRINI
-    document.getElementById('search-mastrino-input').addEventListener('input', () => {
-      renderMastriniView();
-    });
+    const searchInput = document.getElementById('search-mastrino-input');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        renderMastriniView();
+      });
+    }
 
 
     function saveAndRenderMastrini() {
@@ -2168,9 +2240,99 @@
       itemMastrinoModal.classList.remove('open');
     });
 
+    // MODALE MODIFICA DATE SETTIMANA
+    const editWeekModal = document.getElementById('edit-week-modal');
+    let currentEditingMonthIdx = null;
+    let currentEditingWeekIdx = null;
 
-    // --- IMPORT GOOGLE FOGLI HANDLERS ---
-    document.getElementById('btn-start-import-gsheet').addEventListener('click', () => {
+    function openEditWeekModal(monthIdx, weekIdx) {
+      currentEditingMonthIdx = parseInt(monthIdx);
+      currentEditingWeekIdx = parseInt(weekIdx);
+      const weeks = generateWeeks(currentEditingMonthIdx);
+      const targetWeek = weeks[currentEditingWeekIdx];
+
+      document.getElementById('modal-week-title').textContent = `Personalizza Settimana ${currentEditingWeekIdx + 1}`;
+      document.getElementById('modal-start-date').value = targetWeek.start;
+      document.getElementById('modal-end-date').value = targetWeek.end;
+
+      editWeekModal.classList.add('open');
+    }
+
+    document.getElementById('close-modal-btn').addEventListener('click', () => {
+      editWeekModal.classList.remove('open');
+    });
+
+    document.getElementById('save-week-dates-btn').addEventListener('click', () => {
+      const startDate = document.getElementById('modal-start-date').value;
+      const endDate = document.getElementById('modal-end-date').value;
+
+      if (!startDate || !endDate || startDate > endDate) {
+        alert("Inserisci un intervallo di date valido.");
+        return;
+      }
+
+      const key = `month_${currentEditingMonthIdx}`;
+      if (!customWeekRanges[key]) {
+        customWeekRanges[key] = generateWeeks(currentEditingMonthIdx);
+      }
+
+      customWeekRanges[key][currentEditingWeekIdx].start = startDate;
+      customWeekRanges[key][currentEditingWeekIdx].end = endDate;
+
+      syncToCloud();
+      editWeekModal.classList.remove('open');
+      renderMonthlyView();
+    });
+
+
+    // --- IMPORT GOOGLE FOGLI HANDLERS CON PARSING E STRUTTURA FOGLIO EXCEL ---
+    async function fetchGoogleSheetCSV(url) {
+      let sheetId = "";
+      let gid = "0";
+
+      const idMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+      if (idMatch) sheetId = idMatch[1];
+
+      const gidMatch = url.match(/[?&]gid=([0-9]+)/);
+      if (gidMatch) gid = gidMatch[1];
+
+      if (!sheetId) throw new Error("URL Google Fogli non valido. Assicurati che contenga l'ID del documento.");
+
+      const exportUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+      const response = await fetch(exportUrl);
+      if (!response.ok) throw new Error("Impossibile scaricare il foglio. Verifica che il link sia pubblico ('Chiunque abbia il link').");
+
+      const csvText = await response.text();
+      return parseCSV(csvText);
+    }
+
+    function parseCSV(text) {
+      const lines = text.split(/\r\n|\n/);
+      const result = [];
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        const row = [];
+        let insideQuote = false;
+        let entry = '';
+        for (let j = 0; j < line.length; j++) {
+          const char = line[j];
+          if (char === '"') {
+            insideQuote = !insideQuote;
+          } else if (char === ',' && !insideQuote) {
+            row.push(entry.trim());
+            entry = '';
+          } else {
+            entry += char;
+          }
+        }
+        row.push(entry.trim());
+        result.push(row);
+      }
+      return result;
+    }
+
+    document.getElementById('btn-start-import-gsheet').addEventListener('click', async () => {
       const url = document.getElementById('gsheet-url-input').value.trim();
       const statusDiv = document.getElementById('import-status');
       if (!url) {
@@ -2179,15 +2341,50 @@
         return;
       }
       statusDiv.style.color = "var(--accent-blue)";
-      statusDiv.textContent = "Importazione saldi fondi avviata...";
-      setTimeout(() => {
+      statusDiv.textContent = "Connessione a Google Fogli in corso...";
+      try {
+        const rows = await fetchGoogleSheetCSV(url);
+        let importedCount = 0;
+        let currentFund = null;
+
+        rows.forEach(row => {
+          if (!row || row.length === 0) return;
+          const col0 = row[0] ? row[0].replace(/"/g, '').trim() : '';
+          const col1 = row[1] ? row[1].replace(/"/g, '').trim() : '';
+          const col2 = row[2] ? row[2].replace(/"/g, '').trim() : '';
+
+          if (col0 && !col1 && !col2) {
+            let foundFund = mastriniData.find(m => m.name.toLowerCase() === col0.toLowerCase());
+            if (!foundFund) {
+              foundFund = { name: col0, items: [] };
+              mastriniData.push(foundFund);
+            }
+            currentFund = foundFund;
+          } else if (currentFund && col0 && col1) {
+            const rawAmount = parseFloat(col1.replace('€', '').replace('.', '').replace(',', '.'));
+            if (!isNaN(rawAmount)) {
+              if (!currentFund.items) currentFund.items = [];
+              currentFund.items.push({
+                date: col2 || formatDateToYMD(new Date()),
+                note: col0,
+                amount: rawAmount
+              });
+              importedCount++;
+            }
+          }
+        });
+
+        saveAndRenderMastrini();
         statusDiv.style.color = "var(--accent-green)";
-        statusDiv.textContent = "Importazione fondi completata con successo!";
-      }, 1200);
+        statusDiv.textContent = `Importazione fondi completata! Importate ${importedCount} voci.`;
+      } catch (err) {
+        statusDiv.style.color = "var(--accent-red)";
+        statusDiv.textContent = "Errore durante l'importazione: " + err.message;
+      }
     });
 
 
-    document.getElementById('btn-start-import-bank-gsheet').addEventListener('click', () => {
+    document.getElementById('btn-start-import-bank-gsheet').addEventListener('click', async () => {
       const url = document.getElementById('gsheet-bank-url-input').value.trim();
       const statusDiv = document.getElementById('import-status');
       if (!url) {
@@ -2196,11 +2393,79 @@
         return;
       }
       statusDiv.style.color = "var(--accent-blue)";
-      statusDiv.textContent = "Importazione spese bancarie avviata...";
-      setTimeout(() => {
+      statusDiv.textContent = "Connessione a Google Fogli in corso...";
+      try {
+        const rows = await fetchGoogleSheetCSV(url);
+        let importedCount = 0;
+
+        rows.forEach(row => {
+          if (!row || row.length < 2) return;
+          const dateStr = row[0] ? row[0].replace(/"/g, '').trim() : '';
+          const descStr = row[1] ? row[1].replace(/"/g, '').trim() : '';
+          const costStr = row[2] ? row[2].replace(/"/g, '').trim() : '';
+
+          const cost = parseFloat(costStr.replace('€', '').replace('.', '').replace(',', '.'));
+          if (descStr && !isNaN(cost)) {
+            bankExpenses.push({
+              id: Date.now() + Math.random(),
+              date: dateStr || formatDateToYMD(new Date()),
+              desc: descStr,
+              cost: cost
+            });
+            importedCount++;
+          }
+        });
+
+        syncToCloud();
+        renderBankExpensesList();
+        syncBankExpensesToFund();
         statusDiv.style.color = "var(--accent-green)";
-        statusDiv.textContent = "Importazione spese bancarie completata con successo!";
-      }, 1200);
+        statusDiv.textContent = `Importazione spese bancarie completata! Importate ${importedCount} spese.`;
+      } catch (err) {
+        statusDiv.style.color = "var(--accent-red)";
+        statusDiv.textContent = "Errore durante l'importazione: " + err.message;
+      }
+    });
+
+
+    // --- SINCRONIZZAZIONE GOOGLE APPS SCRIPT (TRASCRIZIONE AUTOMATICA) ---
+    const gasUrlInput = document.getElementById('gas-url-input');
+    const syncStatusDiv = document.getElementById('sync-status');
+    const savedGasUrl = localStorage.getItem('gas_script_url') || "";
+    if (gasUrlInput && savedGasUrl) gasUrlInput.value = savedGasUrl;
+
+    document.getElementById('btn-execute-sync-gas').addEventListener('click', async () => {
+      const scriptUrl = gasUrlInput.value.trim();
+      if (!scriptUrl) {
+        syncStatusDiv.style.color = "var(--accent-red)";
+        syncStatusDiv.textContent = "Inserisci l'URL del tuo Google Apps Script Web App.";
+        return;
+      }
+      localStorage.setItem('gas_script_url', scriptUrl);
+      syncStatusDiv.style.color = "var(--accent-blue)";
+      syncStatusDiv.textContent = "Invio dati a Google Sheets in corso...";
+
+      const payload = {
+        monthlySalaries,
+        expenses,
+        mastriniData,
+        bankExpenses
+      };
+
+      try {
+        await fetch(scriptUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        syncStatusDiv.style.color = "var(--accent-green)";
+        syncStatusDiv.textContent = "Sincronizzazione completata con successo! Dati trascritti sul foglio Google.";
+      } catch (err) {
+        syncStatusDiv.style.color = "var(--accent-red)";
+        syncStatusDiv.textContent = "Errore di connessione a Google Apps Script: " + err.message;
+      }
     });
 
 
@@ -2248,20 +2513,21 @@
         container.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted);">Nessuna spesa bancaria registrata</i>';
         return;
       }
-      container.innerHTML = bankExpenses.map(b => `
+      container.innerHTML = bankExpenses.map((b, idx) => `
         <div class="expense-item">
           <span><b>${b.desc}</b> (${b.date})</span>
           <div>
-            <span style="color:var(--accent-red); font-weight:600;">- € ${parseFloat(b.cost).toFixed(2)}</span>
-            <button class="action-btn delete-btn delete-bank-btn" data-id="${b.id}"><i class="fa-solid fa-trash"></i></button>
+            <span style="color:var(--accent-red); font-weight:600;">- € ${parseFloat(b.cost || 0).toFixed(2)}</span>
+            <button class="action-btn delete-btn delete-bank-exp-btn" data-idx="${idx}"><i class="fa-solid fa-trash"></i></button>
           </div>
         </div>
       `).join('');
-      container.querySelectorAll('.delete-bank-btn').forEach(btn => {
+
+      container.querySelectorAll('.delete-bank-exp-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          const id = parseInt(btn.dataset.id);
-          requestDeleteConfirmation("Sei sicuro di voler eliminare questa spesa bancaria?", () => {
-            bankExpenses = bankExpenses.filter(b => b.id !== id);
+          const idx = parseInt(btn.dataset.idx);
+          requestDeleteConfirmation("Eliminare questa spesa bancaria?", () => {
+            bankExpenses.splice(idx, 1);
             syncToCloud();
             renderBankExpensesList();
             syncBankExpensesToFund();
@@ -2270,92 +2536,259 @@
       });
     }
 
-
     function syncBankExpensesToFund() {
-      mastriniData.forEach(m => {
-        if (m.items) {
-          m.items = m.items.filter(item => !item.isAutoBank);
-        }
+      if (!bankTargetFund) return;
+      const targetFund = mastriniData.find(m => m.name === bankTargetFund);
+      if (!targetFund) return;
+      if (!targetFund.items) targetFund.items = [];
+
+      targetFund.items = targetFund.items.filter(it => !it.isBankExpense);
+
+      bankExpenses.forEach(b => {
+        targetFund.items.push({
+          date: b.date,
+          note: `[Banca] ${b.desc}`,
+          amount: -Math.abs(parseFloat(b.cost) || 0),
+          isBankExpense: true
+        });
       });
-      if (bankTargetFund && bankExpenses.length > 0) {
-        const totalBankCost = bankExpenses.reduce((acc, curr) => acc + parseFloat(curr.cost || 0), 0);
-        const targetMastrino = mastriniData.find(m => m.name === bankTargetFund);
-        if (targetMastrino) {
-          if (!targetMastrino.items) targetMastrino.items = [];
-          targetMastrino.items.push({
-            date: formatDateToYMD(new Date()),
-            note: "Totale Spese Bancarie",
-            amount: -totalBankCost,
-            isAutoBank: true
-          });
-        }
-      }
+
       syncToCloud();
       renderMastriniView();
     }
 
 
-    // Inserimento Rapido Form
-    document.getElementById('quick-expense-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const date = document.getElementById('quick-date').value;
-      const amount = parseFloat(document.getElementById('quick-amount').value);
-      const desc = document.getElementById('quick-desc').value;
-      if (!date || isNaN(amount) || !desc) return;
-
-
-      const newExpense = { id: Date.now(), date, amount, desc, type: currentMovementType };
-      expenses.push(newExpense);
-      
-      const expDate = new Date(date);
-      monthSelect.value = getTargetMonthIndex(expDate);
-      document.getElementById('quick-amount').value = "";
-      document.getElementById('quick-desc').value = "";
-      
-      syncToCloud();
-      renderMonthlyView(newExpense.id);
-      document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
-      document.getElementById('sec-mensile').classList.add('active');
+    // --- MODALE EXPORT EXCEL & ENGINE EXCELJS GRAFICA MODERNA ---
+    const exportModal = document.getElementById('export-modal');
+    document.getElementById('btn-open-export-modal').addEventListener('click', () => {
+      closeDrawer();
+      exportModal.classList.add('open');
+    });
+    document.getElementById('close-export-modal-btn').addEventListener('click', () => {
+      exportModal.classList.remove('open');
     });
 
+    document.getElementById('btn-export-mensile').addEventListener('click', () => {
+      const monthIdx = parseInt(monthSelect.value);
+      exportExcelData({ mensile: [monthIdx], mastrini: false, banca: false }, `Gestione_Mensile_${monthsNames[monthIdx]}.xlsx`);
+    });
 
-    // Modal Edit Week
-    let activeEdit = null;
-    const editWeekModal = document.getElementById('edit-week-modal');
-    function openEditWeekModal(mIdx, wIdx) {
-      activeEdit = { mIdx, wIdx };
-      const weeks = generateWeeks(parseInt(mIdx));
-      const currentW = weeks[wIdx];
-      document.getElementById('modal-week-title').textContent = `Modifica SETTIMANA ${parseInt(wIdx) + 1}`;
-      document.getElementById('modal-start-date').value = currentW.start;
-      document.getElementById('modal-end-date').value = currentW.end;
-      editWeekModal.classList.add('open');
+    document.getElementById('btn-export-mastrini').addEventListener('click', () => {
+      exportExcelData({ mensile: [], mastrini: true, banca: false }, `Export_Mastrini.xlsx`);
+    });
+
+    document.getElementById('btn-export-banca').addEventListener('click', () => {
+      exportExcelData({ mensile: [], mastrini: false, banca: true }, `Export_Spese_Banca.xlsx`);
+    });
+
+    document.getElementById('btn-export-completo').addEventListener('click', () => {
+      const allMonths = [0,1,2,3,4,5,6,7,8,9,10,11];
+      exportExcelData({ mensile: allMonths, mastrini: true, banca: true }, `Export_Completo_Anno.xlsx`);
+    });
+
+    // GENERA E SCARICA IL FILE EXCEL FORMATTATO CON STYLE E COLORI
+    async function exportExcelData(options, filename) {
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'Gestionale Spese & Entrate';
+
+      // 1. FOGLI MENSILE
+      if (options.mensile && options.mensile.length > 0) {
+        options.mensile.forEach(mIdx => {
+          const sheet = workbook.addWorksheet(monthsNames[mIdx]);
+          sheet.views = [{ showGridLines: true }];
+
+          // Header Foglio
+          sheet.mergeCells('A1:D1');
+          const titleCell = sheet.getCell('A1');
+          titleCell.value = `GESTIONE MENSILE - ${monthsNames[mIdx].toUpperCase()}`;
+          titleCell.font = { name: 'Inter', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+          titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+          titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+          sheet.getRow(1).height = 30;
+
+          // Intestazione Tabella
+          const headers = ['Data', 'Descrizione / Voce', 'Tipo', 'Importo (€)'];
+          sheet.addRow([]);
+          const headerRow = sheet.addRow(headers);
+          headerRow.height = 24;
+          headerRow.eachCell(cell => {
+            cell.font = { name: 'Inter', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = { bottom: { style: 'medium', color: { argb: 'FF38BDF8' } } };
+          });
+
+          // Settimane e Movimenti
+          const weeks = generateWeeks(mIdx);
+          let totalExpMonth = 0;
+          let totalIncMonth = 0;
+
+          weeks.forEach((w, wIdx) => {
+            const wExpenses = expenses.filter(e => e.date >= w.start && e.date <= w.end);
+            
+            // Subheader Settimana
+            const weekRow = sheet.addRow([`SETTIMANA ${wIdx + 1} (${w.start} - ${w.end})`]);
+            sheet.mergeCells(`A${weekRow.number}:D${weekRow.number}`);
+            weekRow.height = 22;
+            const wCell = weekRow.getCell(1);
+            wCell.font = { name: 'Inter', size: 10, bold: true, color: { argb: 'FF38BDF8' } };
+            wCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+
+            if (wExpenses.length === 0) {
+              const emptyRow = sheet.addRow(['-', 'Nessun movimento', '-', 0]);
+              emptyRow.getCell(4).numFmt = '€ #,##0.00';
+            } else {
+              wExpenses.forEach(exp => {
+                const isInc = exp.type === 'income';
+                const amt = parseFloat(exp.amount || 0);
+                if (isInc) totalIncMonth += amt; else totalExpMonth += amt;
+
+                const row = sheet.addRow([exp.date, exp.desc, isInc ? 'Entrata' : 'Spesa', isInc ? amt : -amt]);
+                row.getCell(4).numFmt = '€ #,##0.00';
+                row.getCell(4).font = { color: { argb: isInc ? 'FF22C55E' : 'FFEF4444' }, bold: true };
+              });
+            }
+          });
+
+          // Riga Totale Spese Mensili
+          sheet.addRow([]);
+          const summaryRow = sheet.addRow(['', 'TOTALE SPESE MENSILE', '', -totalExpMonth]);
+          summaryRow.height = 24;
+          summaryRow.getCell(2).font = { name: 'Inter', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+          summaryRow.getCell(4).font = { name: 'Inter', size: 11, bold: true, color: { argb: 'FFEF4444' } };
+          summaryRow.getCell(4).numFmt = '€ #,##0.00';
+          summaryRow.eachCell(cell => {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+          });
+
+          sheet.columns = [
+            { width: 14 },
+            { width: 35 },
+            { width: 14 },
+            { width: 18 }
+          ];
+        });
+      }
+
+      // 2. FOGLIO MASTRINI
+      if (options.mastrini) {
+        const sheet = workbook.addWorksheet('Mastrini');
+        sheet.views = [{ showGridLines: true }];
+
+        sheet.mergeCells('A1:C1');
+        const titleCell = sheet.getCell('A1');
+        titleCell.value = 'GESTIONE MASTRINI E SALDI FONDI';
+        titleCell.font = { name: 'Inter', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+        titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        sheet.getRow(1).height = 30;
+
+        let totalLiquidita = 0;
+
+        mastriniData.forEach(m => {
+          sheet.addRow([]);
+          const fundHeader = sheet.addRow([m.name.toUpperCase()]);
+          sheet.mergeCells(`A${fundHeader.number}:C${fundHeader.number}`);
+          fundHeader.height = 22;
+          const fhCell = fundHeader.getCell(1);
+          fhCell.font = { name: 'Inter', size: 11, bold: true, color: { argb: 'FF38BDF8' } };
+          fhCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+
+          const subHeaders = sheet.addRow(['Data', 'Nota / Causale', 'Importo (€)']);
+          subHeaders.eachCell(cell => {
+            cell.font = { bold: true, color: { argb: 'FF94A3B8' } };
+          });
+
+          let fundSum = 0;
+          (m.items || []).forEach(it => {
+            const amt = parseFloat(it.amount || 0);
+            fundSum += amt;
+            const row = sheet.addRow([it.date || '-', it.note || '-', amt]);
+            row.getCell(3).numFmt = '€ #,##0.00';
+            row.getCell(3).font = { color: { argb: amt >= 0 ? 'FF22C55E' : 'FFEF4444' } };
+          });
+
+          totalLiquidita += fundSum;
+
+          const fundTotalRow = sheet.addRow(['', 'SALDO FONDO', fundSum]);
+          fundTotalRow.getCell(2).font = { bold: true };
+          fundTotalRow.getCell(3).font = { bold: true, color: { argb: fundSum >= 0 ? 'FF22C55E' : 'FFEF4444' } };
+          fundTotalRow.getCell(3).numFmt = '€ #,##0.00';
+        });
+
+        // Totale Globale Mastrini
+        sheet.addRow([]);
+        const grandTotalRow = sheet.addRow(['', 'TOTALE MASTRINI (Liquidità Reale)', totalLiquidita]);
+        grandTotalRow.height = 26;
+        grandTotalRow.getCell(2).font = { name: 'Inter', size: 12, bold: true, color: { argb: 'FFFFFFFF' } };
+        grandTotalRow.getCell(3).font = { name: 'Inter', size: 12, bold: true, color: { argb: 'FF38BDF8' } };
+        grandTotalRow.getCell(3).numFmt = '€ #,##0.00';
+        grandTotalRow.eachCell(cell => {
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+        });
+
+        sheet.columns = [
+          { width: 14 },
+          { width: 40 },
+          { width: 20 }
+        ];
+      }
+
+      // 3. FOGLIO SPESE BANCA
+      if (options.banca) {
+        const sheet = workbook.addWorksheet('Spese Banca');
+        sheet.views = [{ showGridLines: true }];
+
+        sheet.mergeCells('A1:C1');
+        const titleCell = sheet.getCell('A1');
+        titleCell.value = 'REGISTRO SPESE BANCARIE';
+        titleCell.font = { name: 'Inter', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+        titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        sheet.getRow(1).height = 30;
+
+        sheet.addRow([]);
+        const headers = ['Data', 'Voce / Commissione', 'Costo (€)'];
+        const headerRow = sheet.addRow(headers);
+        headerRow.height = 24;
+        headerRow.eachCell(cell => {
+          cell.font = { name: 'Inter', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        });
+
+        let totalBank = 0;
+        bankExpenses.forEach(b => {
+          const cost = parseFloat(b.cost || 0);
+          totalBank += cost;
+          const row = sheet.addRow([b.date, b.desc, -cost]);
+          row.getCell(3).numFmt = '€ #,##0.00';
+          row.getCell(3).font = { color: { argb: 'FFEF4444' }, bold: true };
+        });
+
+        sheet.addRow([]);
+        const totalRow = sheet.addRow(['', 'TOTALE SPESE BANCARIE', -totalBank]);
+        totalRow.height = 24;
+        totalRow.getCell(2).font = { name: 'Inter', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+        totalRow.getCell(3).font = { name: 'Inter', size: 11, bold: true, color: { argb: 'FFEF4444' } };
+        totalRow.getCell(3).numFmt = '€ #,##0.00';
+        totalRow.eachCell(cell => {
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+        });
+
+        sheet.columns = [
+          { width: 14 },
+          { width: 40 },
+          { width: 20 }
+        ];
+      }
+
+      // Generazione e Download del file tramite FileSaver
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      saveAs(blob, filename);
+      exportModal.classList.remove('open');
     }
-
-    document.getElementById('close-modal-btn').addEventListener('click', () => {
-      editWeekModal.classList.remove('open');
-    });
-
-    document.getElementById('save-week-dates-btn').addEventListener('click', () => {
-      if (!activeEdit) return;
-      const { mIdx, wIdx } = activeEdit;
-      const key = `month_${mIdx}`;
-      if (!customWeekRanges[key]) {
-        customWeekRanges[key] = generateWeeks(parseInt(mIdx));
-      }
-      const newStart = document.getElementById('modal-start-date').value;
-      const newEnd = document.getElementById('modal-end-date').value;
-      if (newStart && newEnd) {
-        customWeekRanges[key][wIdx].start = newStart;
-        customWeekRanges[key][wIdx].end = newEnd;
-        syncToCloud();
-        editWeekModal.classList.remove('open');
-        renderMonthlyView();
-      }
-    });
-
-    // Inizializzazione rapida
-    document.getElementById('quick-date').value = formatDateToYMD(new Date());
   </script>
 </body>
 </html>
