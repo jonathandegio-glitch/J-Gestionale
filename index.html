@@ -8,6 +8,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- SheetJS per Export Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   
   <style>
     :root {
@@ -474,6 +476,9 @@
       <h3 style="font-weight:700;">Menu Navigazione</h3>
       <button class="close-btn" id="close-drawer-btn">&times;</button>
     </div>
+    <button class="btn btn-secondary nav-item-btn" id="btn-open-export-modal" style="border: 1px solid var(--accent-green); color: var(--accent-green);">
+      <i class="fa-solid fa-file-excel"></i> Esporta File Excel
+    </button>
     <button class="btn btn-secondary nav-item-btn" id="btn-open-settings-modal" style="border: 1px solid var(--accent-orange); color: var(--accent-orange);">
       <i class="fa-solid fa-sliders"></i> Setting Fondi Mensili
     </button>
@@ -784,6 +789,29 @@
       </div>
     </section>
   </main>
+
+  <!-- MODALE EXPORT EXCEL -->
+  <div class="modal" id="export-excel-modal">
+    <div class="modal-content">
+      <h3 style="margin-bottom:15px; font-weight:700;"><i class="fa-solid fa-file-excel" style="color:var(--accent-green); margin-right:8px;"></i> Esporta Dati Excel</h3>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:20px;">
+        Seleziona la tipologia di Report Excel formattato che desideri scaricare:
+      </p>
+      <button class="btn btn-secondary" id="btn-export-mensile" style="border: 1px solid var(--accent-blue); text-align: left; justify-content: flex-start;">
+        <i class="fa-solid fa-calendar-days" style="color:var(--accent-blue);"></i> 1) Export Gestione Mensile Corrente
+      </button>
+      <button class="btn btn-secondary" id="btn-export-mastrini" style="border: 1px solid var(--accent-orange); text-align: left; justify-content: flex-start;">
+        <i class="fa-solid fa-vault" style="color:var(--accent-orange);"></i> 2) Export Mastrini & Saldi Fondi
+      </button>
+      <button class="btn btn-secondary" id="btn-export-banca" style="border: 1px solid var(--accent-red); text-align: left; justify-content: flex-start;">
+        <i class="fa-solid fa-receipt" style="color:var(--accent-red);"></i> 3) Export Spese Bancarie
+      </button>
+      <button class="btn btn-primary" id="btn-export-completo" style="background:var(--accent-green); color:#000; text-align: left; justify-content: flex-start; margin-top:10px;">
+        <i class="fa-solid fa-file-circle-check"></i> 4) Export Completo Anno (1 foglio/mese + Mastrini + Spese Banca)
+      </button>
+      <button class="btn btn-secondary" id="close-export-modal-btn" style="margin-top:15px;">Annulla</button>
+    </div>
+  </div>
 
   <!-- MODALE BANNER DI CONFERMA ELIMINAZIONE GENERALIZZATA -->
   <div class="modal" id="confirm-delete-modal">
@@ -2015,30 +2043,31 @@
     function openMastrinoItemModal(mIdx, iIdx = null) {
       document.getElementById('mastrino-target-idx').value = mIdx;
       document.getElementById('mastrino-item-idx').value = iIdx !== null ? iIdx : "";
-      
       if (iIdx !== null) {
         const item = mastriniData[mIdx].items[iIdx];
         document.getElementById('mastrino-item-modal-title').textContent = "Modifica Voce Fondo";
         document.getElementById('mastrino-item-date').value = item.date || formatDateToYMD(new Date());
         document.getElementById('mastrino-item-note').value = item.note || "";
-        const rawAmt = parseFloat(item.amount) || 0;
+        const rawAmt = parseFloat(item.amount || 0);
         document.getElementById('mastrino-item-amount').value = Math.abs(rawAmt);
-        if (rawAmt >= 0) {
-          mastrinoToggleInc.click();
-        } else {
+        if (rawAmt < 0) {
           mastrinoToggleExp.click();
+        } else {
+          mastrinoToggleInc.click();
         }
       } else {
         document.getElementById('mastrino-item-modal-title').textContent = "Aggiungi Voce Fondo";
         document.getElementById('mastrino-item-date').value = formatDateToYMD(new Date());
         document.getElementById('mastrino-item-note').value = "";
         document.getElementById('mastrino-item-amount').value = "";
-        mastrinoToggleExp.click();
+        mastrinoToggleInc.click();
       }
       itemMastrinoModal.classList.add('open');
     }
 
-    document.getElementById('close-item-mastrino-btn').addEventListener('click', () => itemMastrinoModal.classList.remove('open'));
+    document.getElementById('close-item-mastrino-btn').addEventListener('click', () => {
+      itemMastrinoModal.classList.remove('open');
+    });
 
     document.getElementById('save-mastrino-item-btn').addEventListener('click', () => {
       const mIdx = parseInt(document.getElementById('mastrino-target-idx').value);
@@ -2066,80 +2095,74 @@
       saveAndRenderMastrini();
     });
 
-    // ELIMINAZIONE VOCE MASTRINO CON COLLEGATE
     function deleteMastrinoItemWithLinked(mIdx, iIdx) {
-      requestDeleteConfirmation("Sei sicuro di voler eliminare questa voce dal mastrino?", () => {
-        const deletedItem = mastriniData[mIdx].items[iIdx];
-        if (!deletedItem) return;
-
-        if (deletedItem.monthKey && deletedItem.fundName) {
-          if (monthlySalaries[deletedItem.monthKey] && monthlySalaries[deletedItem.monthKey].sentFunds) {
-            delete monthlySalaries[deletedItem.monthKey].sentFunds[deletedItem.fundName];
-          }
-        }
-
-        if (deletedItem.transferPairId) {
-          const pairId = deletedItem.transferPairId;
-          mastriniData.forEach(fund => {
-            if (fund.items) {
-              fund.items = fund.items.filter(it => it.transferPairId !== pairId);
+      const item = mastriniData[mIdx].items[iIdx];
+      requestDeleteConfirmation("Sei sicuro di voler eliminare questa voce dal fondo?", () => {
+        if (item.transferPairId) {
+          const pairId = item.transferPairId;
+          mastriniData.forEach(m => {
+            if (m.items) {
+              m.items = m.items.filter(it => it.transferPairId !== pairId);
             }
           });
+        } else if (item.monthKey && item.fundName) {
+          if (monthlySalaries[item.monthKey] && monthlySalaries[item.monthKey].sentFunds) {
+            delete monthlySalaries[item.monthKey].sentFunds[item.fundName];
+          }
+          mastriniData[mIdx].items.splice(iIdx, 1);
         } else {
           mastriniData[mIdx].items.splice(iIdx, 1);
         }
-
         saveAndRenderMastrini();
       });
     }
 
-    // CAMPO DI RICERCA MASTRINI
-    document.getElementById('search-mastrino-input').addEventListener('input', () => {
-      renderMastriniView();
+    const addMastrinoModal = document.getElementById('add-mastrino-modal');
+    document.getElementById('btn-open-add-mastrino').addEventListener('click', () => {
+      document.getElementById('new-mastrino-name').value = "";
+      addMastrinoModal.classList.add('open');
     });
+    document.getElementById('close-add-mastrino-btn').addEventListener('click', () => {
+      addMastrinoModal.classList.remove('open');
+    });
+    document.getElementById('save-new-mastrino-btn').addEventListener('click', () => {
+      const name = document.getElementById('new-mastrino-name').value.trim();
+      if (!name) return;
+      mastriniData.push({ name, items: [] });
+      addMastrinoModal.classList.remove('open');
+      saveAndRenderMastrini();
+    });
+
+    const searchInput = document.getElementById('search-mastrino-input');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        renderMastriniView();
+      });
+    }
 
     function saveAndRenderMastrini() {
       syncToCloud();
       renderMastriniView();
       renderMonthlyView();
-      syncBankExpensesToFund();
     }
 
-    // Modal Nuovo Mastrino
-    document.getElementById('btn-open-add-mastrino').addEventListener('click', () => {
-      document.getElementById('new-mastrino-name').value = "";
-      document.getElementById('add-mastrino-modal').classList.add('open');
-    });
-    document.getElementById('close-add-mastrino-btn').addEventListener('click', () => {
-      document.getElementById('add-mastrino-modal').classList.remove('open');
-    });
-    document.getElementById('save-new-mastrino-btn').addEventListener('click', () => {
-      const name = document.getElementById('new-mastrino-name').value.trim();
-      if (!name) return;
-      if (!mastriniData) mastriniData = [];
-      mastriniData.push({ name, items: [] });
-      saveAndRenderMastrini();
-      document.getElementById('add-mastrino-modal').classList.remove('open');
-    });
-
-    // SPESE BANCARIE & SINCRONIZZAZIONE FONDO
+    // SPESE BANCARIE
     function renderBankTargetSelect() {
-      const select = document.getElementById('bank-target-fund');
-      if (!select) return;
-      select.innerHTML = '<option value="">-- Nessun Fondo Collegato --</option>';
-      (mastriniData || []).forEach(m => {
+      const sel = document.getElementById('bank-target-fund');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">-- Nessun Fondo --</option>';
+      mastriniData.forEach(m => {
         const opt = document.createElement('option');
         opt.value = m.name;
         opt.textContent = m.name;
         if (m.name === bankTargetFund) opt.selected = true;
-        select.appendChild(opt);
+        sel.appendChild(opt);
       });
     }
 
     document.getElementById('bank-target-fund').addEventListener('change', (e) => {
       bankTargetFund = e.target.value;
       syncToCloud();
-      syncBankExpensesToFund();
     });
 
     document.getElementById('bank-expense-form').addEventListener('submit', (e) => {
@@ -2148,59 +2171,265 @@
       const cost = parseFloat(document.getElementById('bank-cost').value);
       const desc = document.getElementById('bank-desc').value.trim();
       if (!date || isNaN(cost) || !desc) return;
-      bankExpenses.push({ id: Date.now(), date, cost, desc });
+      const newBankExp = { id: Date.now(), date, desc, cost };
+      bankExpenses.push(newBankExp);
+
+      if (bankTargetFund) {
+        const targetMastrino = mastriniData.find(m => m.name === bankTargetFund);
+        if (targetMastrino) {
+          if (!targetMastrino.items) targetMastrino.items = [];
+          targetMastrino.items.push({
+            date: date,
+            note: `Spesa Banca: ${desc}`,
+            amount: -Math.abs(cost),
+            bankExpenseId: newBankExp.id
+          });
+        }
+      }
+
       syncToCloud();
       document.getElementById('bank-cost').value = "";
       document.getElementById('bank-desc').value = "";
       renderBankExpensesList();
-      syncBankExpensesToFund();
+      renderMastriniView();
     });
 
     function renderBankExpensesList() {
       const container = document.getElementById('bank-expenses-list');
       if (!container) return;
-      if (!bankExpenses || bankExpenses.length === 0) {
-        container.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted);">Nessuna spesa bancaria inserita</i>';
+      if (bankExpenses.length === 0) {
+        container.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted);">Nessuna spesa bancaria registrata</i>';
         return;
       }
-      container.innerHTML = bankExpenses.map(b => `
-        <div class="expense-item">
-          <span><b>${b.desc}</b> (${b.date})</span>
-          <div>
-            <span style="color:var(--accent-red); font-weight:600;">- € ${parseFloat(b.cost).toFixed(2)}</span>
-            <button class="action-btn delete-btn delete-bank-btn" data-id="${b.id}"><i class="fa-solid fa-trash"></i></button>
+      container.innerHTML = bankExpenses.map(b => {
+        const parts = b.date ? b.date.split('-') : ['','',''];
+        return `
+          <div class="expense-item">
+            <span><b>${b.desc}</b> (${parts[2]}/${parts[1]}/${parts[0]})</span>
+            <div>
+              <span style="color:var(--accent-red); font-weight:600;">- € ${parseFloat(b.cost).toFixed(2)}</span>
+              <button class="action-btn delete-btn delete-bank-exp-btn" data-id="${b.id}"><i class="fa-solid fa-trash"></i></button>
+            </div>
           </div>
-        </div>
-      `).join('');
-      container.querySelectorAll('.delete-bank-btn').forEach(btn => {
+        `;
+      }).join('');
+
+      container.querySelectorAll('.delete-bank-exp-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const id = parseInt(btn.dataset.id);
-          requestDeleteConfirmation("Eliminare questa spesa bancaria?", () => {
-            bankExpenses = bankExpenses.filter(x => x.id !== id);
+          requestDeleteConfirmation("Sei sicuro di voler eliminare questa spesa bancaria?", () => {
+            bankExpenses = bankExpenses.filter(b => b.id !== id);
+            mastriniData.forEach(m => {
+              if (m.items) {
+                m.items = m.items.filter(it => it.bankExpenseId !== id);
+              }
+            });
             syncToCloud();
             renderBankExpensesList();
-            syncBankExpensesToFund();
+            renderMastriniView();
           });
         });
       });
     }
 
-    function syncBankExpensesToFund() {
-      if (!bankTargetFund) return;
-      const targetM = mastriniData.find(m => m.name === bankTargetFund);
-      if (!targetM) return;
-      targetM.items = (targetM.items || []).filter(item => !item.isBankExpense);
-      bankExpenses.forEach(b => {
-        targetM.items.push({
-          date: b.date,
-          note: `[Banca] ${b.desc}`,
-          amount: -Math.abs(parseFloat(b.cost) || 0),
-          isBankExpense: true
-        });
-      });
-      syncToCloud();
-      renderMastriniView();
+    // --- MODALE E LOGICA DI EXPORT EXCEL FORMATTATO ---
+    const exportModal = document.getElementById('export-excel-modal');
+    document.getElementById('btn-open-export-modal').addEventListener('click', () => {
+      closeDrawer();
+      exportModal.classList.add('open');
+    });
+    document.getElementById('close-export-modal-btn').addEventListener('click', () => {
+      exportModal.classList.remove('open');
+    });
+
+    // Helper per stili tabelle Excel
+    function applyExcelHeaderStyle(ws, headerRange) {
+      if(!ws['!cols']) ws['!cols'] = [];
+      for(let i=0; i<10; i++) {
+        ws['!cols'][i] = { wch: 22 };
+      }
     }
+
+    // Export 1: Mensile Corrente
+    document.getElementById('btn-export-mensile').addEventListener('click', () => {
+      const monthIdx = parseInt(monthSelect.value);
+      const mName = monthsNames[monthIdx];
+      const wb = XLSX.utils.book_new();
+      const ws = buildMonthlySheet(monthIdx);
+      XLSX.utils.book_append_sheet(wb, ws, mName.substring(0, 31));
+      XLSX.writeFile(wb, `Gestione_Mensile_${mName}_2026.xlsx`);
+      exportModal.classList.remove('open');
+    });
+
+    // Export 2: Mastrini
+    document.getElementById('btn-export-mastrini').addEventListener('click', () => {
+      const wb = XLSX.utils.book_new();
+      const ws = buildMastriniSheet();
+      XLSX.utils.book_append_sheet(wb, ws, "Mastrini");
+      XLSX.writeFile(wb, `Export_Mastrini_Fondi_2026.xlsx`);
+      exportModal.classList.remove('open');
+    });
+
+    // Export 3: Spese Banca
+    document.getElementById('btn-export-banca').addEventListener('click', () => {
+      const wb = XLSX.utils.book_new();
+      const ws = buildBankExpensesSheet();
+      XLSX.utils.book_append_sheet(wb, ws, "Spese Bancarie");
+      XLSX.writeFile(wb, `Export_Spese_Bancarie_2026.xlsx`);
+      exportModal.classList.remove('open');
+    });
+
+    // Export 4: Completo Annuale
+    document.getElementById('btn-export-completo').addEventListener('click', () => {
+      const wb = XLSX.utils.book_new();
+      
+      // 12 Fogli Mensili
+      monthsNames.forEach((mName, idx) => {
+        const wsMonth = buildMonthlySheet(idx);
+        XLSX.utils.book_append_sheet(wb, wsMonth, mName.substring(0, 31));
+      });
+
+      // Foglio Mastrini
+      const wsMastrini = buildMastriniSheet();
+      XLSX.utils.book_append_sheet(wb, wsMastrini, "Mastrini");
+
+      // Foglio Spese Banca
+      const wsBank = buildBankExpensesSheet();
+      XLSX.utils.book_append_sheet(wb, wsBank, "Spese Bancarie");
+
+      XLSX.writeFile(wb, `Gestionale_Report_Completo_2026.xlsx`);
+      exportModal.classList.remove('open');
+    });
+
+    function buildMonthlySheet(monthIdx) {
+      const key = `month_${monthIdx}`;
+      const mName = monthsNames[monthIdx];
+      const weeks = generateWeeks(monthIdx);
+      const salData = monthlySalaries[key] || { base: 0, speseVive: 0, eff: 0, customFundAlloc: {} };
+      
+      let rows = [
+        [`REPORT MENSILE: ${mName.toUpperCase()} 2026`],
+        [],
+        ["PARAMETRI ENTRATE & BUDGET"],
+        ["Stipendio Base (€)", salData.base || 0],
+        ["Budget Spese Vive (€)", salData.speseVive || 0],
+        ["Stipendio Effettivo (€)", salData.eff || 0],
+        ["Extra Calcolato (€)", Math.max(0, (salData.eff || 0) - (salData.base || 0))],
+        [],
+        ["DETTAGLIO MOVIMENTI SETTIMANALI"],
+        ["Settimana", "Data", "Descrizione", "Tipologia", "Importo (€)"]
+      ];
+
+      let totSpese = 0;
+      let totEntrate = 0;
+
+      weeks.forEach((w, i) => {
+        const wExpenses = expenses.filter(e => e.date >= w.start && e.date <= w.end);
+        if (wExpenses.length === 0) {
+          rows.push([`Settimana ${i + 1}`, `${w.start} - ${w.end}`, "Nessun movimento", "-", 0]);
+        } else {
+          wExpenses.forEach(e => {
+            const isInc = e.type === 'income';
+            const amt = parseFloat(e.amount) || 0;
+            if (isInc) totEntrate += amt;
+            else totSpese += amt;
+            rows.push([`Settimana ${i + 1}`, e.date, e.desc, isInc ? "Entrata" : "Spesa", isInc ? amt : -amt]);
+          });
+        }
+      });
+
+      rows.push([]);
+      rows.push(["RIPARTIZIONE FONDI MASTRINI"]);
+      rows.push(["Fondo", "Quota Base (€)", "Quota Extra (€)", "Totale Fondo (€)"]);
+
+      let totBaseAcc = 0;
+      let totExtraAcc = 0;
+
+      mastriniData.forEach(m => {
+        const defaultCfg = (settingsFunds.allocations && settingsFunds.allocations[m.name]) || { baseAlloc: 0, extraRatio: 0 };
+        const savedCustom = salData.customFundAlloc && salData.customFundAlloc[m.name];
+        const baseShare = parseFloat(savedCustom && savedCustom.base !== undefined ? savedCustom.base : defaultCfg.baseAlloc) || 0;
+        const extraShare = parseFloat(savedCustom && savedCustom.extra !== undefined ? savedCustom.extra : defaultCfg.extraRatio) || 0;
+        totBaseAcc += baseShare;
+        totExtraAcc += extraShare;
+        rows.push([m.name, baseShare, extraShare, baseShare + extraShare]);
+      });
+
+      rows.push([]);
+      rows.push(["RECAP FINALE E BILANCIO MENSILE"]);
+      rows.push(["Totale Entrate Assolute (€)", salData.eff || 0]);
+      rows.push(["Totale Spese Vive (Netto) (€)", totEntrate - totSpese]);
+      rows.push(["Totale Accantonamento Fondi (€)", totBaseAcc + totExtraAcc]);
+      rows.push(["DISAVANZO / RIMANENZA TOTALE (€)", (salData.eff || 0) + (totEntrate - totSpese) - (totBaseAcc + totExtraAcc)]);
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      applyExcelHeaderStyle(ws);
+      return ws;
+    }
+
+    function buildMastriniSheet() {
+      let rows = [
+        ["REPORT GENERALE MASTRINI E FONDI"],
+        [],
+        ["Nome Fondo", "Data Movimento", "Descrizione / Nota", "Importo (€)"]
+      ];
+
+      let grandTotal = 0;
+
+      if (mastriniData.length === 0) {
+        rows.push(["Nessun Fondo Presente", "-", "-", 0]);
+      } else {
+        mastriniData.forEach(m => {
+          const items = m.items || [];
+          const fundTotal = items.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+          grandTotal += fundTotal;
+
+          if (items.length === 0) {
+            rows.push([m.name, "-", "Nessun movimento", 0]);
+          } else {
+            items.forEach(it => {
+              rows.push([m.name, it.date || "-", it.note || "-", parseFloat(it.amount) || 0]);
+            });
+          }
+          rows.push([`TOTALE ${m.name.toUpperCase()}`, "", "", fundTotal]);
+          rows.push([]);
+        });
+      }
+
+      rows.push(["TOTALE LIQUIDITÀ REALE MASTRINI (€)", "", "", grandTotal]);
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      applyExcelHeaderStyle(ws);
+      return ws;
+    }
+
+    function buildBankExpensesSheet() {
+      let rows = [
+        ["REPORT SPESE E COMMISSIONI BANCARIE"],
+        ["Fondo Destinazione Associato:", bankTargetFund || "Nessun Fondo"],
+        [],
+        ["Data", "Descrizione / Commissione", "Costo (€)"]
+      ];
+
+      let totalCost = 0;
+
+      if (bankExpenses.length === 0) {
+        rows.push(["-", "Nessuna spesa registrata", 0]);
+      } else {
+        bankExpenses.forEach(b => {
+          const c = parseFloat(b.cost) || 0;
+          totalCost += c;
+          rows.push([b.date || "-", b.desc || "-", -Math.abs(c)]);
+        });
+      }
+
+      rows.push([]);
+      rows.push(["TOTALE SPESE BANCARIE (€)", "", -Math.abs(totalCost)]);
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      applyExcelHeaderStyle(ws);
+      return ws;
+    }
+
   </script>
 </body>
 </html>
