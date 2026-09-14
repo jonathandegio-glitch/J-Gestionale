@@ -699,14 +699,16 @@
             <div class="expense-item" style="padding-left: 15px; font-size: 0.85rem; color: var(--text-muted);"><span>• Settimana 5+:</span><span id="recap-w5">€ 0.00</span></div>
             <hr style="border-color: var(--border-color); margin: 4px 0;">
             <div class="expense-item"><span>Totale Accantonamenti ai Fondi:</span><b id="recap-tot-fondi" style="color:var(--accent-blue);">€ 0.00</b></div>
+            <div class="expense-item" style="padding-left: 15px; font-size: 0.85rem; color: var(--text-muted);"><span>• Totale Fondi da Base:</span><span id="recap-tot-fondi-base">€ 0.00</span></div>
+            <div class="expense-item" style="padding-left: 15px; font-size: 0.85rem; color: var(--text-muted);"><span>• Totale Fondi da Extra:</span><span id="recap-tot-fondi-extra">€ 0.00</span></div>
             <div class="expense-item"><span>Rimanenza Stipendio Base:</span><b id="recap-rem-base">€ 0.00</b></div>
             <div class="expense-item"><span>Rimanenza Extra Stipendio:</span><b id="recap-rem-extra">€ 0.00</b></div>
             <hr style="border-color: var(--border-color); margin: 4px 0;">
             <div class="expense-item"><span>Stipendio Base:</span><span id="recap-stip-base">€ 0.00</span></div>
             <div class="expense-item"><span>Stipendio Extra:</span><span id="recap-stip-extra">€ 0.00</span></div>
+            <div class="expense-item"><span>Totale Entrate Assoluto:</span><b id="recap-tot-entrate" style="color:var(--accent-green);">€ 0.00</b></div>
             <div class="expense-item"><span>Totale Spese Vive (Netto):</span><span id="recap-tot-spese-vive">€ 0.00</span></div>
             <div class="expense-item"><span>Totale Accantonamento Fondi:</span><span id="recap-tot-accantonamento">€ 0.00</span></div>
-            <div class="expense-item"><span>Totale Fondi Extra:</span><b id="recap-tot-fondi-extra" style="color:var(--accent-blue);">€ 0.00</b></div>
             <div class="expense-item" style="font-size: 1rem; margin-top: 5px;"><span>Eventuale Disavanzo:</span><b id="recap-disavanzo">€ 0.00</b></div>
           </div>
         </div>
@@ -1081,6 +1083,7 @@
           }
           
           isInitialLoadDone = true;
+          initMonthDropdown();
           renderMonthlyView();
           renderMastriniView();
           renderBankExpensesList();
@@ -1193,7 +1196,6 @@
       const today = new Date();
       monthSelect.value = getTargetMonthIndex(today);
     }
-    initMonthDropdown();
 
     monthSelect.addEventListener('change', () => {
       renderMonthlyView();
@@ -1594,8 +1596,8 @@
       const weeks = generateWeeks(monthIdx);
 
       let weekTotals = [];
-      let totalMonthlyExpensesOnly = 0;
-      let totalMonthlyIncomesOnly = 0;
+      let totalMonthlyExpenses = 0;
+      let totalMonthlyIncomes = 0;
 
       weeks.forEach((w, i) => {
         const wExpenses = expenses.filter(e => e.date >= w.start && e.date <= w.end);
@@ -1604,8 +1606,8 @@
         const wNetTotal = wTotalIncomes - wTotalExpenses;
 
         weekTotals.push(wTotalExpenses);
-        totalMonthlyExpensesOnly += wTotalExpenses;
-        totalMonthlyIncomesOnly += wTotalIncomes;
+        totalMonthlyExpenses += wTotalExpenses;
+        totalMonthlyIncomes += wTotalIncomes;
 
         const containsHighlight = highlightExpenseId && wExpenses.some(e => e.id === highlightExpenseId);
         const formatD = (dStr) => {
@@ -1658,24 +1660,25 @@
         container.appendChild(weekEl);
       });
 
-      // Spese Vive Calcolate Al Netto delle Voci Positive/Negative del Mese (es: +20 e -120 = 100)
-      const totalNetSpeseVive = Math.abs(totalMonthlyExpensesOnly - totalMonthlyIncomesOnly);
 
-      // MONITORAGGIO SPESE VIVE
+      // MONITORAGGIO SPESE VIVE (NETTO)
       const currentSal = monthlySalaries[key] || {};
       const budgetSpese = currentSal.speseVive || 0;
+      const netSpeseVive = totalMonthlyIncomes - totalMonthlyExpenses;
       const statusText = document.getElementById('spese-vive-status-text');
       const statusBox = document.getElementById('spese-vive-monitor');
-      statusText.textContent = `${totalNetSpeseVive.toFixed(2)} / ${budgetSpese.toFixed(2)} €`;
+      
+      const absNetSpese = netSpeseVive < 0 ? Math.abs(netSpeseVive) : 0;
+      statusText.textContent = `${netSpeseVive >= 0 ? '+' : ''}${netSpeseVive.toFixed(2)} / ${budgetSpese.toFixed(2)} €`;
 
       if (budgetSpese > 0) {
-        if (totalNetSpeseVive > budgetSpese) {
+        if (absNetSpese > budgetSpese) {
           statusBox.style.color = 'var(--accent-red)';
           statusBox.style.borderColor = 'var(--accent-red)';
-        } else if (totalNetSpeseVive > budgetSpese * 0.75) {
+        } else if (absNetSpese > budgetSpese * 0.75) {
           statusBox.style.color = 'var(--accent-orange)';
           statusBox.style.borderColor = 'var(--accent-orange)';
-        } else if (totalNetSpeseVive > budgetSpese * 0.5) {
+        } else if (absNetSpese > budgetSpese * 0.5) {
           statusBox.style.color = '#eab308'; // Giallo
           statusBox.style.borderColor = '#eab308';
         } else {
@@ -1688,7 +1691,7 @@
       }
 
       // AGGIORNAMENTO RECAP MENSILE
-      document.getElementById('recap-tot-spese').textContent = `€ ${totalMonthlyExpensesOnly.toFixed(2)}`;
+      document.getElementById('recap-tot-spese').textContent = `€ ${totalMonthlyExpenses.toFixed(2)}`;
       document.getElementById('recap-w1').textContent = `€ ${(weekTotals[0] || 0).toFixed(2)}`;
       document.getElementById('recap-w2').textContent = `€ ${(weekTotals[1] || 0).toFixed(2)}`;
       document.getElementById('recap-w3').textContent = `€ ${(weekTotals[2] || 0).toFixed(2)}`;
@@ -1711,20 +1714,29 @@
       const stipBase = currentSal.base || 0;
       const stipEff = currentSal.eff || 0;
       const stipExtra = Math.max(0, stipEff - stipBase);
-      const remBase = stipBase - totalBaseAcc - totalNetSpeseVive;
+      const remBase = stipBase - totalBaseAcc + netSpeseVive;
       const remExtra = stipExtra - totalExtraAcc;
       const totEntrate = stipEff;
-      const disavanzo = (totEntrate - totalNetSpeseVive - totalAccantonamenti);
+      const disavanzo = (totEntrate + netSpeseVive - totalAccantonamenti);
 
       document.getElementById('recap-tot-fondi').textContent = `€ ${totalAccantonamenti.toFixed(2)}`;
+      const recapFondiBaseEl = document.getElementById('recap-tot-fondi-base');
+      if (recapFondiBaseEl) recapFondiBaseEl.textContent = `€ ${totalBaseAcc.toFixed(2)}`;
+      const recapFondiExtraEl = document.getElementById('recap-tot-fondi-extra');
+      if (recapFondiExtraEl) recapFondiExtraEl.textContent = `€ ${totalExtraAcc.toFixed(2)}`;
+
       document.getElementById('recap-rem-base').textContent = `€ ${remBase.toFixed(2)}`;
       document.getElementById('recap-rem-extra').textContent = `€ ${remExtra.toFixed(2)}`;
 
       document.getElementById('recap-stip-base').textContent = `€ ${stipBase.toFixed(2)}`;
       document.getElementById('recap-stip-extra').textContent = `€ ${stipExtra.toFixed(2)}`;
-      document.getElementById('recap-tot-spese-vive').textContent = `€ ${totalNetSpeseVive.toFixed(2)}`;
+      document.getElementById('recap-tot-entrate').textContent = `€ ${totEntrate.toFixed(2)}`;
+      
+      const recapSpeseViveEl = document.getElementById('recap-tot-spese-vive');
+      recapSpeseViveEl.textContent = `${netSpeseVive >= 0 ? '+' : ''}€ ${netSpeseVive.toFixed(2)}`;
+      recapSpeseViveEl.style.color = netSpeseVive >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+
       document.getElementById('recap-tot-accantonamento').textContent = `€ ${totalAccantonamenti.toFixed(2)}`;
-      document.getElementById('recap-tot-fondi-extra').textContent = `€ ${totalExtraAcc.toFixed(2)}`;
 
       const disavanzoEl = document.getElementById('recap-disavanzo');
       disavanzoEl.textContent = `€ ${disavanzo.toFixed(2)}`;
@@ -2309,6 +2321,7 @@
 
     // Modal Edit Week
     let activeEdit = null;
+    const editWeekModal = document.getElementById('edit-week-modal');
     function openEditWeekModal(mIdx, wIdx) {
       activeEdit = { mIdx, wIdx };
       const weeks = generateWeeks(parseInt(mIdx));
@@ -2316,31 +2329,33 @@
       document.getElementById('modal-week-title').textContent = `Modifica SETTIMANA ${parseInt(wIdx) + 1}`;
       document.getElementById('modal-start-date').value = currentW.start;
       document.getElementById('modal-end-date').value = currentW.end;
-      document.getElementById('edit-week-modal').classList.add('open');
+      editWeekModal.classList.add('open');
     }
 
     document.getElementById('close-modal-btn').addEventListener('click', () => {
-      document.getElementById('edit-week-modal').classList.remove('open');
+      editWeekModal.classList.remove('open');
     });
 
     document.getElementById('save-week-dates-btn').addEventListener('click', () => {
       if (!activeEdit) return;
       const { mIdx, wIdx } = activeEdit;
-      const start = document.getElementById('modal-start-date').value;
-      const end = document.getElementById('modal-end-date').value;
-      if (!start || !end) return;
-
       const key = `month_${mIdx}`;
       if (!customWeekRanges[key]) {
         customWeekRanges[key] = generateWeeks(parseInt(mIdx));
       }
-      customWeekRanges[key][wIdx].start = start;
-      customWeekRanges[key][wIdx].end = end;
-
-      syncToCloud();
-      document.getElementById('edit-week-modal').classList.remove('open');
-      renderMonthlyView();
+      const newStart = document.getElementById('modal-start-date').value;
+      const newEnd = document.getElementById('modal-end-date').value;
+      if (newStart && newEnd) {
+        customWeekRanges[key][wIdx].start = newStart;
+        customWeekRanges[key][wIdx].end = newEnd;
+        syncToCloud();
+        editWeekModal.classList.remove('open');
+        renderMonthlyView();
+      }
     });
+
+    // Inizializzazione rapida
+    document.getElementById('quick-date').value = formatDateToYMD(new Date());
   </script>
 </body>
 </html>
