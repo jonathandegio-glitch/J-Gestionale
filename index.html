@@ -1867,7 +1867,8 @@
     function renderMastriniView() {
       const container = document.getElementById('mastrini-container');
       const totalEl = document.getElementById('totale-mastrini-liquidita');
-      const searchVal = document.getElementById('search-mastrino-input') ? document.getElementById('search-mastrino-input').value.toLowerCase().trim() : "";
+      const searchInput = document.getElementById('search-mastrino-input');
+      const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : "";
       if (!container) return;
       container.innerHTML = "";
       let grandTotal = 0;
@@ -1888,58 +1889,50 @@
           const card = document.createElement('div');
           card.className = 'mastrino-card collapsed';
           card.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" class="mastrino-card-header">
-              <div style="font-weight:700; color:var(--text-main); font-size:1rem; display:flex; align-items:center; gap:8px;">
-                <i class="fa-solid fa-chevron-down toggle-icon" style="font-size:0.8rem; color:var(--text-muted);"></i>
-                ${m.name}
-              </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" class="mastrino-header">
+              <h4 style="font-weight:700; color:var(--accent-blue);">${m.name}</h4>
               <div>
-                <button class="action-btn edit-btn transfer-mastrino-btn" data-m="${mIdx}" title="Trasferisci Somma"><i class="fa-solid fa-right-left"></i></button>
-                <button class="action-btn delete-btn delete-mastrino-btn" data-m="${mIdx}" title="Elimina Fondo"><i class="fa-solid fa-trash"></i></button>
+                <button class="action-btn edit-btn btn-transfer-mastrino" data-idx="${mIdx}" title="Trasferisci a un altro fondo"><i class="fa-solid fa-right-left"></i></button>
+                <button class="action-btn delete-btn btn-delete-mastrino" data-idx="${mIdx}" title="Elimina fondo"><i class="fa-solid fa-trash"></i></button>
+                <i class="fa-solid fa-chevron-down" style="font-size:0.8rem; margin-left:6px; color:var(--text-muted);"></i>
               </div>
             </div>
-            <div class="mastrino-balance" style="color:${mTotal < 0 ? 'var(--accent-red)' : 'var(--accent-green)'};">€ ${mTotal.toFixed(2)}</div>
+            <div class="mastrino-balance">€ ${mTotal.toFixed(2)}</div>
             <div class="mastrino-card-content">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Movimenti Fondo:</span>
-                <button class="btn btn-primary add-item-mastrino-btn" data-m="${mIdx}" style="width:auto; padding:4px 8px; font-size:0.75rem; display:inline-flex; margin:0;">
-                  <i class="fa-solid fa-plus"></i> Aggiungi Movimento
+              <div style="margin-bottom:12px; display:flex; gap:6px;">
+                <button class="btn btn-primary btn-add-item-mastrino" data-idx="${mIdx}" style="padding:6px 10px; font-size:0.75rem; margin:0;">
+                  <i class="fa-solid fa-plus"></i> Aggiungi Voce
                 </button>
               </div>
-              <div style="max-height:180px; overflow-y:auto; border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:6px; background:rgba(0,0,0,0.2);">
-                ${m.items.length === 0 ? '<i style="font-size:0.75rem; color:var(--text-muted);">Nessuna voce registrata</i>' : 
+              <div class="mastrino-items-list">
+                ${m.items.length === 0 ? '<i style="font-size:0.75rem; color:var(--text-muted);">Nessun movimento nel fondo</i>' :
                   m.items.map((it, itemIdx) => {
-                    const amt = parseFloat(it.amount) || 0;
+                    const amt = parseFloat(it.amount || 0);
+                    const isPos = amt >= 0;
                     const parts = it.date ? it.date.split('-') : ['','',''];
-                    const dateFormatted = parts.length === 3 ? `${parts[2]}/${parts[1]}` : it.date;
+                    const dateStr = parts.length === 3 ? `${parts[2]}/${parts[1]}` : '';
                     return `
-                      <div class="expense-item" style="padding:6px 2px; font-size:0.8rem;">
+                      <div class="expense-item" style="padding:6px 0;">
                         <span>
-                          <i class="fa-solid ${amt >= 0 ? 'fa-arrow-down' : 'fa-arrow-up'}" style="color:${amt >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}; font-size:0.7rem; margin-right:4px;"></i>
-                          <b>${it.note || 'Voce'}</b> <span style="color:var(--text-muted); font-size:0.75rem;">(${dateFormatted})</span>
+                          <b>${it.note || 'Voce'}</b> ${dateStr ? `(${dateStr})` : ''}
                         </span>
                         <div>
-                          <span style="color:${amt >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}; font-weight:600;">€ ${amt.toFixed(2)}</span>
-                          <button class="action-btn edit-btn edit-item-mastrino-btn" data-m="${mIdx}" data-i="${itemIdx}"><i class="fa-solid fa-pen"></i></button>
-                          <button class="action-btn delete-btn delete-item-mastrino-btn" data-m="${mIdx}" data-i="${itemIdx}"><i class="fa-solid fa-trash"></i></button>
+                          <span style="color:${isPos ? 'var(--accent-green)' : 'var(--accent-red)'}; font-weight:600;">
+                            ${isPos ? '+' : ''} € ${amt.toFixed(2)}
+                          </span>
+                          <button class="action-btn edit-btn btn-edit-mastrino-item" data-midx="${mIdx}" data-iidx="${itemIdx}"><i class="fa-solid fa-pen-to-square"></i></button>
+                          <button class="action-btn delete-btn btn-delete-mastrino-item" data-midx="${mIdx}" data-iidx="${itemIdx}"><i class="fa-solid fa-trash"></i></button>
                         </div>
                       </div>
                     `;
-                  }).join('')
-                }
+                  }).join('')}
               </div>
             </div>
           `;
 
-          card.querySelector('.mastrino-card-header').addEventListener('click', (e) => {
+          card.querySelector('.mastrino-header').addEventListener('click', (e) => {
             if (e.target.closest('.action-btn')) return;
             card.classList.toggle('collapsed');
-            const icon = card.querySelector('.toggle-icon');
-            if (card.classList.contains('collapsed')) {
-              icon.className = 'fa-solid fa-chevron-down toggle-icon';
-            } else {
-              icon.className = 'fa-solid fa-chevron-up toggle-icon';
-            }
           });
 
           container.appendChild(card);
@@ -1949,36 +1942,68 @@
       if (totalEl) totalEl.textContent = `€ ${grandTotal.toFixed(2)}`;
 
       // Listeners Mastrini
-      document.querySelectorAll('.delete-mastrino-btn').forEach(btn => {
-        btn.addEventListener('click', () => deleteMastrino(parseInt(btn.dataset.m)));
+      document.querySelectorAll('.btn-delete-mastrino').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.idx);
+          requestDeleteConfirmation(`Sei sicuro di voler eliminare il fondo "${mastriniData[idx].name}" e tutti i suoi movimenti?`, () => {
+            mastriniData.splice(idx, 1);
+            saveAndRenderMastrini();
+          });
+        });
       });
-      document.querySelectorAll('.add-item-mastrino-btn').forEach(btn => {
-        btn.addEventListener('click', () => openItemMastrinoModal(parseInt(btn.dataset.m)));
+
+      document.querySelectorAll('.btn-add-item-mastrino').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.idx);
+          openItemMastrinoModal(idx);
+        });
       });
-      document.querySelectorAll('.edit-item-mastrino-btn').forEach(btn => {
-        btn.addEventListener('click', () => openItemMastrinoModal(parseInt(btn.dataset.m), parseInt(btn.dataset.i)));
+
+      document.querySelectorAll('.btn-edit-mastrino-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const mIdx = parseInt(btn.dataset.midx);
+          const iIdx = parseInt(btn.dataset.iidx);
+          openItemMastrinoModal(mIdx, iIdx);
+        });
       });
-      document.querySelectorAll('.delete-item-mastrino-btn').forEach(btn => {
-        btn.addEventListener('click', () => deleteItemMastrino(parseInt(btn.dataset.m), parseInt(btn.dataset.i)));
+
+      document.querySelectorAll('.btn-delete-mastrino-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const mIdx = parseInt(btn.dataset.midx);
+          const iIdx = parseInt(btn.dataset.iidx);
+          requestDeleteConfirmation("Sei sicuro di voler eliminare questa voce dal fondo?", () => {
+            mastriniData[mIdx].items.splice(iIdx, 1);
+            saveAndRenderMastrini();
+          });
+        });
       });
-      document.querySelectorAll('.transfer-mastrino-btn').forEach(btn => {
-        btn.addEventListener('click', () => openTransferFundModal(parseInt(btn.dataset.m)));
+
+      document.querySelectorAll('.btn-transfer-mastrino').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.idx);
+          openTransferFundModal(idx);
+        });
       });
+
+      updateBankTargetFundOptions();
     }
 
     const searchMastrinoInput = document.getElementById('search-mastrino-input');
     if (searchMastrinoInput) {
-      searchMastrinoInput.addEventListener('input', renderMastriniView);
+      searchMastrinoInput.addEventListener('input', () => {
+        renderMastriniView();
+      });
     }
 
     function saveAndRenderMastrini() {
       syncToCloud();
       renderMastriniView();
       renderMonthlyView();
-      renderBankExpensesList();
     }
 
-    // NUOVO MASTRINO
+    // MODALE CREA NUOVO MASTRINO
     const addMastrinoModal = document.getElementById('add-mastrino-modal');
     document.getElementById('btn-open-add-mastrino').addEventListener('click', () => {
       document.getElementById('new-mastrino-name').value = "";
@@ -1993,26 +2018,24 @@
       addMastrinoModal.classList.remove('open');
     });
 
-    function deleteMastrino(mIdx) {
-      requestDeleteConfirmation("Sei sicuro di voler eliminare questo fondo/mastrino?", () => {
-        mastriniData.splice(mIdx, 1);
-        saveAndRenderMastrini();
-      });
-    }
-
-    // MODALE ITEM MASTRINO
+    // MODALE AGGIUNGI/MODIFICA VOCE MASTRINO
     const itemMastrinoModal = document.getElementById('item-mastrino-modal');
-    function openItemMastrinoModal(mIdx, iIdx = null) {
-      document.getElementById('mastrino-target-idx').value = mIdx;
-      document.getElementById('mastrino-item-idx').value = iIdx !== null ? iIdx : "";
-      if (iIdx !== null) {
+    function openItemMastrinoModal(mastrinoIdx, itemIdx = null) {
+      document.getElementById('mastrino-target-idx').value = mastrinoIdx;
+      document.getElementById('mastrino-item-idx').value = itemIdx !== null ? itemIdx : "";
+      
+      if (itemIdx !== null) {
         document.getElementById('mastrino-item-modal-title').textContent = "Modifica Voce Fondo";
-        const item = mastriniData[mIdx].items[iIdx];
+        const item = mastriniData[mastrinoIdx].items[itemIdx];
         document.getElementById('mastrino-item-date').value = item.date || formatDateToYMD(new Date());
         document.getElementById('mastrino-item-note').value = item.note || "";
-        const amt = parseFloat(item.amount) || 0;
+        const amt = parseFloat(item.amount || 0);
         document.getElementById('mastrino-item-amount').value = Math.abs(amt);
-        if (amt >= 0) mastrinoToggleInc.click(); else mastrinoToggleExp.click();
+        if (amt >= 0) {
+          mastrinoToggleInc.click();
+        } else {
+          mastrinoToggleExp.click();
+        }
       } else {
         document.getElementById('mastrino-item-modal-title').textContent = "Aggiungi Voce Fondo";
         document.getElementById('mastrino-item-date').value = formatDateToYMD(new Date());
@@ -2030,30 +2053,30 @@
       const date = document.getElementById('mastrino-item-date').value;
       const note = document.getElementById('mastrino-item-note').value.trim();
       let amount = parseFloat(document.getElementById('mastrino-item-amount').value);
-      if (!date || isNaN(amount)) return;
-      if (mastrinoMovementType === "expense") amount = -Math.abs(amount); else amount = Math.abs(amount);
 
-      if (!mastriniData[mIdx].items) mastriniData[mIdx].items = [];
+      if (isNaN(amount) || !note) return;
+      if (mastrinoMovementType === 'expense') {
+        amount = -Math.abs(amount);
+      } else {
+        amount = Math.abs(amount);
+      }
+
+      const itemObj = { date, note, amount };
 
       if (iIdxStr !== "") {
         const iIdx = parseInt(iIdxStr);
-        mastriniData[mIdx].items[iIdx] = { date, note, amount };
+        mastriniData[mIdx].items[iIdx] = itemObj;
       } else {
-        mastriniData[mIdx].items.push({ date, note, amount });
+        if (!mastriniData[mIdx].items) mastriniData[mIdx].items = [];
+        mastriniData[mIdx].items.push(itemObj);
       }
+
       saveAndRenderMastrini();
       itemMastrinoModal.classList.remove('open');
     });
 
-    function deleteItemMastrino(mIdx, iIdx) {
-      requestDeleteConfirmation("Sei sicuro di voler eliminare questa voce dal fondo?", () => {
-        mastriniData[mIdx].items.splice(iIdx, 1);
-        saveAndRenderMastrini();
-      });
-    }
-
-    // MODALE TRASFERIMENTO FONDI
-    const transferFundModal = document.getElementById('transfer-fund-modal');
+    // MODALE TRASFERIMENTO DENARO
+    const transferModal = document.getElementById('transfer-fund-modal');
     function openTransferFundModal(fromIdx) {
       document.getElementById('transfer-from-idx').value = fromIdx;
       document.getElementById('transfer-from-name').value = mastriniData[fromIdx].name;
@@ -2068,10 +2091,10 @@
         }
       });
       document.getElementById('transfer-amount').value = "";
-      transferFundModal.classList.add('open');
+      transferModal.classList.add('open');
     }
 
-    document.getElementById('close-transfer-modal-btn').addEventListener('click', () => transferFundModal.classList.remove('open'));
+    document.getElementById('close-transfer-modal-btn').addEventListener('click', () => transferModal.classList.remove('open'));
     document.getElementById('execute-transfer-btn').addEventListener('click', () => {
       const fromIdx = parseInt(document.getElementById('transfer-from-idx').value);
       const toIdx = parseInt(document.getElementById('transfer-to-select').value);
@@ -2080,64 +2103,98 @@
 
       const fromName = mastriniData[fromIdx].name;
       const toName = mastriniData[toIdx].name;
-      const today = formatDateToYMD(new Date());
+      const todayStr = formatDateToYMD(new Date());
 
-      if (!mastriniData[fromIdx].items) mastriniData[fromIdx].items = [];
-      if (!mastriniData[toIdx].items) mastriniData[toIdx].items = [];
+      mastriniData[fromIdx].items.push({
+        date: todayStr,
+        note: `Trasferimento verso ${toName}`,
+        amount: -amount
+      });
 
-      mastriniData[fromIdx].items.push({ date: today, note: `Trasferimento a ${toName}`, amount: -amount });
-      mastriniData[toIdx].items.push({ date: today, note: `Trasferimento da ${fromName}`, amount: amount });
+      mastriniData[toIdx].items.push({
+        date: todayStr,
+        note: `Trasferimento da ${fromName}`,
+        amount: amount
+      });
 
       saveAndRenderMastrini();
-      transferFundModal.classList.remove('open');
-      alert(`Trasferimento di € ${amount.toFixed(2)} da ${fromName} a ${toName} eseguito!`);
+      transferModal.classList.remove('open');
     });
 
-    // SPESE BANCARIE RENDERING E GESTIONE
-    function renderBankExpensesList() {
-      const selectTarget = document.getElementById('bank-target-fund');
-      if (selectTarget) {
-        selectTarget.innerHTML = '<option value="">-- Nessun Fondo Collegato --</option>';
-        mastriniData.forEach(m => {
-          const opt = document.createElement('option');
-          opt.value = m.name;
-          opt.textContent = m.name;
-          if (m.name === bankTargetFund) opt.selected = true;
-          selectTarget.appendChild(opt);
-        });
+    // --- SPESE BANCARIE E SELEZIONE FONDO DESTINAZIONE ---
+    function updateBankTargetFundOptions() {
+      const select = document.getElementById('bank-target-fund');
+      if (!select) return;
+      select.innerHTML = '<option value="">-- Seleziona Fondo --</option>';
+      mastriniData.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.name;
+        opt.textContent = m.name;
+        if (m.name === bankTargetFund) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    document.getElementById('bank-target-fund').addEventListener('change', (e) => {
+      bankTargetFund = e.target.value;
+      syncToCloud();
+    });
+
+    document.getElementById('bank-expense-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const date = document.getElementById('bank-date').value;
+      const cost = parseFloat(document.getElementById('bank-cost').value);
+      const desc = document.getElementById('bank-desc').value.trim();
+      if (!date || isNaN(cost) || !desc) return;
+
+      const newBankExp = { id: Date.now(), date, desc, cost };
+      bankExpenses.push(newBankExp);
+
+      if (bankTargetFund) {
+        const targetM = mastriniData.find(m => m.name === bankTargetFund);
+        if (targetM) {
+          if (!targetM.items) targetM.items = [];
+          targetM.items.push({
+            date,
+            note: `Spesa Bancaria: ${desc}`,
+            amount: -Math.abs(cost)
+          });
+        }
       }
 
-      const listContainer = document.getElementById('bank-expenses-list');
-      if (!listContainer) return;
-      if (!bankExpenses || bankExpenses.length === 0) {
-        listContainer.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted);">Nessuna spesa bancaria registrata.</i>';
+      syncToCloud();
+      document.getElementById('bank-cost').value = "";
+      document.getElementById('bank-desc').value = "";
+      renderBankExpensesList();
+      renderMastriniView();
+    });
+
+    function renderBankExpensesList() {
+      const container = document.getElementById('bank-expenses-list');
+      if (!container) return;
+      if (bankExpenses.length === 0) {
+        container.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted);">Nessuna spesa bancaria registrata.</i>';
         return;
       }
-      let totBank = bankExpenses.reduce((acc, curr) => acc + (parseFloat(curr.cost) || 0), 0);
-      listContainer.innerHTML = `
-        <div style="font-weight:700; font-size:0.95rem; margin-bottom:10px; color:var(--accent-red);">
-          Totale Spese Bancarie: € ${totBank.toFixed(2)}
-        </div>
-        ${bankExpenses.map((b, bIdx) => {
-          const parts = b.date ? b.date.split('-') : ['','',''];
-          const dateStr = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : b.date;
-          return `
-            <div class="expense-item">
-              <span><b>${b.desc}</b> (${dateStr})</span>
-              <div>
-                <span style="color:var(--accent-red); font-weight:600;">€ ${parseFloat(b.cost || 0).toFixed(2)}</span>
-                <button class="action-btn delete-btn delete-bank-btn" data-b="${bIdx}"><i class="fa-solid fa-trash"></i></button>
-              </div>
+      container.innerHTML = bankExpenses.map((b, idx) => {
+        const parts = b.date ? b.date.split('-') : ['','',''];
+        const dateStr = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : '';
+        return `
+          <div class="expense-item">
+            <span><b>${b.desc}</b> (${dateStr})</span>
+            <div>
+              <span style="color:var(--accent-red); font-weight:600;">- € ${parseFloat(b.cost || 0).toFixed(2)}</span>
+              <button class="action-btn delete-btn btn-delete-bank-exp" data-idx="${idx}"><i class="fa-solid fa-trash"></i></button>
             </div>
-          `;
-        }).join('')}
-      `;
+          </div>
+        `;
+      }).join('');
 
-      listContainer.querySelectorAll('.delete-bank-btn').forEach(btn => {
+      container.querySelectorAll('.btn-delete-bank-exp').forEach(btn => {
         btn.addEventListener('click', () => {
-          const bIdx = parseInt(btn.dataset.b);
+          const idx = parseInt(btn.dataset.idx);
           requestDeleteConfirmation("Sei sicuro di voler eliminare questa spesa bancaria?", () => {
-            bankExpenses.splice(bIdx, 1);
+            bankExpenses.splice(idx, 1);
             syncToCloud();
             renderBankExpensesList();
           });
@@ -2145,484 +2202,262 @@
       });
     }
 
-    const bankTargetFundSelect = document.getElementById('bank-target-fund');
-    if (bankTargetFundSelect) {
-      bankTargetFundSelect.addEventListener('change', (e) => {
-        bankTargetFund = e.target.value;
-        syncToCloud();
-      });
-    }
-
-    const bankForm = document.getElementById('bank-expense-form');
-    if (bankForm) {
-      bankForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const date = document.getElementById('bank-date').value;
-        const cost = parseFloat(document.getElementById('bank-cost').value);
-        const desc = document.getElementById('bank-desc').value.trim();
-        if (!date || isNaN(cost) || !desc) return;
-        bankExpenses.push({ id: Date.now(), date, cost, desc });
-        syncToCloud();
-        document.getElementById('bank-cost').value = "";
-        document.getElementById('bank-desc').value = "";
-        renderBankExpensesList();
-      });
-    }
-
-    // --- IMPORTAZIONE DA GOOGLE FOGLI ---
-    document.getElementById('btn-start-import-gsheet').addEventListener('click', async () => {
-      const url = document.getElementById('gsheet-url-input').value.trim();
-      const statusDiv = document.getElementById('import-status');
-      if (!url) {
-        statusDiv.style.color = "var(--accent-red)";
-        statusDiv.textContent = "Inserisci un URL di Google Fogli valido!";
-        return;
-      }
-      try {
-        statusDiv.style.color = "var(--accent-blue)";
-        statusDiv.textContent = "Download e lettura dati in corso...";
-        let csvUrl = url;
-        if (url.includes('/edit')) {
-          csvUrl = url.split('/edit')[0] + '/export?format=csv';
-        }
-        const resp = await fetch(csvUrl);
-        if (!resp.ok) throw new Error("Impossibile scaricare il foglio. Verifica che sia pubblico/condiviso con link.");
-        const text = await resp.text();
-        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-        
-        let importedCount = 0;
-        lines.forEach(line => {
-          const parts = line.split(',');
-          if (parts.length >= 2) {
-            const name = parts[0].replace(/"/g, '').trim();
-            const val = parseFloat(parts[1].replace(/"/g, '').replace('€', '').trim());
-            if (name && !isNaN(val)) {
-              let existing = mastriniData.find(m => m.name.toLowerCase() === name.toLowerCase());
-              if (existing) {
-                if (!existing.items) existing.items = [];
-                existing.items.push({ date: formatDateToYMD(new Date()), note: "Importato da Google Fogli", amount: val });
-              } else {
-                mastriniData.push({
-                  name: name,
-                  items: [{ date: formatDateToYMD(new Date()), note: "Importato da Google Fogli", amount: val }]
-                });
-              }
-              importedCount++;
-            }
-          }
-        });
-        saveAndRenderMastrini();
-        statusDiv.style.color = "var(--accent-green)";
-        statusDiv.textContent = `Importazione completata con successo! Aggiornati/Creati ${importedCount} fondi.`;
-      } catch (err) {
-        statusDiv.style.color = "var(--accent-red)";
-        statusDiv.textContent = "Errore: " + err.message;
-      }
-    });
-
-    document.getElementById('btn-start-import-bank-gsheet').addEventListener('click', async () => {
-      const url = document.getElementById('gsheet-bank-url-input').value.trim();
-      const statusDiv = document.getElementById('import-status');
-      if (!url) {
-        statusDiv.style.color = "var(--accent-red)";
-        statusDiv.textContent = "Inserisci un URL per le spese bancarie!";
-        return;
-      }
-      try {
-        statusDiv.style.color = "var(--accent-blue)";
-        statusDiv.textContent = "Download spese bancarie...";
-        let csvUrl = url;
-        if (url.includes('/edit')) {
-          csvUrl = url.split('/edit')[0] + '/export?format=csv';
-        }
-        const resp = await fetch(csvUrl);
-        if (!resp.ok) throw new Error("Errore durante il recupero del file CSV.");
-        const text = await resp.text();
-        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-        let count = 0;
-        lines.forEach(line => {
-          const parts = line.split(',');
-          if (parts.length >= 3) {
-            const date = parts[0].replace(/"/g, '').trim();
-            const desc = parts[1].replace(/"/g, '').trim();
-            const cost = parseFloat(parts[2].replace(/"/g, '').replace('€', '').trim());
-            if (date && desc && !isNaN(cost)) {
-              bankExpenses.push({ id: Date.now() + count, date, desc, cost });
-              count++;
-            }
-          }
-        });
-        syncToCloud();
-        renderBankExpensesList();
-        statusDiv.style.color = "var(--accent-green)";
-        statusDiv.textContent = `Importazione Spese Bancarie completata! Importate ${count} voci.`;
-      } catch (err) {
-        statusDiv.style.color = "var(--accent-red)";
-        statusDiv.textContent = "Errore: " + err.message;
-      }
-    });
-
-    // --- SINCRONIZZAZIONE GOOGLE APPS SCRIPT ---
-    document.getElementById('btn-execute-sync-gas').addEventListener('click', async () => {
-      const gasUrl = document.getElementById('gas-url-input').value.trim();
-      const syncStatus = document.getElementById('sync-status');
-      if (!gasUrl) {
-        syncStatus.style.color = "var(--accent-red)";
-        syncStatus.textContent = "Inserisci l'URL di Google Apps Script!";
-        return;
-      }
-      try {
-        syncStatus.style.color = "var(--accent-blue)";
-        syncStatus.textContent = "Invio dati a Google Script in corso...";
-        const payload = {
-          expenses,
-          mastriniData,
-          bankExpenses,
-          monthlySalaries,
-          timestamp: new Date().toISOString()
-        };
-        await fetch(gasUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        syncStatus.style.color = "var(--accent-green)";
-        syncStatus.textContent = "Sincronizzazione completata! I dati sono stati inviati allo script.";
-      } catch (err) {
-        syncStatus.style.color = "var(--accent-red)";
-        syncStatus.textContent = "Errore durante la sincronizzazione: " + err.message;
-      }
-    });
-
-    // --- MODULO DI EXPORT EXCEL FORMATTATO (SheetJS / xlsx-js-style) ---
+    // --- MODALE EXPORT EXCEL FORMATTATO ---
     const exportModal = document.getElementById('export-excel-modal');
     document.getElementById('btn-open-export-modal').addEventListener('click', () => {
       closeDrawer();
       exportModal.classList.add('open');
     });
-    document.getElementById('close-export-modal-btn').addEventListener('click', () => {
-      exportModal.classList.remove('open');
-    });
+    document.getElementById('close-export-modal-btn').addEventListener('click', () => exportModal.classList.remove('open'));
 
-    // Helper per stilizzare le celle
-    function styleCell(cell, options = {}) {
-      if (!cell) return;
-      cell.s = cell.s || {};
-      
-      // Font predefinito pulito e moderno
-      cell.s.font = { name: "Segoe UI", sz: 11, color: { rgb: "333333" }, ...options.font };
-      
-      // Allineamento
-      cell.s.alignment = { vertical: "center", horizontal: "left", wrapText: true, ...options.alignment };
-      
-      // Sfondi e colori
-      if (options.fillColor) {
-        cell.s.fill = { fgColor: { rgb: options.fillColor } };
-      }
-      
-      // Bordi sottili ed eleganti
-      cell.s.border = options.border || {
-        top: { style: "thin", color: { rgb: "E2E8F0" } },
-        bottom: { style: "thin", color: { rgb: "E2E8F0" } },
-        left: { style: "thin", color: { rgb: "E2E8F0" } },
-        right: { style: "thin", color: { rgb: "E2E8F0" } }
+    function createStyledHeader(title) {
+      return {
+        v: title,
+        s: {
+          font: { bold: true, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "1E293B" } },
+          alignment: { horizontal: "center", vertical: "center" }
+        }
       };
-      
-      // Formattazione numerica valuta
-      if (options.numFmt) {
-        cell.z = options.numFmt;
-      }
-    }
-
-    // Helper per generare il foglio della Gestione Mensile formattato
-    function buildMonthlySheet(monthIdx) {
-      const monthKey = `month_${monthIdx}`;
-      const monthName = monthsNames[monthIdx];
-      const salData = monthlySalaries[monthKey] || { base: 0, speseVive: 0, eff: 0, customFundAlloc: {} };
-      const weeks = generateWeeks(monthIdx);
-      
-      const wsData = [];
-      wsData.push([`GESTIONE MENSILE - ${monthName.toUpperCase()}`]);
-      wsData.push([]);
-      
-      // Intestazioni Riepilogo
-      wsData.push(["RIEPILOGO MENSILE", "VALORE (€)"]);
-      wsData.push(["Stipendio Base", parseFloat(salData.base || 0)]);
-      wsData.push(["Budget Spese Vive", parseFloat(salData.speseVive || 0)]);
-      wsData.push(["Stipendio Effettivo", parseFloat(salData.eff || 0)]);
-      const extraVal = Math.max(0, (parseFloat(salData.eff || 0) - parseFloat(salData.base || 0)));
-      wsData.push(["Extra Calcolato", extraVal]);
-      wsData.push([]);
-
-      // Intestazione Dettaglio Movimenti
-      wsData.push(["Settimana", "Data", "Descrizione / Fondo", "Tipologia", "Importo (€)"]);
-
-      let totalMonthExpenses = 0;
-      let totalMonthIncomes = 0;
-
-      weeks.forEach((w, idx) => {
-        const wExpenses = expenses.filter(e => e.date >= w.start && e.date <= w.end);
-        if (wExpenses.length === 0) {
-          wsData.push([`Settimana ${idx + 1}`, `${w.start} - ${w.end}`, "Nessun movimento", "-", 0]);
-        } else {
-          wExpenses.forEach(e => {
-            const isInc = e.type === 'income';
-            const amt = parseFloat(e.amount) || 0;
-            if (isInc) totalMonthIncomes += amt; else totalMonthExpenses += amt;
-            wsData.push([
-              `Settimana ${idx + 1}`,
-              e.date,
-              e.desc,
-              isInc ? "Entrata" : "Spesa",
-              isInc ? amt : -amt
-            ]);
-          });
-        }
-      });
-
-      wsData.push([]);
-      wsData.push(["TOTALE ENTRATE", "", "", "", totalMonthIncomes]);
-      wsData.push(["TOTALE SPESE", "", "", "", totalMonthExpenses]);
-      wsData.push(["SALDO NETTO SPESE VIVE", "", "", "", totalMonthIncomes - totalMonthExpenses]);
-
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-      // Applicazione Stili Grafici Avanzati
-      const range = XLSX.utils.decode_range(ws['!ref']);
-      for (let R = range.s.r; R <= range.e.r; ++R) {
-        for (let C = range.s.c; C <= range.e.c; ++C) {
-          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-          if (!ws[cellRef]) continue;
-
-          // Titolo Principale
-          if (R === 0) {
-            styleCell(ws[cellRef], {
-              font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } },
-              fillColor: "0284C7",
-              alignment: { horizontal: "center" }
-            });
-          }
-          // Intestazioni Sezione
-          else if (R === 2 || R === 9) {
-            styleCell(ws[cellRef], {
-              font: { bold: true, color: { rgb: "FFFFFF" } },
-              fillColor: "1E293B",
-              alignment: { horizontal: "center" }
-            });
-          }
-          // Righe Totali
-          else if (R >= range.e.r - 2) {
-            styleCell(ws[cellRef], {
-              font: { bold: true, color: { rgb: "0F172A" } },
-              fillColor: "E2E8F0",
-              numFmt: "#,##0.00 €"
-            });
-          }
-          // Dati standard e valute
-          else {
-            const isNumber = typeof ws[cellRef].v === 'number';
-            styleCell(ws[cellRef], {
-              numFmt: isNumber ? "#,##0.00 €" : undefined,
-              alignment: { horizontal: isNumber ? "right" : "left" }
-            });
-          }
-        }
-      }
-
-      ws['!cols'] = [{ wch: 16 }, { wch: 22 }, { wch: 30 }, { wch: 14 }, { wch: 16 }];
-      return ws;
-    }
-
-    // Helper per generare il foglio dei Mastrini formattato
-    function buildMastriniSheet() {
-      const wsData = [];
-      wsData.push(["REPORT MASTRINI E SALDI FONDI"]);
-      wsData.push([]);
-      wsData.push(["Nome Fondo", "Data Voce", "Descrizione / Nota", "Importo (€)", "Saldo Progressivo (€)"]);
-
-      let grandTotal = 0;
-
-      if (mastriniData && mastriniData.length > 0) {
-        mastriniData.forEach(m => {
-          let fundBalance = 0;
-          if (m.items && m.items.length > 0) {
-            m.items.forEach(it => {
-              const amt = parseFloat(it.amount) || 0;
-              fundBalance += amt;
-              wsData.push([m.name, it.date, it.note || "Voce", amt, fundBalance]);
-            });
-          } else {
-            wsData.push([m.name, "-", "Nessun movimento", 0, 0]);
-          }
-          grandTotal += fundBalance;
-          wsData.push([`TOTALE FONDO ${m.name.toUpperCase()}`, "", "", "", fundBalance]);
-          wsData.push([]);
-        });
-      }
-
-      wsData.push(["TOTALE LIQUIDITÀ MASTRINI", "", "", "", grandTotal]);
-
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-      // Applicazione Stili Grafici Avanzati
-      const range = XLSX.utils.decode_range(ws['!ref']);
-      for (let R = range.s.r; R <= range.e.r; ++R) {
-        for (let C = range.s.c; C <= range.e.c; ++C) {
-          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-          if (!ws[cellRef]) continue;
-
-          const cellValue = String(ws[cellRef].v || "");
-
-          if (R === 0) {
-            styleCell(ws[cellRef], {
-              font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } },
-              fillColor: "F97316",
-              alignment: { horizontal: "center" }
-            });
-          } else if (R === 2) {
-            styleCell(ws[cellRef], {
-              font: { bold: true, color: { rgb: "FFFFFF" } },
-              fillColor: "1E293B",
-              alignment: { horizontal: "center" }
-            });
-          } else if (cellValue.startsWith("TOTALE FONDO")) {
-            styleCell(ws[cellRef], {
-              font: { bold: true, color: { rgb: "1E3A8A" } },
-              fillColor: "DBEAFE",
-              numFmt: "#,##0.00 €"
-            });
-          } else if (cellValue.startsWith("TOTALE LIQUIDITÀ")) {
-            styleCell(ws[cellRef], {
-              font: { bold: true, sz: 12, color: { rgb: "FFFFFF" } },
-              fillColor: "15803D",
-              numFmt: "#,##0.00 €"
-            });
-          } else {
-            const isNumber = typeof ws[cellRef].v === 'number';
-            styleCell(ws[cellRef], {
-              numFmt: isNumber ? "#,##0.00 €" : undefined,
-              alignment: { horizontal: isNumber ? "right" : "left" }
-            });
-          }
-        }
-      }
-
-      ws['!cols'] = [{ wch: 25 }, { wch: 14 }, { wch: 35 }, { wch: 16 }, { wch: 20 }];
-      return ws;
-    }
-
-    // Helper per generare il foglio Spese Bancarie formattato
-    function buildBankSheet() {
-      const wsData = [];
-      wsData.push(["REPORT SPESE BANCARIE"]);
-      wsData.push([]);
-      wsData.push(["Fondo Collegato:", bankTargetFund || "Nessun fondo selezionato"]);
-      wsData.push([]);
-      wsData.push(["Data", "Descrizione Commissione / Voce", "Costo (€)"]);
-
-      let totalBank = 0;
-      if (bankExpenses && bankExpenses.length > 0) {
-        bankExpenses.forEach(b => {
-          const cost = parseFloat(b.cost) || 0;
-          totalBank += cost;
-          wsData.push([b.date, b.desc, cost]);
-        });
-      }
-
-      wsData.push([]);
-      wsData.push(["TOTALE SPESE BANCARIE", "", totalBank]);
-
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-      // Applicazione Stili Grafici
-      const range = XLSX.utils.decode_range(ws['!ref']);
-      for (let R = range.s.r; R <= range.e.r; ++R) {
-        for (let C = range.s.c; C <= range.e.c; ++C) {
-          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-          if (!ws[cellRef]) continue;
-
-          if (R === 0) {
-            styleCell(ws[cellRef], {
-              font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } },
-              fillColor: "EF4444",
-              alignment: { horizontal: "center" }
-            });
-          } else if (R === 4) {
-            styleCell(ws[cellRef], {
-              font: { bold: true, color: { rgb: "FFFFFF" } },
-              fillColor: "1E293B",
-              alignment: { horizontal: "center" }
-            });
-          } else if (R === range.e.r) {
-            styleCell(ws[cellRef], {
-              font: { bold: true, color: { rgb: "991B1B" } },
-              fillColor: "FEE2E2",
-              numFmt: "#,##0.00 €"
-            });
-          } else {
-            const isNumber = typeof ws[cellRef].v === 'number';
-            styleCell(ws[cellRef], {
-              numFmt: isNumber ? "#,##0.00 €" : undefined,
-              alignment: { horizontal: isNumber ? "right" : "left" }
-            });
-          }
-        }
-      }
-
-      ws['!cols'] = [{ wch: 16 }, { wch: 40 }, { wch: 18 }];
-      return ws;
     }
 
     // 1) Export Gestione Mensile Corrente
     document.getElementById('btn-export-mensile').addEventListener('click', () => {
       const monthIdx = parseInt(monthSelect.value);
+      const monthName = monthsNames[monthIdx];
+      const weeks = generateWeeks(monthIdx);
+      const data = [];
+
+      data.push([createStyledHeader(`REPORT MENSILE - ${monthName.toUpperCase()}`), ""]);
+      data.push(["Data", "Descrizione", "Tipo", "Importo (€)"]);
+
+      weeks.forEach((w, i) => {
+        data.push([`--- SETTIMANA ${i + 1} (${w.start} al ${w.end}) ---`, "", "", ""]);
+        const wExpenses = expenses.filter(e => e.date >= w.start && e.date <= w.end);
+        wExpenses.forEach(e => {
+          data.push([e.date, e.desc, e.type === 'income' ? 'Entrata' : 'Spesa', e.amount]);
+        });
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(data);
       const wb = XLSX.utils.book_new();
-      const ws = buildMonthlySheet(monthIdx);
-      XLSX.utils.book_append_sheet(wb, ws, monthsNames[monthIdx]);
-      XLSX.writeFile(wb, `Gestione_Mensile_${monthsNames[monthIdx]}_2026.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, monthName);
+      XLSX.writeFile(wb, `Report_Mensile_${monthName}.xlsx`);
       exportModal.classList.remove('open');
     });
 
     // 2) Export Mastrini & Saldi Fondi
     document.getElementById('btn-export-mastrini').addEventListener('click', () => {
       const wb = XLSX.utils.book_new();
-      const ws = buildMastriniSheet();
-      XLSX.utils.book_append_sheet(wb, ws, "Mastrini & Fondi");
-      XLSX.writeFile(wb, `Export_Mastrini_Fondi_2026.xlsx`);
+      mastriniData.forEach(m => {
+        const data = [
+          [createStyledHeader(`FONDO: ${m.name.toUpperCase()}`), "", ""],
+          ["Data", "Nota / Descrizione", "Importo (€)"]
+        ];
+        (m.items || []).forEach(it => {
+          data.push([it.date, it.note, it.amount]);
+        });
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const safeName = m.name.replace(/[\\/?*:[\]]/g, "_").substring(0, 30);
+        XLSX.utils.book_append_sheet(wb, ws, safeName);
+      });
+      XLSX.writeFile(wb, `Report_Mastrini_Fondi.xlsx`);
       exportModal.classList.remove('open');
     });
 
     // 3) Export Spese Bancarie
     document.getElementById('btn-export-banca').addEventListener('click', () => {
+      const data = [
+        [createStyledHeader("SPESE BANCARIE"), ""],
+        ["Data", "Voce / Descrizione", "Costo (€)"]
+      ];
+      bankExpenses.forEach(b => {
+        data.push([b.date, b.desc, b.cost]);
+      });
+      const ws = XLSX.utils.aoa_to_sheet(data);
       const wb = XLSX.utils.book_new();
-      const ws = buildBankSheet();
       XLSX.utils.book_append_sheet(wb, ws, "Spese Bancarie");
-      XLSX.writeFile(wb, `Export_Spese_Bancarie_2026.xlsx`);
+      XLSX.writeFile(wb, `Report_Spese_Bancarie.xlsx`);
       exportModal.classList.remove('open');
     });
 
-    // 4) Export Completo Anno (1 foglio per mese + 1 Mastrini + 1 Spese Banca)
+    // 4) Export Completo Anno
     document.getElementById('btn-export-completo').addEventListener('click', () => {
       const wb = XLSX.utils.book_new();
-
-      // Generazione di 1 foglio per ciascuno dei 12 mesi
       monthsNames.forEach((mName, idx) => {
-        const wsMonth = buildMonthlySheet(idx);
-        XLSX.utils.book_append_sheet(wb, wsMonth, mName);
+        const weeks = generateWeeks(idx);
+        const data = [
+          [createStyledHeader(`MESE: ${mName.toUpperCase()}`), "", "", ""],
+          ["Data", "Descrizione", "Tipo", "Importo (€)"]
+        ];
+        weeks.forEach((w, i) => {
+          const wExpenses = expenses.filter(e => e.date >= w.start && e.date <= w.end);
+          if (wExpenses.length > 0) {
+            data.push([`--- SETTIMANA ${i + 1} ---`, "", "", ""]);
+            wExpenses.forEach(e => {
+              data.push([e.date, e.desc, e.type === 'income' ? 'Entrata' : 'Spesa', e.amount]);
+            });
+          }
+        });
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, ws, mName);
       });
 
-      // Foglio Mastrini
-      const wsMastrini = buildMastriniSheet();
-      XLSX.utils.book_append_sheet(wb, wsMastrini, "Mastrini e Saldi");
+      // Aggiunge foglio Mastrini
+      const mastriniSummary = [
+        [createStyledHeader("RIEPILOGO MASTRINI"), ""],
+        ["Fondo", "Saldo Attuale (€)"]
+      ];
+      mastriniData.forEach(m => {
+        const tot = (m.items || []).reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
+        mastriniSummary.push([m.name, tot]);
+      });
+      const wsMastrini = XLSX.utils.aoa_to_sheet(mastriniSummary);
+      XLSX.utils.book_append_sheet(wb, wsMastrini, "Mastrini");
 
-      // Foglio Spese Bancarie
-      const wsBank = buildBankSheet();
-      XLSX.utils.book_append_sheet(wb, wsBank, "Spese Bancarie");
+      // Aggiunge foglio Spese Banca
+      const bankSummary = [
+        [createStyledHeader("SPESE BANCARIE"), ""],
+        ["Data", "Voce", "Costo (€)"]
+      ];
+      bankExpenses.forEach(b => {
+        bankSummary.push([b.date, b.desc, b.cost]);
+      });
+      const wsBank = XLSX.utils.aoa_to_sheet(bankSummary);
+      XLSX.utils.book_append_sheet(wb, wsBank, "Spese Banca");
 
-      XLSX.writeFile(wb, `Gestionale_Report_Completo_2026.xlsx`);
+      XLSX.writeFile(wb, `Report_Gestionale_Completo.xlsx`);
       exportModal.classList.remove('open');
     });
+
+    // --- IMPORTAZIONE DA GOOGLE FOGLI CSV / DOCS ---
+    document.getElementById('btn-start-import-gsheet').addEventListener('click', async () => {
+      const url = document.getElementById('gsheet-url-input').value.trim();
+      const status = document.getElementById('import-status');
+      if (!url) {
+        status.textContent = "Inserisci un URL valido.";
+        status.style.color = "var(--accent-red)";
+        return;
+      }
+      status.textContent = "Download e importazione in corso...";
+      status.style.color = "var(--accent-blue)";
+
+      try {
+        let fetchUrl = url;
+        if (url.includes('/edit')) {
+          fetchUrl = url.replace(/\/edit.*$/, '/export?format=csv');
+        }
+        const res = await fetch(fetchUrl);
+        const text = await res.text();
+        const lines = text.split('\n');
+        let count = 0;
+
+        lines.forEach(line => {
+          const parts = line.split(',');
+          if (parts.length >= 2) {
+            const name = parts[0].replace(/"/g, '').trim();
+            const val = parseFloat(parts[1].replace(/"/g, '').trim());
+            if (name && !isNaN(val)) {
+              let m = mastriniData.find(x => x.name.toLowerCase() === name.toLowerCase());
+              if (!m) {
+                m = { name, items: [] };
+                mastriniData.push(m);
+              }
+              m.items.push({
+                date: formatDateToYMD(new Date()),
+                note: "Importato da Google Fogli",
+                amount: val
+              });
+              count++;
+            }
+          }
+        });
+
+        saveAndRenderMastrini();
+        status.textContent = `Importazione completata con successo! Inserite/aggiornate ${count} voci.`;
+        status.style.color = "var(--accent-green)";
+      } catch (err) {
+        status.textContent = "Errore durante l'importazione. Verifica il link e i permessi di condivisione.";
+        status.style.color = "var(--accent-red)";
+      }
+    });
+
+    document.getElementById('btn-start-import-bank-gsheet').addEventListener('click', async () => {
+      const url = document.getElementById('gsheet-bank-url-input').value.trim();
+      const status = document.getElementById('import-status');
+      if (!url) {
+        status.textContent = "Inserisci un URL valido.";
+        status.style.color = "var(--accent-red)";
+        return;
+      }
+      status.textContent = "Importazione spese bancarie...";
+      status.style.color = "var(--accent-blue)";
+
+      try {
+        let fetchUrl = url;
+        if (url.includes('/edit')) {
+          fetchUrl = url.replace(/\/edit.*$/, '/export?format=csv');
+        }
+        const res = await fetch(fetchUrl);
+        const text = await res.text();
+        const lines = text.split('\n');
+        let count = 0;
+
+        lines.forEach(line => {
+          const parts = line.split(',');
+          if (parts.length >= 3) {
+            const date = parts[0].replace(/"/g, '').trim();
+            const desc = parts[1].replace(/"/g, '').trim();
+            const cost = parseFloat(parts[2].replace(/"/g, '').trim());
+            if (desc && !isNaN(cost)) {
+              bankExpenses.push({ id: Date.now() + count, date, desc, cost });
+              count++;
+            }
+          }
+        });
+
+        syncToCloud();
+        renderBankExpensesList();
+        status.textContent = `Importazione spese bancarie completata! Inserite ${count} voci.`;
+        status.style.color = "var(--accent-green)";
+      } catch (err) {
+        status.textContent = "Errore durante l'importazione spese bancarie.";
+        status.style.color = "var(--accent-red)";
+      }
+    });
+
+    // --- SINCRONIZZAZIONE GOOGLE APPS SCRIPT ---
+    document.getElementById('btn-execute-sync-gas').addEventListener('click', async () => {
+      const url = document.getElementById('gas-url-input').value.trim();
+      const status = document.getElementById('sync-status');
+      if (!url) {
+        status.textContent = "Inserisci un URL Web App Google Apps Script valido.";
+        status.style.color = "var(--accent-red)";
+        return;
+      }
+      status.textContent = "Invio dati in corso...";
+      status.style.color = "var(--accent-blue)";
+
+      try {
+        const payload = {
+          expenses,
+          mastriniData,
+          bankExpenses
+        };
+        await fetch(url, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        status.textContent = "Sincronizzazione completata con successo con Google Script!";
+        status.style.color = "var(--accent-green)";
+      } catch (err) {
+        status.textContent = "Errore di connessione a Apps Script: " + err.message;
+        status.style.color = "var(--accent-red)";
+      }
+    });
+
   </script>
 </body>
 </html>
