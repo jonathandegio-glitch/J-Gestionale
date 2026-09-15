@@ -680,6 +680,12 @@
           <span id="spese-vive-status-text">0.00 / 0.00 €</span>
         </div>
 
+        <div style="margin-bottom: 16px; text-align: right;">
+          <button class="btn btn-primary" id="btn-add-week-block" style="width: auto; padding: 6px 14px; font-size: 0.85rem; display: inline-flex;">
+            <i class="fa-solid fa-plus"></i> Aggiungi Blocco Settimana
+          </button>
+        </div>
+
         <div id="weeks-container"></div>
 
         <!-- RECAP MENSILE COMPLETO -->
@@ -1208,9 +1214,10 @@
     ];
     const monthSelect = document.getElementById('select-month-cycle');
 
+    // REGOLA DEFAULT: Mese N va dal 15 del mese N+1 al 15 del mese N+2
     function getMonthDateRange(monthIndex, baseYear = 2026) {
-      let startM = monthIndex;
-      let endM = monthIndex + 1;
+      let startM = monthIndex + 1;
+      let endM = monthIndex + 2;
       let startY = baseYear;
       let endY = baseYear;
       if (startM > 11) { startM = startM - 12; startY++; }
@@ -1620,6 +1627,76 @@
       renderMonthlyView();
     });
 
+    // DINAMICITÀ E PULIZIA SOVRAPPOSIZIONE DATE
+    function cleanOverlappingDates(sourceMonthIdx, sourceWeekIdx, newStart, newEnd) {
+      for (let mKey in customWeekRanges) {
+        let currentMonthIdx = parseInt(mKey.replace('month_', ''));
+        let weeks = customWeekRanges[mKey];
+        let modified = false;
+
+        weeks.forEach((w, wIdx) => {
+          if (currentMonthIdx === sourceMonthIdx && wIdx === sourceWeekIdx) return;
+
+          let wStart = w.start;
+          let wEnd = w.end;
+
+          if (wStart <= newEnd && wEnd >= newStart) {
+            if (newStart <= wStart && newEnd >= wEnd) {
+              w.start = "";
+              w.end = "";
+              modified = true;
+            } else if (newStart <= wStart && newEnd < wEnd) {
+              let nextDay = new Date(newEnd);
+              nextDay.setDate(nextDay.getDate() + 1);
+              w.start = formatDateToYMD(nextDay);
+              modified = true;
+            } else if (newStart > wStart && newEnd >= wEnd) {
+              let prevDay = new Date(newStart);
+              prevDay.setDate(prevDay.getDate() - 1);
+              w.end = formatDateToYMD(prevDay);
+              modified = true;
+            }
+          }
+        });
+
+        if (modified) {
+          customWeekRanges[mKey] = weeks.filter(w => w.start && w.end && w.start <= w.end);
+        }
+      }
+    }
+
+    // BOTTONE AGGIUNGI BLOCCO SETTIMANA
+    document.getElementById('btn-add-week-block').addEventListener('click', () => {
+      const monthIdx = parseInt(monthSelect.value);
+      const key = `month_${monthIdx}`;
+      const weeks = generateWeeks(monthIdx);
+      
+      let lastEnd = new Date();
+      if (weeks.length > 0) {
+        lastEnd = new Date(weeks[weeks.length - 1].end);
+        lastEnd.setDate(lastEnd.getDate() + 1);
+      } else {
+        const range = getMonthDateRange(monthIdx);
+        lastEnd = range.startDate;
+      }
+      
+      let nextEnd = new Date(lastEnd);
+      nextEnd.setDate(nextEnd.getDate() + 6);
+
+      const newWeek = {
+        id: Date.now(),
+        start: formatDateToYMD(lastEnd),
+        end: formatDateToYMD(nextEnd)
+      };
+
+      weeks.push(newWeek);
+      customWeekRanges[key] = weeks;
+      cleanOverlappingDates(monthIdx, weeks.length - 1, newWeek.start, newWeek.end);
+      
+      syncToCloud();
+      renderMonthlyView();
+    });
+
     // RENDERING VISTA MENSILE
     function renderMonthlyView(highlightExpenseId = null) {
       const monthIdx = parseInt(monthSelect.value);
@@ -1656,6 +1733,7 @@
           <div class="week-header">
             <span>SETTIMANA ${i + 1} (${formatD(w.start)} - ${formatD(w.end)}) 
               <button class="action-btn edit-btn edit-week-btn" data-m="${monthIdx}" data-w="${i}" title="Modifica date"><i class="fa-solid fa-pen"></i></button>
+              <button class="action-btn delete-btn delete-week-btn" data-m="${monthIdx}" data-w="${i}" title="Elimina settimana"><i class="fa-solid fa-trash"></i></button>
             </span>
             <span style="color:${wNetTotal >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'};">
               ${wNetTotal >= 0 ? '+ ' : ''}€ ${wNetTotal.toFixed(2)}
@@ -1780,6 +1858,9 @@
       document.querySelectorAll('.edit-week-btn').forEach(btn => {
         btn.addEventListener('click', () => openEditWeekModal(btn.dataset.m, btn.dataset.w));
       });
+      document.querySelectorAll('.delete-week-btn').forEach(btn => {
+        btn.addEventListener('click', () => deleteWeekBlock(btn.dataset.m, btn.dataset.w));
+      });
       document.querySelectorAll('.add-in-week-btn').forEach(btn => {
         btn.addEventListener('click', () => openAddExpenseModal(btn.dataset.start));
       });
@@ -1790,6 +1871,19 @@
         btn.addEventListener('click', () => deleteExpense(parseInt(btn.dataset.id)));
       });
       renderRecentExpenses();
+    }
+
+    function deleteWeekBlock(mIdx, wIdx) {
+      mIdx = parseInt(mIdx);
+      wIdx = parseInt(wIdx);
+      requestDeleteConfirmation("Sei sicuro di voler eliminare questo blocco settimana?", () => {
+        const key = `month_${mIdx}`;
+        let weeks = generateWeeks(mIdx);
+        weeks.splice(wIdx, 1);
+        customWeekRanges[key] = weeks;
+        syncToCloud();
+        renderMonthlyView();
+      });
     }
 
     function renderRecentExpenses() {
@@ -1918,9 +2012,15 @@
       const { mIdx, wIdx } = editingWeekContext;
       const key = `month_${mIdx}`;
       const weeks = generateWeeks(mIdx);
-      weeks[wIdx].start = document.getElementById('modal-start-date').value;
-      weeks[wIdx].end = document.getElementById('modal-end-date').value;
+      const newStart = document.getElementById('modal-start-date').value;
+      const newEnd = document.getElementById('modal-end-date').value;
+
+      weeks[wIdx].start = newStart;
+      weeks[wIdx].end = newEnd;
       customWeekRanges[key] = weeks;
+
+      cleanOverlappingDates(mIdx, wIdx, newStart, newEnd);
+
       syncToCloud();
       editWeekModal.classList.remove('open');
       renderMonthlyView();
