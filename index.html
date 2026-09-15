@@ -613,14 +613,14 @@
           <span><i class="fa-solid fa-rotate"></i> Sincronizzazione / Trascrizione Google Script</span>
         </div>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
-          Inserisci l'URL di Google Apps Script per trascrivere i movimenti su un nuovo foglio.
+          Inserisci l'URL di Google Apps Script per trascrivere i movimenti su un nuovo foglio. Una volta inserito, la scrittura avverrà in automatico ad ogni modifica o aggiornamento.
         </p>
         <div class="form-group">
           <label>URL Google Apps Script Web App</label>
           <input type="url" id="gas-url-input" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
         </div>
         <button class="btn btn-success" id="btn-execute-sync-gas">
-          <i class="fa-solid fa-cloud-arrow-up"></i> Sincronizza Movimenti su Google Sheets
+          <i class="fa-solid fa-cloud-arrow-up"></i> Sincronizza Ora su Google Sheets
         </button>
         <div id="sync-status" style="margin-top: 15px; font-size: 0.85rem; font-weight: 600;"></div>
       </div>
@@ -1005,12 +1005,44 @@
     let monthlySalaries = JSON.parse(localStorage.getItem('monthly_salaries')) || {};
     let bankExpenses = JSON.parse(localStorage.getItem('bank_expenses_data')) || [];
     let bankTargetFund = localStorage.getItem('bank_target_fund') || "";
+    let gasUrl = localStorage.getItem('gas_sync_url') || "";
 
     let currentMovementType = "expense";
     let modalMovementType = "expense";
     let mastrinoMovementType = "expense";
 
-    // --- SINCRONIZZAZIONE REALTIME FIREBASE ---
+    // --- AUTOMATISMO SCRITTURA GOOGLE SHEETS VIA SCRIPT ---
+    function sendAutoSyncToGAS() {
+      const urlInput = document.getElementById('gas-url-input');
+      const url = urlInput ? urlInput.value.trim() : gasUrl;
+      if (!url) return;
+      
+      const payload = {
+        expenses: expenses,
+        mastrini: mastriniData,
+        bankExpenses: bankExpenses,
+        updatedAt: new Date().toISOString()
+      };
+
+      fetch(url, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify(payload)
+      }).then(() => {
+        const syncStatus = document.getElementById('sync-status');
+        if (syncStatus) {
+          syncStatus.style.color = "var(--accent-green)";
+          syncStatus.textContent = "Sincronizzato automaticamente su Google Sheets alle " + new Date().toLocaleTimeString();
+        }
+      }).catch(err => {
+        console.error("Errore Sincronizzazione GAS:", err);
+      });
+    }
+
+    // --- SINCRONIZZAZIONE REALTIME FIREBASE & TRASCRIZIONE AUTOMATICA ---
     function syncToCloud() {
       localStorage.setItem('expenses_data', JSON.stringify(expenses));
       localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
@@ -1019,6 +1051,9 @@
       localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
       localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
       localStorage.setItem('bank_target_fund', bankTargetFund);
+
+      // Invio automatico ad ogni modifica
+      sendAutoSyncToGAS();
 
       if (!currentUser) return;
       const userRef = ref(db, 'users/' + currentUser.uid);
@@ -1081,6 +1116,17 @@
           renderMonthlyView();
           renderMastriniView();
           renderBankExpensesList();
+          
+          // Inizializza input GAS
+          const gasInput = document.getElementById('gas-url-input');
+          if (gasInput) {
+            gasInput.value = gasUrl;
+            gasInput.addEventListener('change', () => {
+              gasUrl = gasInput.value.trim();
+              localStorage.setItem('gas_sync_url', gasUrl);
+              sendAutoSyncToGAS();
+            });
+          }
         });
       } else {
         currentUser = null;
@@ -1115,6 +1161,23 @@
         }
       });
     });
+
+    // EXECUTE MANUAL SYNC GAS
+    const btnExecuteSyncGAS = document.getElementById('btn-execute-sync-gas');
+    if (btnExecuteSyncGAS) {
+      btnExecuteSyncGAS.addEventListener('click', () => {
+        const gasInput = document.getElementById('gas-url-input');
+        if (gasInput) {
+          gasUrl = gasInput.value.trim();
+          localStorage.setItem('gas_sync_url', gasUrl);
+        }
+        if (!gasUrl) {
+          alert("Inserisci un URL valido di Google Apps Script!");
+          return;
+        }
+        sendAutoSyncToGAS();
+      });
+    }
 
     // --- UTILITY MODALE DI CONFERMA ELIMINAZIONE GENERALIZZATA ---
     let pendingDeleteCallback = null;
@@ -2009,32 +2072,34 @@
       document.getElementById('new-mastrino-name').value = "";
       addMastrinoModal.classList.add('open');
     });
-    document.getElementById('close-add-mastrino-btn').addEventListener('click', () => addMastrinoModal.classList.remove('open'));
+
+    document.getElementById('close-add-mastrino-btn').addEventListener('click', () => {
+      addMastrinoModal.classList.remove('open');
+    });
+
     document.getElementById('save-new-mastrino-btn').addEventListener('click', () => {
       const name = document.getElementById('new-mastrino-name').value.trim();
       if (!name) return;
-      mastriniData.push({ name, items: [] });
+      mastriniData.push({ name: name, items: [] });
       saveAndRenderMastrini();
       addMastrinoModal.classList.remove('open');
     });
 
-    // MODALE AGGIUNGI/MODIFICA VOCE MASTRINO
+    // MODALE VOCE MASTRINO
     const itemMastrinoModal = document.getElementById('item-mastrino-modal');
-    function openItemMastrinoModal(mastrinoIdx, itemIdx = null) {
-      document.getElementById('mastrino-target-idx').value = mastrinoIdx;
+    function openItemMastrinoModal(mIdx, itemIdx = null) {
+      document.getElementById('mastrino-target-idx').value = mIdx;
       document.getElementById('mastrino-item-idx').value = itemIdx !== null ? itemIdx : "";
-      
       if (itemIdx !== null) {
+        const item = mastriniData[mIdx].items[itemIdx];
         document.getElementById('mastrino-item-modal-title').textContent = "Modifica Voce Fondo";
-        const item = mastriniData[mastrinoIdx].items[itemIdx];
         document.getElementById('mastrino-item-date').value = item.date || formatDateToYMD(new Date());
         document.getElementById('mastrino-item-note').value = item.note || "";
-        const amt = parseFloat(item.amount || 0);
-        document.getElementById('mastrino-item-amount').value = Math.abs(amt);
-        if (amt >= 0) {
-          mastrinoToggleInc.click();
-        } else {
+        document.getElementById('mastrino-item-amount').value = Math.abs(item.amount || 0);
+        if ((item.amount || 0) < 0) {
           mastrinoToggleExp.click();
+        } else {
+          mastrinoToggleInc.click();
         }
       } else {
         document.getElementById('mastrino-item-modal-title').textContent = "Aggiungi Voce Fondo";
@@ -2046,87 +2111,80 @@
       itemMastrinoModal.classList.add('open');
     }
 
-    document.getElementById('close-item-mastrino-btn').addEventListener('click', () => itemMastrinoModal.classList.remove('open'));
+    document.getElementById('close-item-mastrino-btn').addEventListener('click', () => {
+      itemMastrinoModal.classList.remove('open');
+    });
+
     document.getElementById('save-mastrino-item-btn').addEventListener('click', () => {
       const mIdx = parseInt(document.getElementById('mastrino-target-idx').value);
-      const iIdxStr = document.getElementById('mastrino-item-idx').value;
+      const itemIdxStr = document.getElementById('mastrino-item-idx').value;
       const date = document.getElementById('mastrino-item-date').value;
       const note = document.getElementById('mastrino-item-note').value.trim();
       let amount = parseFloat(document.getElementById('mastrino-item-amount').value);
-
-      if (isNaN(amount) || !note) return;
+      if (isNaN(amount) || !date) return;
       if (mastrinoMovementType === 'expense') {
         amount = -Math.abs(amount);
       } else {
         amount = Math.abs(amount);
       }
+      if (!mastriniData[mIdx].items) mastriniData[mIdx].items = [];
 
-      const itemObj = { date, note, amount };
-
-      if (iIdxStr !== "") {
-        const iIdx = parseInt(iIdxStr);
-        mastriniData[mIdx].items[iIdx] = itemObj;
+      if (itemIdxStr !== "") {
+        const iIdx = parseInt(itemIdxStr);
+        mastriniData[mIdx].items[iIdx] = { date, note, amount };
       } else {
-        if (!mastriniData[mIdx].items) mastriniData[mIdx].items = [];
-        mastriniData[mIdx].items.push(itemObj);
+        mastriniData[mIdx].items.push({ date, note, amount });
       }
-
       saveAndRenderMastrini();
       itemMastrinoModal.classList.remove('open');
     });
 
-    // MODALE TRASFERIMENTO DENARO
-    const transferModal = document.getElementById('transfer-fund-modal');
+    // MODALE TRASFERIMENTO FONDI
+    const transferFundModal = document.getElementById('transfer-fund-modal');
     function openTransferFundModal(fromIdx) {
       document.getElementById('transfer-from-idx').value = fromIdx;
       document.getElementById('transfer-from-name').value = mastriniData[fromIdx].name;
-      const selectTo = document.getElementById('transfer-to-select');
-      selectTo.innerHTML = "";
+      const select = document.getElementById('transfer-to-select');
+      select.innerHTML = "";
       mastriniData.forEach((m, idx) => {
         if (idx !== fromIdx) {
           const opt = document.createElement('option');
           opt.value = idx;
           opt.textContent = m.name;
-          selectTo.appendChild(opt);
+          select.appendChild(opt);
         }
       });
       document.getElementById('transfer-amount').value = "";
-      transferModal.classList.add('open');
+      transferFundModal.classList.add('open');
     }
 
-    document.getElementById('close-transfer-modal-btn').addEventListener('click', () => transferModal.classList.remove('open'));
+    document.getElementById('close-transfer-modal-btn').addEventListener('click', () => {
+      transferFundModal.classList.remove('open');
+    });
+
     document.getElementById('execute-transfer-btn').addEventListener('click', () => {
       const fromIdx = parseInt(document.getElementById('transfer-from-idx').value);
       const toIdx = parseInt(document.getElementById('transfer-to-select').value);
       const amount = parseFloat(document.getElementById('transfer-amount').value);
       if (isNaN(amount) || amount <= 0 || isNaN(toIdx)) return;
-
+      
+      const today = formatDateToYMD(new Date());
       const fromName = mastriniData[fromIdx].name;
       const toName = mastriniData[toIdx].name;
-      const todayStr = formatDateToYMD(new Date());
 
-      mastriniData[fromIdx].items.push({
-        date: todayStr,
-        note: `Trasferimento verso ${toName}`,
-        amount: -amount
-      });
-
-      mastriniData[toIdx].items.push({
-        date: todayStr,
-        note: `Trasferimento da ${fromName}`,
-        amount: amount
-      });
+      mastriniData[fromIdx].items.push({ date: today, note: `Trasferito a ${toName}`, amount: -amount });
+      mastriniData[toIdx].items.push({ date: today, note: `Trasferito da ${fromName}`, amount: amount });
 
       saveAndRenderMastrini();
-      transferModal.classList.remove('open');
+      transferFundModal.classList.remove('open');
     });
 
-    // --- SPESE BANCARIE E SELEZIONE FONDO DESTINAZIONE ---
+    // SPESE BANCARIE
     function updateBankTargetFundOptions() {
       const select = document.getElementById('bank-target-fund');
       if (!select) return;
-      select.innerHTML = '<option value="">-- Seleziona Fondo --</option>';
-      mastriniData.forEach(m => {
+      select.innerHTML = '<option value="">Nessun Fondo (Generico)</option>';
+      mastriniData.forEach((m) => {
         const opt = document.createElement('option');
         opt.value = m.name;
         opt.textContent = m.name;
@@ -2146,22 +2204,16 @@
       const cost = parseFloat(document.getElementById('bank-cost').value);
       const desc = document.getElementById('bank-desc').value.trim();
       if (!date || isNaN(cost) || !desc) return;
-
-      const newBankExp = { id: Date.now(), date, desc, cost };
-      bankExpenses.push(newBankExp);
-
+      
+      bankExpenses.push({ id: Date.now(), date, cost, desc, targetFund: bankTargetFund });
+      
       if (bankTargetFund) {
-        const targetM = mastriniData.find(m => m.name === bankTargetFund);
-        if (targetM) {
-          if (!targetM.items) targetM.items = [];
-          targetM.items.push({
-            date,
-            note: `Spesa Bancaria: ${desc}`,
-            amount: -Math.abs(cost)
-          });
+        const m = mastriniData.find(item => item.name === bankTargetFund);
+        if (m) {
+          if (!m.items) m.items = [];
+          m.items.push({ date, note: `Spesa Banca: ${desc}`, amount: -cost });
         }
       }
-
       syncToCloud();
       document.getElementById('bank-cost').value = "";
       document.getElementById('bank-desc').value = "";
@@ -2170,31 +2222,27 @@
     });
 
     function renderBankExpensesList() {
-      const container = document.getElementById('bank-expenses-list');
-      if (!container) return;
+      const list = document.getElementById('bank-expenses-list');
+      if (!list) return;
       if (bankExpenses.length === 0) {
-        container.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted);">Nessuna spesa bancaria registrata.</i>';
+        list.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted);">Nessuna spesa bancaria inserita</i>';
         return;
       }
-      container.innerHTML = bankExpenses.map((b, idx) => {
-        const parts = b.date ? b.date.split('-') : ['','',''];
-        const dateStr = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : '';
-        return `
-          <div class="expense-item">
-            <span><b>${b.desc}</b> (${dateStr})</span>
-            <div>
-              <span style="color:var(--accent-red); font-weight:600;">- € ${parseFloat(b.cost || 0).toFixed(2)}</span>
-              <button class="action-btn delete-btn btn-delete-bank-exp" data-idx="${idx}"><i class="fa-solid fa-trash"></i></button>
-            </div>
+      list.innerHTML = bankExpenses.map(b => `
+        <div class="expense-item">
+          <span><b>${b.desc}</b> (${b.date}) ${b.targetFund ? `<small style="color:var(--accent-blue);">[${b.targetFund}]</small>` : ''}</span>
+          <div>
+            <span style="color:var(--accent-red); font-weight:600;">- € ${parseFloat(b.cost || 0).toFixed(2)}</span>
+            <button class="action-btn delete-btn btn-delete-bank" data-id="${b.id}"><i class="fa-solid fa-trash"></i></button>
           </div>
-        `;
-      }).join('');
+        </div>
+      `).join('');
 
-      container.querySelectorAll('.btn-delete-bank-exp').forEach(btn => {
+      list.querySelectorAll('.btn-delete-bank').forEach(btn => {
         btn.addEventListener('click', () => {
-          const idx = parseInt(btn.dataset.idx);
+          const id = parseInt(btn.dataset.id);
           requestDeleteConfirmation("Sei sicuro di voler eliminare questa spesa bancaria?", () => {
-            bankExpenses.splice(idx, 1);
+            bankExpenses = bankExpenses.filter(x => x.id !== id);
             syncToCloud();
             renderBankExpensesList();
           });
@@ -2202,261 +2250,13 @@
       });
     }
 
-    // --- MODALE EXPORT EXCEL FORMATTATO ---
+    // MODALE EXPORT EXCEL
     const exportModal = document.getElementById('export-excel-modal');
     document.getElementById('btn-open-export-modal').addEventListener('click', () => {
       closeDrawer();
       exportModal.classList.add('open');
     });
     document.getElementById('close-export-modal-btn').addEventListener('click', () => exportModal.classList.remove('open'));
-
-    function createStyledHeader(title) {
-      return {
-        v: title,
-        s: {
-          font: { bold: true, color: { rgb: "FFFFFF" } },
-          fill: { fgColor: { rgb: "1E293B" } },
-          alignment: { horizontal: "center", vertical: "center" }
-        }
-      };
-    }
-
-    // 1) Export Gestione Mensile Corrente
-    document.getElementById('btn-export-mensile').addEventListener('click', () => {
-      const monthIdx = parseInt(monthSelect.value);
-      const monthName = monthsNames[monthIdx];
-      const weeks = generateWeeks(monthIdx);
-      const data = [];
-
-      data.push([createStyledHeader(`REPORT MENSILE - ${monthName.toUpperCase()}`), ""]);
-      data.push(["Data", "Descrizione", "Tipo", "Importo (€)"]);
-
-      weeks.forEach((w, i) => {
-        data.push([`--- SETTIMANA ${i + 1} (${w.start} al ${w.end}) ---`, "", "", ""]);
-        const wExpenses = expenses.filter(e => e.date >= w.start && e.date <= w.end);
-        wExpenses.forEach(e => {
-          data.push([e.date, e.desc, e.type === 'income' ? 'Entrata' : 'Spesa', e.amount]);
-        });
-      });
-
-      const ws = XLSX.utils.aoa_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, monthName);
-      XLSX.writeFile(wb, `Report_Mensile_${monthName}.xlsx`);
-      exportModal.classList.remove('open');
-    });
-
-    // 2) Export Mastrini & Saldi Fondi
-    document.getElementById('btn-export-mastrini').addEventListener('click', () => {
-      const wb = XLSX.utils.book_new();
-      mastriniData.forEach(m => {
-        const data = [
-          [createStyledHeader(`FONDO: ${m.name.toUpperCase()}`), "", ""],
-          ["Data", "Nota / Descrizione", "Importo (€)"]
-        ];
-        (m.items || []).forEach(it => {
-          data.push([it.date, it.note, it.amount]);
-        });
-        const ws = XLSX.utils.aoa_to_sheet(data);
-        const safeName = m.name.replace(/[\\/?*:[\]]/g, "_").substring(0, 30);
-        XLSX.utils.book_append_sheet(wb, ws, safeName);
-      });
-      XLSX.writeFile(wb, `Report_Mastrini_Fondi.xlsx`);
-      exportModal.classList.remove('open');
-    });
-
-    // 3) Export Spese Bancarie
-    document.getElementById('btn-export-banca').addEventListener('click', () => {
-      const data = [
-        [createStyledHeader("SPESE BANCARIE"), ""],
-        ["Data", "Voce / Descrizione", "Costo (€)"]
-      ];
-      bankExpenses.forEach(b => {
-        data.push([b.date, b.desc, b.cost]);
-      });
-      const ws = XLSX.utils.aoa_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Spese Bancarie");
-      XLSX.writeFile(wb, `Report_Spese_Bancarie.xlsx`);
-      exportModal.classList.remove('open');
-    });
-
-    // 4) Export Completo Anno
-    document.getElementById('btn-export-completo').addEventListener('click', () => {
-      const wb = XLSX.utils.book_new();
-      monthsNames.forEach((mName, idx) => {
-        const weeks = generateWeeks(idx);
-        const data = [
-          [createStyledHeader(`MESE: ${mName.toUpperCase()}`), "", "", ""],
-          ["Data", "Descrizione", "Tipo", "Importo (€)"]
-        ];
-        weeks.forEach((w, i) => {
-          const wExpenses = expenses.filter(e => e.date >= w.start && e.date <= w.end);
-          if (wExpenses.length > 0) {
-            data.push([`--- SETTIMANA ${i + 1} ---`, "", "", ""]);
-            wExpenses.forEach(e => {
-              data.push([e.date, e.desc, e.type === 'income' ? 'Entrata' : 'Spesa', e.amount]);
-            });
-          }
-        });
-        const ws = XLSX.utils.aoa_to_sheet(data);
-        XLSX.utils.book_append_sheet(wb, ws, mName);
-      });
-
-      // Aggiunge foglio Mastrini
-      const mastriniSummary = [
-        [createStyledHeader("RIEPILOGO MASTRINI"), ""],
-        ["Fondo", "Saldo Attuale (€)"]
-      ];
-      mastriniData.forEach(m => {
-        const tot = (m.items || []).reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
-        mastriniSummary.push([m.name, tot]);
-      });
-      const wsMastrini = XLSX.utils.aoa_to_sheet(mastriniSummary);
-      XLSX.utils.book_append_sheet(wb, wsMastrini, "Mastrini");
-
-      // Aggiunge foglio Spese Banca
-      const bankSummary = [
-        [createStyledHeader("SPESE BANCARIE"), ""],
-        ["Data", "Voce", "Costo (€)"]
-      ];
-      bankExpenses.forEach(b => {
-        bankSummary.push([b.date, b.desc, b.cost]);
-      });
-      const wsBank = XLSX.utils.aoa_to_sheet(bankSummary);
-      XLSX.utils.book_append_sheet(wb, wsBank, "Spese Banca");
-
-      XLSX.writeFile(wb, `Report_Gestionale_Completo.xlsx`);
-      exportModal.classList.remove('open');
-    });
-
-    // --- IMPORTAZIONE DA GOOGLE FOGLI CSV / DOCS ---
-    document.getElementById('btn-start-import-gsheet').addEventListener('click', async () => {
-      const url = document.getElementById('gsheet-url-input').value.trim();
-      const status = document.getElementById('import-status');
-      if (!url) {
-        status.textContent = "Inserisci un URL valido.";
-        status.style.color = "var(--accent-red)";
-        return;
-      }
-      status.textContent = "Download e importazione in corso...";
-      status.style.color = "var(--accent-blue)";
-
-      try {
-        let fetchUrl = url;
-        if (url.includes('/edit')) {
-          fetchUrl = url.replace(/\/edit.*$/, '/export?format=csv');
-        }
-        const res = await fetch(fetchUrl);
-        const text = await res.text();
-        const lines = text.split('\n');
-        let count = 0;
-
-        lines.forEach(line => {
-          const parts = line.split(',');
-          if (parts.length >= 2) {
-            const name = parts[0].replace(/"/g, '').trim();
-            const val = parseFloat(parts[1].replace(/"/g, '').trim());
-            if (name && !isNaN(val)) {
-              let m = mastriniData.find(x => x.name.toLowerCase() === name.toLowerCase());
-              if (!m) {
-                m = { name, items: [] };
-                mastriniData.push(m);
-              }
-              m.items.push({
-                date: formatDateToYMD(new Date()),
-                note: "Importato da Google Fogli",
-                amount: val
-              });
-              count++;
-            }
-          }
-        });
-
-        saveAndRenderMastrini();
-        status.textContent = `Importazione completata con successo! Inserite/aggiornate ${count} voci.`;
-        status.style.color = "var(--accent-green)";
-      } catch (err) {
-        status.textContent = "Errore durante l'importazione. Verifica il link e i permessi di condivisione.";
-        status.style.color = "var(--accent-red)";
-      }
-    });
-
-    document.getElementById('btn-start-import-bank-gsheet').addEventListener('click', async () => {
-      const url = document.getElementById('gsheet-bank-url-input').value.trim();
-      const status = document.getElementById('import-status');
-      if (!url) {
-        status.textContent = "Inserisci un URL valido.";
-        status.style.color = "var(--accent-red)";
-        return;
-      }
-      status.textContent = "Importazione spese bancarie...";
-      status.style.color = "var(--accent-blue)";
-
-      try {
-        let fetchUrl = url;
-        if (url.includes('/edit')) {
-          fetchUrl = url.replace(/\/edit.*$/, '/export?format=csv');
-        }
-        const res = await fetch(fetchUrl);
-        const text = await res.text();
-        const lines = text.split('\n');
-        let count = 0;
-
-        lines.forEach(line => {
-          const parts = line.split(',');
-          if (parts.length >= 3) {
-            const date = parts[0].replace(/"/g, '').trim();
-            const desc = parts[1].replace(/"/g, '').trim();
-            const cost = parseFloat(parts[2].replace(/"/g, '').trim());
-            if (desc && !isNaN(cost)) {
-              bankExpenses.push({ id: Date.now() + count, date, desc, cost });
-              count++;
-            }
-          }
-        });
-
-        syncToCloud();
-        renderBankExpensesList();
-        status.textContent = `Importazione spese bancarie completata! Inserite ${count} voci.`;
-        status.style.color = "var(--accent-green)";
-      } catch (err) {
-        status.textContent = "Errore durante l'importazione spese bancarie.";
-        status.style.color = "var(--accent-red)";
-      }
-    });
-
-    // --- SINCRONIZZAZIONE GOOGLE APPS SCRIPT ---
-    document.getElementById('btn-execute-sync-gas').addEventListener('click', async () => {
-      const url = document.getElementById('gas-url-input').value.trim();
-      const status = document.getElementById('sync-status');
-      if (!url) {
-        status.textContent = "Inserisci un URL Web App Google Apps Script valido.";
-        status.style.color = "var(--accent-red)";
-        return;
-      }
-      status.textContent = "Invio dati in corso...";
-      status.style.color = "var(--accent-blue)";
-
-      try {
-        const payload = {
-          expenses,
-          mastriniData,
-          bankExpenses
-        };
-        await fetch(url, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        status.textContent = "Sincronizzazione completata con successo con Google Script!";
-        status.style.color = "var(--accent-green)";
-      } catch (err) {
-        status.textContent = "Errore di connessione a Apps Script: " + err.message;
-        status.style.color = "var(--accent-red)";
-      }
-    });
 
   </script>
 </body>
