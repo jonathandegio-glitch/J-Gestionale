@@ -1017,6 +1017,24 @@
     let modalMovementType = "expense";
     let mastrinoMovementType = "expense";
 
+    // --- HELPER DATE DI DEFAULT ---
+    function formatDateToYMD(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function initDefaultDates() {
+      const today = formatDateToYMD(new Date());
+      const quickDateInput = document.getElementById('quick-date');
+      if (quickDateInput && !quickDateInput.value) quickDateInput.value = today;
+      const bankDateInput = document.getElementById('bank-date');
+      if (bankDateInput && !bankDateInput.value) bankDateInput.value = today;
+      const mastrinoItemDate = document.getElementById('mastrino-item-date');
+      if (mastrinoItemDate && !mastrinoItemDate.value) mastrinoItemDate.value = today;
+    }
+
     // --- AUTOMATISMO SCRITTURA GOOGLE SHEETS VIA SCRIPT ---
     function sendAutoSyncToGAS() {
       const urlInput = document.getElementById('gas-url-input');
@@ -1048,8 +1066,47 @@
       });
     }
 
+    // --- SINCRONIZZAZIONE SPESE BANCARIE COL FONDO DI DESTINAZIONE ---
+    function syncBankExpensesToFund(previousFundName = null) {
+      if (!mastriniData) return;
+      const totalBankCost = bankExpenses.reduce((acc, curr) => acc + (parseFloat(curr.cost) || 0), 0);
+      
+      // Se è cambiato il fondo di destinazione, rimuoviamo la voce dal vecchio fondo
+      if (previousFundName && previousFundName !== bankTargetFund) {
+        const oldFund = mastriniData.find(m => m.name === previousFundName);
+        if (oldFund && oldFund.items) {
+          oldFund.items = oldFund.items.filter(item => item.isBankSync !== true);
+        }
+      }
+
+      if (bankTargetFund) {
+        const targetFund = mastriniData.find(m => m.name === bankTargetFund);
+        if (targetFund) {
+          if (!targetFund.items) targetFund.items = [];
+          const existingItemIdx = targetFund.items.findIndex(item => item.isBankSync === true);
+          if (totalBankCost > 0) {
+            const syncItem = {
+              date: formatDateToYMD(new Date()),
+              note: "Totale Spese Bancarie",
+              amount: -Math.abs(totalBankCost),
+              isBankSync: true
+            };
+            if (existingItemIdx !== -1) {
+              targetFund.items[existingItemIdx] = syncItem;
+            } else {
+              targetFund.items.push(syncItem);
+            }
+          } else if (existingItemIdx !== -1) {
+            targetFund.items.splice(existingItemIdx, 1);
+          }
+        }
+      }
+    }
+
     // --- SINCRONIZZAZIONE REALTIME FIREBASE & TRASCRIZIONE AUTOMATICA ---
-    function syncToCloud() {
+    function syncToCloud(previousBankFund = null) {
+      syncBankExpensesToFund(previousBankFund);
+
       localStorage.setItem('expenses_data', JSON.stringify(expenses));
       localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
       localStorage.setItem('mastrini_data', JSON.stringify(mastriniData));
@@ -1117,9 +1174,11 @@
           }
           
           isInitialLoadDone = true;
+          initDefaultDates();
           initMonthDropdown();
           renderMonthlyView();
           renderMastriniView();
+          renderBankExpensesView();
           
           const gasInput = document.getElementById('gas-url-input');
           if (gasInput) {
@@ -1214,13 +1273,6 @@
       if (!str) return new Date();
       const p = str.split('-');
       return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
-    }
-
-    function formatDateToYMD(d) {
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
     }
 
     function getMonthDateRange(monthIndex, baseYear = 2026) {
@@ -1380,7 +1432,7 @@
     // INSERIMENTO RAPIDO
     document.getElementById('quick-expense-form').addEventListener('submit', (e) => {
       e.preventDefault();
-      const date = document.getElementById('quick-date').value;
+      const date = document.getElementById('quick-date').value || formatDateToYMD(new Date());
       const amount = parseFloat(document.getElementById('quick-amount').value);
       const desc = document.getElementById('quick-desc').value.trim();
       if (!date || isNaN(amount) || !desc) return;
@@ -1389,6 +1441,7 @@
       syncToCloud();
       document.getElementById('quick-amount').value = "";
       document.getElementById('quick-desc').value = "";
+      document.getElementById('quick-date').value = formatDateToYMD(new Date());
       renderMonthlyView(newExp.id);
     });
 
@@ -1989,7 +2042,7 @@
       if (!exp) return;
       document.getElementById('expense-modal-title').textContent = "Modifica Movimento";
       document.getElementById('edit-exp-id').value = exp.id;
-      document.getElementById('modal-exp-date').value = exp.date;
+      document.getElementById('modal-exp-date').value = exp.date || formatDateToYMD(new Date());
       document.getElementById('modal-exp-desc').value = exp.desc;
       document.getElementById('modal-exp-amount').value = exp.amount;
       modalMovementType = exp.type || "expense";
@@ -2004,7 +2057,7 @@
     function openAddExpenseModal(defaultDate) {
       document.getElementById('expense-modal-title').textContent = "Aggiungi Movimento";
       document.getElementById('edit-exp-id').value = "";
-      document.getElementById('modal-exp-date').value = defaultDate;
+      document.getElementById('modal-exp-date').value = defaultDate || formatDateToYMD(new Date());
       document.getElementById('modal-exp-desc').value = "";
       document.getElementById('modal-exp-amount').value = "";
       modalExpExpenseBtn.click();
@@ -2014,7 +2067,7 @@
     document.getElementById('close-expense-modal-btn').addEventListener('click', () => expModal.classList.remove('open'));
     document.getElementById('save-expense-btn').addEventListener('click', () => {
       const id = document.getElementById('edit-exp-id').value;
-      const date = document.getElementById('modal-exp-date').value;
+      const date = document.getElementById('modal-exp-date').value || formatDateToYMD(new Date());
       const desc = document.getElementById('modal-exp-desc').value;
       const amount = parseFloat(document.getElementById('modal-exp-amount').value);
       if (!date || !desc || isNaN(amount)) return;
@@ -2147,6 +2200,9 @@
           e.stopPropagation();
           const idx = parseInt(btn.dataset.idx);
           requestDeleteConfirmation(`Sei sicuro di voler eliminare il fondo "${mastriniData[idx].name}" e tutti i suoi movimenti?`, () => {
+            if (bankTargetFund === mastriniData[idx].name) {
+              bankTargetFund = "";
+            }
             mastriniData.splice(idx, 1);
             saveAndRenderMastrini();
           });
@@ -2199,6 +2255,7 @@
       syncToCloud();
       renderMastriniView();
       renderMonthlyView();
+      renderBankExpensesView();
     }
 
     // MODALE CREA NUOVO MASTRINO
@@ -2253,7 +2310,7 @@
     document.getElementById('save-mastrino-item-btn').addEventListener('click', () => {
       const mIdx = parseInt(document.getElementById('mastrino-target-idx').value);
       const itemIdxStr = document.getElementById('mastrino-item-idx').value;
-      const date = document.getElementById('mastrino-item-date').value;
+      const date = document.getElementById('mastrino-item-date').value || formatDateToYMD(new Date());
       const note = document.getElementById('mastrino-item-note').value.trim();
       let amount = parseFloat(document.getElementById('mastrino-item-amount').value);
       if (isNaN(amount) || !date) return;
@@ -2318,6 +2375,103 @@
       saveAndRenderMastrini();
       transferFundModal.classList.remove('open');
     });
+
+    // RENDERING & GESTIONE SEZIONE SPESE BANCARIE (PUNTO 2)
+    function renderBankExpensesView() {
+      const targetSelect = document.getElementById('bank-target-fund');
+      if (targetSelect) {
+        targetSelect.innerHTML = '<option value="">-- Nessun Fondo Assegnato --</option>';
+        (mastriniData || []).forEach(m => {
+          const opt = document.createElement('option');
+          opt.value = m.name;
+          opt.textContent = m.name;
+          if (m.name === bankTargetFund) opt.selected = true;
+          targetSelect.appendChild(opt);
+        });
+      }
+
+      const listContainer = document.getElementById('bank-expenses-list');
+      if (!listContainer) return;
+      listContainer.innerHTML = "";
+
+      const bankDateInput = document.getElementById('bank-date');
+      if (bankDateInput && !bankDateInput.value) {
+        bankDateInput.value = formatDateToYMD(new Date());
+      }
+
+      if (!bankExpenses || bankExpenses.length === 0) {
+        listContainer.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted);">Nessuna spesa bancaria registrata</i>';
+        return;
+      }
+
+      let totalCost = 0;
+      const htmlList = bankExpenses.map((b, idx) => {
+        const costVal = parseFloat(b.cost || 0);
+        totalCost += costVal;
+        const parts = b.date ? b.date.split('-') : ['','',''];
+        const dateStr = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : b.date;
+        return `
+          <div class="expense-item">
+            <span><b>${b.desc}</b> (${dateStr})</span>
+            <div>
+              <span style="color:var(--accent-red); font-weight:600;">- € ${costVal.toFixed(2)}</span>
+              <button class="action-btn delete-btn delete-bank-exp-btn" data-idx="${idx}"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      listContainer.innerHTML = `
+        <div style="margin-bottom:12px; font-weight:700; color:var(--accent-blue);">
+          Totale Spese Bancarie: € ${totalCost.toFixed(2)}
+        </div>
+        ${htmlList}
+      `;
+
+      listContainer.querySelectorAll('.delete-bank-exp-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.idx);
+          requestDeleteConfirmation("Sei sicuro di voler eliminare questa spesa bancaria?", () => {
+            bankExpenses.splice(idx, 1);
+            syncToCloud();
+            renderBankExpensesView();
+            renderMastriniView();
+          });
+        });
+      });
+    }
+
+    const bankTargetSelect = document.getElementById('bank-target-fund');
+    if (bankTargetSelect) {
+      bankTargetSelect.addEventListener('change', (e) => {
+        const prevFund = bankTargetFund;
+        bankTargetFund = e.target.value;
+        syncToCloud(prevFund);
+        renderMastriniView();
+      });
+    }
+
+    const bankForm = document.getElementById('bank-expense-form');
+    if (bankForm) {
+      bankForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const date = document.getElementById('bank-date').value || formatDateToYMD(new Date());
+        const cost = parseFloat(document.getElementById('bank-cost').value);
+        const desc = document.getElementById('bank-desc').value.trim();
+
+        if (!date || isNaN(cost) || !desc) return;
+
+        bankExpenses.push({ id: Date.now(), date, cost, desc });
+        syncToCloud();
+
+        document.getElementById('bank-cost').value = "";
+        document.getElementById('bank-desc').value = "";
+        document.getElementById('bank-date').value = formatDateToYMD(new Date());
+
+        renderBankExpensesView();
+        renderMastriniView();
+      });
+    }
   </script>
 </body>
 </html>
