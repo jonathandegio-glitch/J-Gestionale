@@ -583,20 +583,20 @@
           <span><i class="fa-solid fa-file-import"></i> Importazione Dati da Google Fogli</span>
         </div>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
-          Incolla i link dei tuoi Fogli Google condivisi per importare i dati dei Fondi o delle Spese Bancarie.
+          Incolla i link dei tuoi Fogli Google condivisi per importare i dati dei Fondi/Mastrini o delle Spese Bancarie.
         </p>
         <div class="form-group">
-          <label>Link Google Fogli / Documents (Saldi Fondi)</label>
+          <label>Link Google Fogli (Import Mastrini)</label>
           <input type="url" id="gsheet-url-input" class="form-control" placeholder="https://docs.google.com/spreadsheets/d/...">
         </div>
         <button class="btn btn-primary" id="btn-start-import-gsheet" style="margin-bottom: 20px;">
-          <i class="fa-solid fa-download"></i> Importa Fondi
+          <i class="fa-solid fa-download"></i> Importa Mastrini
         </button>
 
         <hr style="border-color: var(--border-color); margin: 20px 0;">
 
         <div class="form-group">
-          <label>Link Google Fogli Spese Bancarie</label>
+          <label>Link Google Fogli (Import Spese Bancarie)</label>
           <input type="url" id="gsheet-bank-url-input" class="form-control" placeholder="https://docs.google.com/spreadsheets/d/...">
         </div>
         <button class="btn btn-primary" id="btn-start-import-bank-gsheet">
@@ -734,7 +734,7 @@
         <div style="background: rgba(56, 189, 248, 0.1); border:1px solid var(--accent-blue); padding:15px; border-radius: var(--radius-sm); margin-bottom: 20px;">
           <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">TOTALE MASTRINI (Liquidità Reale):</div>
           <div id="totale-mastrini-liquidita" style="font-size: 1.8rem; font-weight: 700; color: var(--accent-blue);">€ 0.00</div>
-          <div style="font-size: 0.7rem; color: var(--text-muted);">Esclusi: Investimenti e Fondo Pensione.</div>
+          <div style="font-size: 0.7rem; color: var(--text-muted);">Esclusi: Investimenti, Fondo pensione e Time deposit.</div>
         </div>
         <div class="mastrini-grid" id="mastrini-container"></div>
       </div>
@@ -1019,6 +1019,7 @@
 
     // --- HELPER DATE DI DEFAULT ---
     function formatDateToYMD(d) {
+      if (!(d instanceof Date) || isNaN(d)) d = new Date();
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
@@ -1237,6 +1238,236 @@
           return;
         }
         sendAutoSyncToGAS();
+      });
+    }
+
+    // --- FUNZIONE DI HELP PER PARSING CSV / LINK PUBBLICI GOOGLE FOGLI ---
+    function getGSheetCsvUrl(urlStr) {
+      if (!urlStr) return null;
+      let match = urlStr.match(/\/d\/([a-zA-Z0-9-_]+)/);
+      if (!match) return null;
+      const sheetId = match[1];
+      let gidMatch = urlStr.match(/[?&]gid=([0-9]+)/);
+      const gid = gidMatch ? gidMatch[1] : '0';
+      return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+    }
+
+    function parseCSVRow(str) {
+      let arr = [];
+      let quote = false;
+      let col = "";
+      for (let c = 0; c < str.length; c++) {
+        let cc = str[c];
+        let nc = str[c+1];
+        if (cc === '"') {
+          if (quote && nc === '"') {
+            col += '"';
+            c++;
+          } else {
+            quote = !quote;
+          }
+        } else if (cc === ',' && !quote) {
+          arr.push(col);
+          col = "";
+        } else {
+          col += cc;
+        }
+      }
+      arr.push(col);
+      return arr;
+    }
+
+    function parseCSV(text) {
+      let lines = text.split(/\r\n|\n/);
+      return lines.map(line => parseCSVRow(line));
+    }
+
+    // Helper per pulire importo
+    function cleanNumber(valStr) {
+      if (!valStr) return 0;
+      let cleaned = valStr.toString().replace(/€/g, '').replace(/\s/g, '');
+      if (cleaned.includes(',') && cleaned.includes('.')) {
+        cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+      } else if (cleaned.includes(',')) {
+        cleaned = cleaned.replace(',', '.');
+      }
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? 0 : num;
+    }
+
+    // Helper per formattare la data da import
+    function parseImportDate(dateStr) {
+      if (!dateStr) return formatDateToYMD(new Date());
+      let str = dateStr.trim();
+      if (str.includes('/')) {
+        let p = str.split('/');
+        if (p.length === 3) {
+          let day = p[0].padStart(2, '0');
+          let m = p[1].padStart(2, '0');
+          let y = p[2].length === 2 ? '20' + p[2] : p[2];
+          return `${y}-${m}-${day}`;
+        }
+      }
+      if (str.includes('-')) {
+        let p = str.split('-');
+        if (p.length === 3 && p[0].length === 4) {
+          return str;
+        }
+      }
+      return formatDateToYMD(new Date());
+    }
+
+    // IMPORT BANCA (FILE: Colonna A = voce, Colonna B = data, Colonna C = importo)
+    const btnImportBankGsheet = document.getElementById('btn-start-import-bank-gsheet');
+    if (btnImportBankGsheet) {
+      btnImportBankGsheet.addEventListener('click', () => {
+        const urlInput = document.getElementById('gsheet-bank-url-input').value.trim();
+        const statusDiv = document.getElementById('import-status');
+        statusDiv.style.color = "var(--accent-blue)";
+        statusDiv.textContent = "Download e importazione Spese Bancarie in corso...";
+
+        const csvUrl = getGSheetCsvUrl(urlInput);
+        if (!csvUrl) {
+          statusDiv.style.color = "var(--accent-red)";
+          statusDiv.textContent = "URL Google Fogli non valido. Assicurati che sia condiviso pubblicamente.";
+          return;
+        }
+
+        fetch(csvUrl)
+          .then(res => {
+            if (!res.ok) throw new Error("Impossibile scaricare il foglio. Verifica i permessi del link.");
+            return res.text();
+          })
+          .then(csvText => {
+            const rows = parseCSV(csvText);
+            let newBankExpenses = [];
+            
+            for (let i = 0; i < rows.length; i++) {
+              let r = rows[i];
+              if (!r || r.length < 3) continue;
+              let desc = r[0] ? r[0].trim() : "";
+              let dateRaw = r[1] ? r[1].trim() : "";
+              let costRaw = r[2] ? r[2].trim() : "";
+
+              if (!desc || desc.toLowerCase() === 'voce' || desc.toLowerCase() === 'descrizione') continue;
+
+              let cost = cleanNumber(costRaw);
+              let date = parseImportDate(dateRaw);
+
+              if (desc && cost !== 0) {
+                newBankExpenses.push({
+                  id: Date.now() + i,
+                  date: date,
+                  desc: desc,
+                  cost: Math.abs(cost)
+                });
+              }
+            }
+
+            if (newBankExpenses.length > 0) {
+              bankExpenses = newBankExpenses;
+              syncToCloud();
+              renderBankExpensesView();
+              renderMastriniView();
+              statusDiv.style.color = "var(--accent-green)";
+              statusDiv.textContent = `Importate con successo ${newBankExpenses.length} spese bancarie!`;
+            } else {
+              statusDiv.style.color = "var(--accent-orange)";
+              statusDiv.textContent = "Nessuna spesa bancaria valida trovata nel file.";
+            }
+          })
+          .catch(err => {
+            statusDiv.style.color = "var(--accent-red)";
+            statusDiv.textContent = "Errore durante l'importazione: " + err.message;
+          });
+      });
+    }
+
+    // IMPORT MASTRINI (Colonna A voce, Colonna B import, Colonna C separatore, e così via)
+    const btnImportMastriniGsheet = document.getElementById('btn-start-import-gsheet');
+    if (btnImportMastriniGsheet) {
+      btnImportMastriniGsheet.addEventListener('click', () => {
+        const urlInput = document.getElementById('gsheet-url-input').value.trim();
+        const statusDiv = document.getElementById('import-status');
+        statusDiv.style.color = "var(--accent-blue)";
+        statusDiv.textContent = "Download e importazione Mastrini in corso...";
+
+        const csvUrl = getGSheetCsvUrl(urlInput);
+        if (!csvUrl) {
+          statusDiv.style.color = "var(--accent-red)";
+          statusDiv.textContent = "URL Google Fogli non valido. Assicurati che sia condiviso pubblicamente.";
+          return;
+        }
+
+        fetch(csvUrl)
+          .then(res => {
+            if (!res.ok) throw new Error("Impossibile scaricare il foglio. Verifica i permessi del link.");
+            return res.text();
+          })
+          .then(csvText => {
+            const rows = parseCSV(csvText);
+            if (rows.length < 3) {
+              throw new Error("Il foglio non contiene dati sufficienti (richieste almeno 3 righe).");
+            }
+
+            let newMastrini = [];
+            let totalCols = 0;
+            rows.forEach(r => { if (r.length > totalCols) totalCols = r.length; });
+
+            // Struttura in orizzontale a blocchi di 3 colonne (Voce, Importo, Separatore)
+            for (let c = 0; c < totalCols; c += 3) {
+              // Nome del Fondo nelle celle unite A1/B1 (ossia riga 0, colonna c o c+1)
+              let fundName = "";
+              if (rows[0] && rows[0][c]) fundName = rows[0][c].trim();
+              if (!fundName && rows[0] && rows[0][c+1]) fundName = rows[0][c+1].trim();
+
+              if (!fundName) continue; // Mastrini finiscono quando non ci sono più nomi / valori
+
+              let rawItems = [];
+              // I valori partono dalla riga 3 (indice 2)
+              for (let r = 2; r < rows.length; r++) {
+                let rRow = rows[r];
+                if (!rRow) continue;
+                let note = rRow[c] ? rRow[c].trim() : "";
+                let amtRaw = rRow[c+1] ? rRow[c+1].trim() : "";
+
+                if (!note && !amtRaw) continue;
+
+                let amt = cleanNumber(amtRaw);
+                rawItems.push({
+                  date: formatDateToYMD(new Date()),
+                  note: note || "Voce",
+                  amount: amt
+                });
+              }
+
+              // L'ULTIMO VALORE PRESENTE IN CODA PER OGNI FONDO È IL TOTALE DI QUEL MASTRINO E VA ESCLUSO
+              if (rawItems.length > 0) {
+                rawItems.pop(); // Rimuove l'ultimo elemento (Totale)
+              }
+
+              if (rawItems.length > 0 || fundName) {
+                newMastrini.push({
+                  name: fundName,
+                  items: rawItems
+                });
+              }
+            }
+
+            if (newMastrini.length > 0) {
+              mastriniData = newMastrini;
+              saveAndRenderMastrini();
+              statusDiv.style.color = "var(--accent-green)";
+              statusDiv.textContent = `Importati con successo ${newMastrini.length} mastrini/fondi!`;
+            } else {
+              statusDiv.style.color = "var(--accent-orange)";
+              statusDiv.textContent = "Nessun mastrino valido trovato nel file.";
+            }
+          })
+          .catch(err => {
+            statusDiv.style.color = "var(--accent-red)";
+            statusDiv.textContent = "Errore durante l'importazione: " + err.message;
+          });
       });
     }
 
@@ -2126,6 +2357,9 @@
       container.innerHTML = "";
       let grandTotal = 0;
 
+      // ELENCO FONDI DA ESCLUDERE DAL CALCOLO TOTALE FONDI
+      const excludedFunds = ["investimenti", "fondo pensione", "time deposit"];
+
       const filteredMastrini = (mastriniData || []).map((m, originalIdx) => ({ ...m, originalIdx }))
         .filter(m => m.name.toLowerCase().includes(searchVal));
 
@@ -2138,12 +2372,18 @@
           const mIdx = m.originalIdx;
           if (!m.items) m.items = [];
           const mTotal = m.items.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
-          grandTotal += mTotal;
+          
+          // Calcolo totale liquidità: ESCLUDI i fondi specificati
+          const isExcluded = excludedFunds.includes(m.name.trim().toLowerCase());
+          if (!isExcluded) {
+            grandTotal += mTotal;
+          }
+
           const card = document.createElement('div');
           card.className = 'mastrino-card collapsed';
           card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" class="mastrino-header">
-              <h4 style="font-weight:700; color:var(--accent-blue);">${m.name}</h4>
+              <h4 style="font-weight:700; color:var(--accent-blue);">${m.name} ${isExcluded ? '<span style="font-size:0.7rem; color:var(--accent-orange); font-weight:normal;">(Escluso da totale)</span>' : ''}</h4>
               <div>
                 <button class="action-btn edit-btn btn-transfer-mastrino" data-idx="${mIdx}" title="Trasferisci a un altro fondo"><i class="fa-solid fa-right-left"></i></button>
                 <button class="action-btn delete-btn btn-delete-mastrino" data-idx="${mIdx}" title="Elimina fondo"><i class="fa-solid fa-trash"></i></button>
