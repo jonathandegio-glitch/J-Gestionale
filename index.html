@@ -734,7 +734,7 @@
         <div style="background: rgba(56, 189, 248, 0.1); border:1px solid var(--accent-blue); padding:15px; border-radius: var(--radius-sm); margin-bottom: 20px;">
           <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">TOTALE MASTRINI (Liquidità Reale):</div>
           <div id="totale-mastrini-liquidita" style="font-size: 1.8rem; font-weight: 700; color: var(--accent-blue);">€ 0.00</div>
-          <div style="font-size: 0.7rem; color: var(--text-muted);">Esclusi: Investimenti, Fondo pensione e Time deposit.</div>
+          <div style="font-size: 0.7rem; color: var(--text-muted);">Esclusi: Entrate, Investimenti, Fondo pensione e Time deposit.</div>
         </div>
         <div class="mastrini-grid" id="mastrini-container"></div>
       </div>
@@ -1247,7 +1247,7 @@
       let match = urlStr.match(/\/d\/([a-zA-Z0-9-_]+)/);
       if (!match) return null;
       const sheetId = match[1];
-      let gidMatch = urlStr.match(/[?&]gid=([0-9]+)/);
+      let gidMatch = urlStr.match(/[?&#]gid=([0-9]+)/);
       const gid = gidMatch ? gidMatch[1] : '0';
       return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
     }
@@ -1335,7 +1335,7 @@
 
         fetch(csvUrl)
           .then(res => {
-            if (!res.ok) throw new Error("Impossibile scaricare il foglio. Verifica i permessi del link.");
+            if (!res.ok) throw new Error("Impossibile scaricare il foglio. Verifica che il file sia visibile a chiunque abbia il link.");
             return res.text();
           })
           .then(csvText => {
@@ -1383,7 +1383,7 @@
       });
     }
 
-    // IMPORT MASTRINI (Struttura in orizzontale a blocchi di 3 colonne: Colonna A voce, Colonna B import, Colonna C separatore)
+    // IMPORT MASTRINI (Colonna A voce, Colonna B import, Colonna C separatore, e così via)
     const btnImportMastriniGsheet = document.getElementById('btn-start-import-gsheet');
     if (btnImportMastriniGsheet) {
       btnImportMastriniGsheet.addEventListener('click', () => {
@@ -1401,7 +1401,7 @@
 
         fetch(csvUrl)
           .then(res => {
-            if (!res.ok) throw new Error("Impossibile scaricare il foglio. Verifica i permessi del link.");
+            if (!res.ok) throw new Error("Impossibile scaricare il foglio. Verifica che il file sia visibile a chiunque abbia il link.");
             return res.text();
           })
           .then(csvText => {
@@ -1414,24 +1414,23 @@
             let totalCols = 0;
             rows.forEach(r => { if (r.length > totalCols) totalCols = r.length; });
 
-            // Ciclo attraverso le colonne a passi di 3 (Voce, Importo, Separatore)
+            // Struttura in orizzontale a blocchi di 3 colonne (Voce, Importo, Separatore)
             for (let c = 0; c < totalCols; c += 3) {
               // Nome del Fondo nelle celle unite A1/B1 (ossia riga 0, colonna c o c+1)
               let fundName = "";
               if (rows[0] && rows[0][c]) fundName = rows[0][c].trim();
               if (!fundName && rows[0] && rows[0][c+1]) fundName = rows[0][c+1].trim();
 
-              if (!fundName) continue; // I mastrini finiscono quando non ci sono più nomi/valori
+              if (!fundName) continue; // Mastrini finiscono quando non ci sono più nomi / valori
 
               let rawItems = [];
-              // I valori da importare partono dalla riga 3 (indice 2)
+              // I valori partono dalla riga 3 (indice 2)
               for (let r = 2; r < rows.length; r++) {
                 let rRow = rows[r];
                 if (!rRow) continue;
                 let note = rRow[c] ? rRow[c].trim() : "";
                 let amtRaw = rRow[c+1] ? rRow[c+1].trim() : "";
 
-                // Se la riga è completamente vuota, continua
                 if (!note && !amtRaw) continue;
 
                 let amt = cleanNumber(amtRaw);
@@ -1444,7 +1443,7 @@
 
               // L'ULTIMO VALORE PRESENTE IN CODA PER OGNI FONDO È IL TOTALE DI QUEL MASTRINO E VA ESCLUSO
               if (rawItems.length > 0) {
-                rawItems.pop(); // Rimuove il totale in coda
+                rawItems.pop(); // Rimuove l'ultimo elemento (Totale)
               }
 
               if (rawItems.length > 0 || fundName) {
@@ -2359,7 +2358,7 @@
       let grandTotal = 0;
 
       // ELENCO FONDI DA ESCLUDERE DAL CALCOLO TOTALE FONDI
-      const excludedFunds = ["investimenti", "fondo pensione", "time deposit"];
+      const excludedFunds = ["entrate", "investimenti", "fondo pensione", "time deposit"];
 
       const filteredMastrini = (mastriniData || []).map((m, originalIdx) => ({ ...m, originalIdx }))
         .filter(m => m.name.toLowerCase().includes(searchVal));
