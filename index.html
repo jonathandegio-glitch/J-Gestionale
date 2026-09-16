@@ -1383,7 +1383,7 @@
       });
     }
 
-    // IMPORT MASTRINI (Colonna A voce, Colonna B import, Colonna C separatore, e così via)
+    // IMPORT MASTRINI (Struttura in orizzontale a blocchi di 3 colonne: Colonna A voce, Colonna B import, Colonna C separatore)
     const btnImportMastriniGsheet = document.getElementById('btn-start-import-gsheet');
     if (btnImportMastriniGsheet) {
       btnImportMastriniGsheet.addEventListener('click', () => {
@@ -1414,23 +1414,24 @@
             let totalCols = 0;
             rows.forEach(r => { if (r.length > totalCols) totalCols = r.length; });
 
-            // Struttura in orizzontale a blocchi di 3 colonne (Voce, Importo, Separatore)
+            // Ciclo attraverso le colonne a passi di 3 (Voce, Importo, Separatore)
             for (let c = 0; c < totalCols; c += 3) {
               // Nome del Fondo nelle celle unite A1/B1 (ossia riga 0, colonna c o c+1)
               let fundName = "";
               if (rows[0] && rows[0][c]) fundName = rows[0][c].trim();
               if (!fundName && rows[0] && rows[0][c+1]) fundName = rows[0][c+1].trim();
 
-              if (!fundName) continue; // Mastrini finiscono quando non ci sono più nomi / valori
+              if (!fundName) continue; // I mastrini finiscono quando non ci sono più nomi/valori
 
               let rawItems = [];
-              // I valori partono dalla riga 3 (indice 2)
+              // I valori da importare partono dalla riga 3 (indice 2)
               for (let r = 2; r < rows.length; r++) {
                 let rRow = rows[r];
                 if (!rRow) continue;
                 let note = rRow[c] ? rRow[c].trim() : "";
                 let amtRaw = rRow[c+1] ? rRow[c+1].trim() : "";
 
+                // Se la riga è completamente vuota, continua
                 if (!note && !amtRaw) continue;
 
                 let amt = cleanNumber(amtRaw);
@@ -1443,7 +1444,7 @@
 
               // L'ULTIMO VALORE PRESENTE IN CODA PER OGNI FONDO È IL TOTALE DI QUEL MASTRINO E VA ESCLUSO
               if (rawItems.length > 0) {
-                rawItems.pop(); // Rimuove l'ultimo elemento (Totale)
+                rawItems.pop(); // Rimuove il totale in coda
               }
 
               if (rawItems.length > 0 || fundName) {
@@ -2616,7 +2617,7 @@
       transferFundModal.classList.remove('open');
     });
 
-    // RENDERING & GESTIONE SEZIONE SPESE BANCARIE (PUNTO 2)
+    // RENDERING & GESTIONE SEZIONE SPESE BANCARIE
     function renderBankExpensesView() {
       const targetSelect = document.getElementById('bank-target-fund');
       if (targetSelect) {
