@@ -829,7 +829,7 @@
         <div style="background: rgba(56, 189, 248, 0.1); border:1px solid var(--accent-blue); padding:15px; border-radius: var(--radius-sm); margin-bottom: 20px;">
           <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">TOTALE MASTRINI (Liquidità Reale):</div>
           <div id="totale-mastrini-liquidita" style="font-size: 1.8rem; font-weight: 700; color: var(--accent-blue);">€ 0.00</div>
-          <div style="font-size: 0.7rem; color: var(--text-muted);">Esclusi: Investimenti, Fondo pensione e Time deposit.</div>
+          <div style="font-size: 0.7rem; color: var(--text-muted);">Esclusi: Investimenti, Fondo pensione, Time deposit e Entrate.</div>
         </div>
         <div class="mastrini-grid" id="mastrini-container"></div>
       </div>
@@ -2542,7 +2542,8 @@
       container.innerHTML = "";
       let grandTotal = 0;
 
-      const excludedFunds = ["investimenti", "fondo pensione", "time deposit"];
+      // FONDI ESCLUSI DAL TOTALE: Investimenti, Fondo pensione, Time deposit e Entrate
+      const excludedFunds = ["investimenti", "fondo pensione", "time deposit", "entrate"];
 
       const filteredMastrini = (mastriniData || []).map((m, originalIdx) => ({ ...m, originalIdx }))
         .filter(m => m.name.toLowerCase().includes(searchVal));
@@ -3147,7 +3148,7 @@
       ]);
       
       let grandTotal = 0;
-      const excludedFunds = ["investimenti", "fondo pensione", "time deposit"];
+      const excludedFunds = ["investimenti", "fondo pensione", "time deposit", "entrate"];
       
       (mastriniData || []).forEach(m => {
         const items = m.items || [];
