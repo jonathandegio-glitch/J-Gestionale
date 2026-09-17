@@ -433,6 +433,45 @@
       border-radius: 4px;
       margin-left: 8px;
     }
+    /* Stili Archivio Annuale */
+    .archive-item {
+      background: var(--card-inner);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .archive-item.viewing {
+      border-color: var(--accent-orange);
+      box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.25);
+    }
+    .archive-item-info { flex: 1; min-width: 200px; }
+    .archive-item-info h4 { font-weight: 700; color: var(--accent-blue); margin-bottom: 4px; font-size: 0.95rem; }
+    .archive-item-info small { color: var(--text-muted); font-size: 0.75rem; }
+    .archive-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .archive-actions button {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .archive-actions button:hover { background: var(--border-color); }
+    .archive-actions .btn-view { color: var(--accent-blue); border-color: var(--accent-blue); }
+    .archive-actions .btn-export-arc { color: var(--accent-green); border-color: var(--accent-green); }
+    .archive-actions .btn-restore { color: var(--accent-orange); border-color: var(--accent-orange); }
+    .archive-actions .btn-delete-arc { color: var(--accent-red); border-color: var(--accent-red); }
   </style>
 </head>
 <body>
@@ -460,7 +499,10 @@
 
   <!-- HEADER -->
   <header class="app-bar">
-    <span class="status-badge" id="cloud-status-badge"><i class="fa-solid fa-circle" style="font-size:8px;"></i> ONLINE</span>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span class="status-badge" id="cloud-status-badge"><i class="fa-solid fa-circle" style="font-size:8px;"></i> ONLINE</span>
+      <span class="status-badge" id="viewing-year-badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); border-color: rgba(56, 189, 248, 0.3);"><i class="fa-solid fa-calendar"></i> <span id="viewing-year-text">Anno Corrente</span></span>
+    </div>
     <div class="logo-container nav-item-btn" data-target="sec-home" title="Torna alla Home">
       <img src="https://lh3.googleusercontent.com/d/1eimNS4XHA7QeuNP2qnTRdC1COpFQGV3c" alt="Logo">
     </div>
@@ -522,6 +564,10 @@
   <main class="container">
     <!-- HOME / FORM RAPIDO -->
     <section id="sec-home" class="view-section active">
+      <div id="home-viewing-banner" style="margin-bottom:14px; padding:10px 14px; border-radius:var(--radius-sm); background:rgba(56, 189, 248, 0.1); border:1px solid var(--accent-blue); color:var(--accent-blue); font-weight:600; font-size:0.85rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <span><i class="fa-solid fa-calendar"></i> Stai visualizzando: <span id="home-viewing-year">Anno Corrente (2026)</span></span>
+        <button id="home-return-btn" class="btn btn-primary" style="display:none; width:auto; padding:4px 12px; font-size:0.75rem; margin:0;">Torna alla Corrente</button>
+      </div>
       <div class="card">
         <div class="card-title">
           <span><i class="fa-solid fa-bolt"></i> Inserimento Rapido Movimento</span>
@@ -789,9 +835,22 @@
     <section id="sec-annuale" class="view-section">
       <div class="card">
         <div class="card-title"><span><i class="fa-solid fa-box-archive"></i> Gestione Annuale</span></div>
-        <button class="btn btn-secondary" style="border: 1px solid var(--accent-orange); color: var(--accent-orange);">
-          <i class="fa-solid fa-box-archive"></i> Archivia Anno Corrente
+        <div style="margin-bottom:16px; padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--card-inner); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <span style="font-weight:700;">Anno Corrente: <span id="current-year-label">2026</span></span>
+          <span id="current-view-mode-label" style="font-size:0.8rem; font-weight:600; color:var(--accent-green);">Modalità: Attiva</span>
+        </div>
+        <button class="btn btn-secondary" id="btn-archive-current" style="border: 1px solid var(--accent-orange); color: var(--accent-orange);">
+          <i class="fa-solid fa-box-archive"></i> Archivia Gestione Corrente
         </button>
+        <button class="btn btn-primary" id="btn-return-to-current" style="display:none;">
+          <i class="fa-solid fa-arrow-left"></i> Torna alla Gestione Corrente
+        </button>
+      </div>
+      <div class="card">
+        <div class="card-title">
+          <span><i class="fa-solid fa-archive"></i> Archivio Gestioni Precedenti</span>
+        </div>
+        <div id="archive-list-container"></div>
       </div>
     </section>
   </main>
@@ -895,7 +954,7 @@
       <input type="hidden" id="edit-exp-id">
       <div class="type-toggle">
         <div class="type-btn active expense" id="modal-toggle-expense"><i class="fa-solid fa-minus"></i> Spesa</div>
-        <div class="type-btn income" id="modal-toggle-income"><i class="fa-solid fa-plus"></i> Entrata</div>
+        <div class="type-btn active income" id="modal-toggle-income"><i class="fa-solid fa-plus"></i> Entrata</div>
       </div>
       <div class="form-group">
         <label>Data</label>
@@ -935,7 +994,7 @@
       <input type="hidden" id="mastrino-item-idx">
       <div class="type-toggle">
         <div class="type-btn active expense" id="mastrino-toggle-expense"><i class="fa-solid fa-minus"></i> Spesa</div>
-        <div class="type-btn income" id="mastrino-toggle-income"><i class="fa-solid fa-plus"></i> Entrata</div>
+        <div class="type-btn active income" id="mastrino-toggle-income"><i class="fa-solid fa-plus"></i> Entrata</div>
       </div>
       <div class="form-group">
         <label>Data</label>
@@ -968,6 +1027,22 @@
       </div>
       <button class="btn btn-primary" id="save-week-dates-btn">Salva Date e Ricalcola a Catena</button>
       <button class="btn btn-secondary" id="close-modal-btn">Annulla</button>
+    </div>
+  </div>
+
+  <!-- MODALE ARCHIVIA GESTIONE CORRENTE -->
+  <div class="modal" id="archive-name-modal">
+    <div class="modal-content">
+      <h3 style="margin-bottom:15px; font-weight:700;"><i class="fa-solid fa-box-archive" style="color:var(--accent-orange); margin-right:8px;"></i> Archivia Gestione Corrente</h3>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:15px;">
+        Verrà salvata una copia completa della gestione corrente nell'archivio. I mastrini della nuova gestione conserveranno il solo totale finale come voce "da anno [nome]". Spese bancarie e movimenti mensili verranno azzerati.
+      </p>
+      <div class="form-group">
+        <label>Nome Gestione Archiviata</label>
+        <input type="text" id="archive-name-input" class="form-control" placeholder="Es. Anno 2025">
+      </div>
+      <button class="btn btn-primary" id="confirm-archive-btn" style="background:var(--accent-orange); color:#fff;">Archivia Ora</button>
+      <button class="btn btn-secondary" id="close-archive-modal-btn">Annulla</button>
     </div>
   </div>
 
@@ -1013,6 +1088,12 @@
     let bankTargetFund = localStorage.getItem('bank_target_fund') || "";
     let gasUrl = localStorage.getItem('gas_sync_url') || "";
 
+    // --- STATO ARCHIVIO ANNUALE (NUOVO) ---
+    let archives = JSON.parse(localStorage.getItem('archives_data')) || [];
+    let viewingArchiveId = null; // null = gestione corrente, altrimenti id archivio visualizzato
+    let liveState = null;        // snapshot della gestione corrente mentre si visualizza un archivio
+    let currentYearLabel = new Date().getFullYear().toString();
+
     let currentMovementType = "expense";
     let modalMovementType = "expense";
     let mastrinoMovementType = "expense";
@@ -1034,6 +1115,16 @@
       if (bankDateInput && !bankDateInput.value) bankDateInput.value = today;
       const mastrinoItemDate = document.getElementById('mastrino-item-date');
       if (mastrinoItemDate && !mastrinoItemDate.value) mastrinoItemDate.value = today;
+    }
+
+    // --- HELPER: deep clone ---
+    function deepClone(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    // --- HELPER: verifica se sto visualizzando un archivio ---
+    function isViewingArchive() {
+      return viewingArchiveId !== null;
     }
 
     // --- AUTOMATISMO SCRITTURA GOOGLE SHEETS VIA SCRIPT ---
@@ -1072,7 +1163,6 @@
       if (!mastriniData) return;
       const totalBankCost = bankExpenses.reduce((acc, curr) => acc + (parseFloat(curr.cost) || 0), 0);
       
-      // Se è cambiato il fondo di destinazione, rimuoviamo la voce dal vecchio fondo
       if (previousFundName && previousFundName !== bankTargetFund) {
         const oldFund = mastriniData.find(m => m.name === previousFundName);
         if (oldFund && oldFund.items) {
@@ -1106,6 +1196,12 @@
 
     // --- SINCRONIZZAZIONE REALTIME FIREBASE & TRASCRIZIONE AUTOMATICA ---
     function syncToCloud(previousBankFund = null) {
+      // MODIFICA: se sto visualizzando un archivio, non sincronizzo
+      if (isViewingArchive()) {
+        console.warn("Sync bloccato: stai visualizzando un archivio. Le modifiche non verranno salvate.");
+        return;
+      }
+
       syncBankExpensesToFund(previousBankFund);
 
       localStorage.setItem('expenses_data', JSON.stringify(expenses));
@@ -1115,6 +1211,7 @@
       localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
       localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
       localStorage.setItem('bank_target_fund', bankTargetFund);
+      localStorage.setItem('archives_data', JSON.stringify(archives)); // NUOVO
 
       sendAutoSyncToGAS();
 
@@ -1128,6 +1225,7 @@
         monthlySalaries,
         bankExpenses,
         bankTargetFund,
+        archives,          // NUOVO
         updatedAt: Date.now()
       };
 
@@ -1164,6 +1262,7 @@
             monthlySalaries = data.monthlySalaries || {};
             bankExpenses = data.bankExpenses || [];
             bankTargetFund = data.bankTargetFund || "";
+            archives = data.archives || []; // NUOVO
 
             localStorage.setItem('expenses_data', JSON.stringify(expenses));
             localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
@@ -1172,6 +1271,7 @@
             localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
             localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
             localStorage.setItem('bank_target_fund', bankTargetFund);
+            localStorage.setItem('archives_data', JSON.stringify(archives)); // NUOVO
           }
           
           isInitialLoadDone = true;
@@ -1180,6 +1280,9 @@
           renderMonthlyView();
           renderMastriniView();
           renderBankExpensesView();
+          renderArchiveList();      // NUOVO
+          updateYearIndicator();    // NUOVO
+          renderArchiveControls();  // NUOVO
           
           const gasInput = document.getElementById('gas-url-input');
           if (gasInput) {
@@ -1242,7 +1345,6 @@
     }
 
     // --- FUNZIONE DI HELP PER PARSING CSV / LINK PUBBLICI GOOGLE FOGLI ---
-    // MODIFICA: aggiunto supporto per "#gid=" oltre a "?gid=" e "&gid="
     function getGSheetCsvUrl(urlStr) {
       if (!urlStr) return null;
       let match = urlStr.match(/\/d\/([a-zA-Z0-9-_]+)/);
@@ -1278,7 +1380,6 @@
       return arr;
     }
 
-    // MODIFICA: rimozione BOM (\uFEFF) che Google Sheets a volte aggiunge in testa
     function parseCSV(text) {
       if (text && text.charCodeAt(0) === 0xFEFF) {
         text = text.slice(1);
@@ -1287,7 +1388,6 @@
       return lines.map(line => parseCSVRow(line));
     }
 
-    // Helper per pulire importo
     function cleanNumber(valStr) {
       if (!valStr) return 0;
       let cleaned = valStr.toString().replace(/€/g, '').replace(/\s/g, '');
@@ -1300,7 +1400,6 @@
       return isNaN(num) ? 0 : num;
     }
 
-    // Helper per formattare la data da import
     function parseImportDate(dateStr) {
       if (!dateStr) return formatDateToYMD(new Date());
       let str = dateStr.trim();
@@ -1322,7 +1421,7 @@
       return formatDateToYMD(new Date());
     }
 
-    // IMPORT BANCA (FILE: Colonna A = voce, Colonna B = data, Colonna C = importo)
+    // IMPORT BANCA
     const btnImportBankGsheet = document.getElementById('btn-start-import-bank-gsheet');
     if (btnImportBankGsheet) {
       btnImportBankGsheet.addEventListener('click', () => {
@@ -1388,11 +1487,7 @@
       });
     }
 
-    // IMPORT MASTRINI (struttura orizzontale a blocchi di 3 colonne: Voce, Importo, Separatore)
-    // MODIFICA: logica riscritta per:
-    //   - interrompere il ciclo quando non ci sono più valori (come da specifica),
-    //   - messaggi di errore più chiari,
-    //   - verificare presenza dati anche quando il nome fondo è in cella adiacente (A1:B1 unite).
+    // IMPORT MASTRINI
     const btnImportMastriniGsheet = document.getElementById('btn-start-import-gsheet');
     if (btnImportMastriniGsheet) {
       btnImportMastriniGsheet.addEventListener('click', () => {
@@ -1423,15 +1518,11 @@
             let totalCols = 0;
             rows.forEach(r => { if (r.length > totalCols) totalCols = r.length; });
 
-            // Struttura orizzontale: ogni fondo occupa 2 colonne (Voce, Importo)
-            // + 1 colonna di separazione. Quindi passo di 3.
             for (let c = 0; c < totalCols; c += 3) {
-              // Nome del Fondo nelle celle unite A1:B1 (indice c o c+1)
               let fundName = "";
               if (rows[0] && rows[0][c]) fundName = rows[0][c].trim();
               if (!fundName && rows[0] && rows[0][c+1]) fundName = rows[0][c+1].trim();
 
-              // Verifica se il blocco contiene almeno un valore (dalla riga 3 in poi, indice 2)
               let hasValues = false;
               for (let r = 2; r < rows.length; r++) {
                 if (rows[r] && (
@@ -1443,7 +1534,6 @@
                 }
               }
 
-              // I mastrini finiscono quando non ci sono più né nome fondo né valori
               if (!fundName && !hasValues) {
                 break;
               }
@@ -1451,7 +1541,6 @@
               if (!fundName) continue;
 
               let rawItems = [];
-              // I valori partono dalla riga 3 (indice 2)
               for (let r = 2; r < rows.length; r++) {
                 let rRow = rows[r];
                 if (!rRow) continue;
@@ -1468,7 +1557,6 @@
                 });
               }
 
-              // L'ULTIMO VALORE PRESENTE IN CODA PER OGNI FONDO È IL TOTALE E VA ESCLUSO
               if (rawItems.length > 0) {
                 rawItems.pop();
               }
@@ -1579,7 +1667,6 @@
       return 0;
     }
 
-    // GENERATORE DINAMICO AUTOMATICO SETTIMANE (DA LUNEDÌ A DOMENICA, 4-5 PER MESE)
     function generateWeeks(monthIndex) {
       const key = `month_${monthIndex}`;
       if (customWeekRanges[key] && customWeekRanges[key].length > 0) {
@@ -1621,7 +1708,6 @@
       return weeks;
     }
 
-    // RICALCOLO A CATENA AUTOMATICO DI TUTTI I MESI E SETTIMANE A PARTIRE DA UNA DATA MODIFICATA
     function recalculateChainFromMonth(startMonthIdx, newFirstWeekStart, newFirstWeekEnd) {
       const startKey = `month_${startMonthIdx}`;
       let weeks = customWeekRanges[startKey] || generateWeeks(startMonthIdx);
@@ -2045,7 +2131,7 @@
       renderMonthlyView();
     });
 
-    // RENDERING VISTA MENSILE CON MOVIMENTI DINAMICAMENTE COMPATIBILI
+    // RENDERING VISTA MENSILE
     function renderMonthlyView(highlightExpenseId = null) {
       const monthIdx = parseInt(monthSelect.value);
       const key = `month_${monthIdx}`;
@@ -2125,7 +2211,6 @@
         container.appendChild(weekEl);
       });
 
-      // MONITORAGGIO SPESE VIVE
       const currentSal = monthlySalaries[key] || {};
       const budgetSpese = currentSal.speseVive || 0;
       const netSpeseVive = totalMonthlyIncomes - totalMonthlyExpenses;
@@ -2154,7 +2239,6 @@
         statusBox.style.borderColor = 'var(--border-color)';
       }
 
-      // RECAP MENSILE
       document.getElementById('recap-tot-spese').textContent = `€ ${totalMonthlyExpenses.toFixed(2)}`;
       document.getElementById('recap-w1').textContent = `€ ${(weekTotals[0] || 0).toFixed(2)}`;
       document.getElementById('recap-w2').textContent = `€ ${(weekTotals[1] || 0).toFixed(2)}`;
@@ -2206,7 +2290,6 @@
       disavanzoEl.textContent = `€ ${disavanzo.toFixed(2)}`;
       disavanzoEl.style.color = disavanzo < 0 ? 'var(--accent-red)' : 'var(--accent-green)';
 
-      // Listeners
       document.querySelectorAll('.edit-week-btn').forEach(btn => {
         btn.addEventListener('click', () => openEditWeekModal(btn.dataset.m, btn.dataset.w));
       });
@@ -2344,7 +2427,7 @@
       renderMonthlyView();
     });
 
-    // MODALE MODIFICA SETTIMANA CON AGGIORNAMENTO A CATENA AUTOMATICO
+    // MODALE MODIFICA SETTIMANA
     const editWeekModal = document.getElementById('edit-week-modal');
     let editingWeekContext = null;
     function openEditWeekModal(mIdx, wIdx) {
@@ -2382,7 +2465,6 @@
       container.innerHTML = "";
       let grandTotal = 0;
 
-      // ELENCO FONDI DA ESCLUDERE DAL CALCOLO TOTALE FONDI
       const excludedFunds = ["investimenti", "fondo pensione", "time deposit"];
 
       const filteredMastrini = (mastriniData || []).map((m, originalIdx) => ({ ...m, originalIdx }))
@@ -2398,7 +2480,6 @@
           if (!m.items) m.items = [];
           const mTotal = m.items.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
           
-          // Calcolo totale liquidità: ESCLUDI i fondi specificati
           const isExcluded = excludedFunds.includes(m.name.trim().toLowerCase());
           if (!isExcluded) {
             grandTotal += mTotal;
@@ -2459,7 +2540,6 @@
 
       if (totalEl) totalEl.textContent = `€ ${grandTotal.toFixed(2)}`;
 
-      // Listeners Mastrini
       document.querySelectorAll('.btn-delete-mastrino').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -2641,7 +2721,7 @@
       transferFundModal.classList.remove('open');
     });
 
-    // RENDERING & GESTIONE SEZIONE SPESE BANCARIE (PUNTO 2)
+    // RENDERING SPESE BANCARIE
     function renderBankExpensesView() {
       const targetSelect = document.getElementById('bank-target-fund');
       if (targetSelect) {
@@ -2736,6 +2816,406 @@
         renderBankExpensesView();
         renderMastriniView();
       });
+    }
+
+    // ================================================================
+    // GESTIONE ANNUALE / ARCHIVIO (NUOVO)
+    // ================================================================
+
+    // Snapshot della gestione corrente
+    function snapshotCurrentState() {
+      return {
+        expenses: deepClone(expenses),
+        customWeekRanges: deepClone(customWeekRanges),
+        mastriniData: deepClone(mastriniData),
+        settingsFunds: deepClone(settingsFunds),
+        monthlySalaries: deepClone(monthlySalaries),
+        bankExpenses: deepClone(bankExpenses),
+        bankTargetFund: bankTargetFund
+      };
+    }
+
+    // Salva snapshot negli archivi senza modificare lo stato corrente
+    function saveCurrentToArchive(name) {
+      archives.push({
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        name: name,
+        year: new Date().getFullYear(),
+        archivedAt: new Date().toISOString(),
+        data: snapshotCurrentState()
+      });
+    }
+
+    // Archivia la gestione corrente (reset dello stato attivo)
+    function archiveCurrentYear(name) {
+      if (isViewingArchive()) {
+        alert("Torna prima alla gestione corrente per poterla archiviare.");
+        return;
+      }
+
+      // 1) Salva snapshot completo
+      saveCurrentToArchive(name);
+
+      // 2) Riduci i mastrini a una sola voce "da anno [nome]" col totale finale
+      mastriniData = (mastriniData || []).map(m => {
+        const total = (m.items || []).reduce((acc, it) => acc + (parseFloat(it.amount) || 0), 0);
+        return {
+          name: m.name,
+          items: total !== 0 ? [{
+            date: formatDateToYMD(new Date()),
+            note: `da anno ${name}`,
+            amount: total
+          }] : []
+        };
+      });
+
+      // 3) Azzera le altre gestioni (spese bancarie incluse; il loro totale è già dentro ai mastrini)
+      expenses = [];
+      customWeekRanges = {};
+      monthlySalaries = {};
+      bankExpenses = [];
+
+      // 4) Salva e re-render
+      syncToCloud();
+      renderAllViews();
+      renderArchiveList();
+      updateYearIndicator();
+    }
+
+    // Helper: re-render completo delle viste
+    function renderAllViews() {
+      initDefaultDates();
+      initMonthDropdown();
+      renderMonthlyView();
+      renderMastriniView();
+      renderBankExpensesView();
+    }
+
+    // Aggiorna indicatore anno (badge header + banner home)
+    function updateYearIndicator() {
+      // Badge header
+      const badge = document.getElementById('viewing-year-badge');
+      const badgeText = document.getElementById('viewing-year-text');
+      // Banner home
+      const homeBanner = document.getElementById('home-viewing-year');
+      const homeReturnBtn = document.getElementById('home-return-btn');
+
+      if (isViewingArchive()) {
+        const arch = archives.find(a => a.id === viewingArchiveId);
+        const label = arch ? `Archivio: ${arch.name}` : 'Archivio';
+        if (badge && badgeText) {
+          badgeText.textContent = label;
+          badge.style.background = 'rgba(249, 115, 22, 0.15)';
+          badge.style.color = 'var(--accent-orange)';
+          badge.style.borderColor = 'rgba(249, 115, 22, 0.3)';
+        }
+        if (homeBanner) homeBanner.textContent = label;
+        if (homeReturnBtn) homeReturnBtn.style.display = 'inline-flex';
+      } else {
+        const label = `Anno Corrente (${currentYearLabel})`;
+        if (badge && badgeText) {
+          badgeText.textContent = label;
+          badge.style.background = 'rgba(56, 189, 248, 0.15)';
+          badge.style.color = 'var(--accent-blue)';
+          badge.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+        }
+        if (homeBanner) homeBanner.textContent = label;
+        if (homeReturnBtn) homeReturnBtn.style.display = 'none';
+      }
+    }
+
+    // Controlla visibilità pulsanti della sezione Gestione Annuale
+    function renderArchiveControls() {
+      const archiveBtn = document.getElementById('btn-archive-current');
+      const returnBtn = document.getElementById('btn-return-to-current');
+      const viewModeLabel = document.getElementById('current-view-mode-label');
+      const currentYearLabelEl = document.getElementById('current-year-label');
+
+      if (currentYearLabelEl) currentYearLabelEl.textContent = currentYearLabel;
+
+      if (isViewingArchive()) {
+        if (archiveBtn) archiveBtn.style.display = 'none';
+        if (returnBtn) returnBtn.style.display = 'flex';
+        if (viewModeLabel) {
+          viewModeLabel.textContent = 'Modalità: Archivio (sola lettura)';
+          viewModeLabel.style.color = 'var(--accent-orange)';
+        }
+      } else {
+        if (archiveBtn) archiveBtn.style.display = 'flex';
+        if (returnBtn) returnBtn.style.display = 'none';
+        if (viewModeLabel) {
+          viewModeLabel.textContent = 'Modalità: Attiva';
+          viewModeLabel.style.color = 'var(--accent-green)';
+        }
+      }
+    }
+
+    // Render lista archivi
+    function renderArchiveList() {
+      const container = document.getElementById('archive-list-container');
+      if (!container) return;
+      container.innerHTML = "";
+
+      if (!archives || archives.length === 0) {
+        container.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted);">Nessun anno archiviato. Utilizza "Archivia Gestione Corrente" per salvare l\'anno in corso.</i>';
+        renderArchiveControls();
+        return;
+      }
+
+      // Ordina per data archiviazione decrescente
+      const sorted = [...archives].sort((a, b) => new Date(b.archivedAt) - new Date(a.archivedAt));
+
+      sorted.forEach(arch => {
+        const isViewing = viewingArchiveId === arch.id;
+        const archDate = new Date(arch.archivedAt).toLocaleString('it-IT');
+        const totMastrini = (arch.data.mastriniData || []).length;
+        const totMov = (arch.data.expenses || []).length;
+        const totBank = (arch.data.bankExpenses || []).length;
+
+        const item = document.createElement('div');
+        item.className = 'archive-item' + (isViewing ? ' viewing' : '');
+        item.innerHTML = `
+          <div class="archive-item-info">
+            <h4><i class="fa-solid fa-calendar-check" style="margin-right:6px;"></i>${arch.name} (${arch.year})</h4>
+            <small>Archiviato il ${archDate} &middot; ${totMastrini} fondi &middot; ${totMov} movimenti &middot; ${totBank} spese bancarie</small>
+          </div>
+          <div class="archive-actions">
+            <button class="btn-view" data-id="${arch.id}"><i class="fa-solid fa-eye"></i> Visualizza</button>
+            <button class="btn-export-arc" data-id="${arch.id}"><i class="fa-solid fa-file-excel"></i> Export</button>
+            <button class="btn-restore" data-id="${arch.id}"><i class="fa-solid fa-rotate-left"></i> Ripristina</button>
+            <button class="btn-delete-arc" data-id="${arch.id}"><i class="fa-solid fa-trash"></i> Elimina</button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+
+      container.querySelectorAll('.btn-view').forEach(btn => {
+        btn.addEventListener('click', () => viewArchive(parseInt(btn.dataset.id)));
+      });
+      container.querySelectorAll('.btn-export-arc').forEach(btn => {
+        btn.addEventListener('click', () => exportArchiveToExcel(parseInt(btn.dataset.id)));
+      });
+      container.querySelectorAll('.btn-restore').forEach(btn => {
+        btn.addEventListener('click', () => restoreArchive(parseInt(btn.dataset.id)));
+      });
+      container.querySelectorAll('.btn-delete-arc').forEach(btn => {
+        btn.addEventListener('click', () => deleteArchive(parseInt(btn.dataset.id)));
+      });
+
+      renderArchiveControls();
+    }
+
+    // Visualizza un archivio (read-only)
+    function viewArchive(id) {
+      const arch = archives.find(a => a.id === id);
+      if (!arch) return;
+
+      // Se sto già visualizzando un altro archivio, prima torno alla corrente
+      if (isViewingArchive()) {
+        returnToCurrent();
+      }
+
+      // Salva lo stato corrente
+      liveState = snapshotCurrentState();
+
+      // Carica lo stato dell'archivio
+      expenses = deepClone(arch.data.expenses || []);
+      customWeekRanges = deepClone(arch.data.customWeekRanges || {});
+      mastriniData = deepClone(arch.data.mastriniData || []);
+      settingsFunds = deepClone(arch.data.settingsFunds || { defaultBase: 0, defaultSpeseVive: 0, defaultEff: 0, allocations: {} });
+      monthlySalaries = deepClone(arch.data.monthlySalaries || {});
+      bankExpenses = deepClone(arch.data.bankExpenses || []);
+      bankTargetFund = arch.data.bankTargetFund || '';
+
+      viewingArchiveId = id;
+
+      renderAllViews();
+      renderArchiveList();
+      updateYearIndicator();
+    }
+
+    // Torna alla gestione corrente
+    function returnToCurrent() {
+      if (!isViewingArchive()) return;
+
+      // Ripristina lo stato live
+      if (liveState) {
+        expenses = liveState.expenses;
+        customWeekRanges = liveState.customWeekRanges;
+        mastriniData = liveState.mastriniData;
+        settingsFunds = liveState.settingsFunds;
+        monthlySalaries = liveState.monthlySalaries;
+        bankExpenses = liveState.bankExpenses;
+        bankTargetFund = liveState.bankTargetFund;
+      }
+      liveState = null;
+      viewingArchiveId = null;
+
+      renderAllViews();
+      renderArchiveList();
+      updateYearIndicator();
+    }
+
+    // Ripristina un archivio come gestione attiva (archiviando la corrente)
+    function restoreArchive(id) {
+      const arch = archives.find(a => a.id === id);
+      if (!arch) return;
+
+      requestDeleteConfirmation(`Sei sicuro di voler ripristinare "${arch.name}" come gestione attiva? La gestione corrente verrà archiviata automaticamente.`, () => {
+        // Se sto visualizzando un archivio, torno prima alla corrente
+        if (isViewingArchive()) {
+          returnToCurrent();
+        }
+
+        // Archivia la gestione corrente con nome automatico (se ha dati)
+        const hasCurrentData = (expenses.length > 0 || (mastriniData || []).some(m => (m.items || []).length > 0) || bankExpenses.length > 0);
+        if (hasCurrentData) {
+          const autoName = `Backup ${currentYearLabel} - ${new Date().toLocaleString('it-IT')}`;
+          saveCurrentToArchive(autoName);
+        }
+
+        // Carica l'archivio come stato attivo
+        expenses = deepClone(arch.data.expenses || []);
+        customWeekRanges = deepClone(arch.data.customWeekRanges || {});
+        mastriniData = deepClone(arch.data.mastriniData || []);
+        settingsFunds = deepClone(arch.data.settingsFunds || { defaultBase: 0, defaultSpeseVive: 0, defaultEff: 0, allocations: {} });
+        monthlySalaries = deepClone(arch.data.monthlySalaries || {});
+        bankExpenses = deepClone(arch.data.bankExpenses || []);
+        bankTargetFund = arch.data.bankTargetFund || '';
+        currentYearLabel = String(arch.year || new Date().getFullYear());
+
+        // Rimuovi l'archivio ripristinato
+        archives = archives.filter(a => a.id !== id);
+
+        syncToCloud();
+        renderAllViews();
+        renderArchiveList();
+        updateYearIndicator();
+      });
+    }
+
+    // Elimina un archivio
+    function deleteArchive(id) {
+      const arch = archives.find(a => a.id === id);
+      if (!arch) return;
+      requestDeleteConfirmation(`Sei sicuro di voler eliminare definitivamente l'archivio "${arch.name}"? L'azione non è reversibile.`, () => {
+        // Se sto visualizzando proprio questo archivio, torno alla corrente
+        if (viewingArchiveId === id) {
+          returnToCurrent();
+        }
+        archives = archives.filter(a => a.id !== id);
+        syncToCloud();
+        renderArchiveList();
+      });
+    }
+
+    // Export Excel di un archivio (usa SheetJS già caricato)
+    function exportArchiveToExcel(id) {
+      const arch = archives.find(a => a.id === id);
+      if (!arch) return;
+      try {
+        const wb = XLSX.utils.book_new();
+        const d = arch.data || {};
+
+        // Foglio Riepilogo Mastrini
+        const mastriniRows = [['Fondo', 'Data', 'Voce', 'Importo (€)']];
+        (d.mastriniData || []).forEach(m => {
+          (m.items || []).forEach(it => {
+            mastriniRows.push([m.name, it.date || '', it.note || '', parseFloat(it.amount) || 0]);
+          });
+        });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(mastriniRows), 'Mastrini');
+
+        // Foglio Movimenti
+        const movRows = [['Data', 'Descrizione', 'Tipo', 'Importo (€)']];
+        (d.expenses || []).forEach(e => {
+          movRows.push([e.date || '', e.desc || '', (e.type === 'income' ? 'Entrata' : 'Spesa'), parseFloat(e.amount) || 0]);
+        });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(movRows), 'Movimenti');
+
+        // Foglio Spese Bancarie
+        const bankRows = [['Data', 'Voce', 'Costo (€)']];
+        (d.bankExpenses || []).forEach(b => {
+          bankRows.push([b.date || '', b.desc || '', parseFloat(b.cost) || 0]);
+        });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(bankRows), 'Spese Bancarie');
+
+        // Foglio Ripartizione Mensile
+        const allocRows = [['Mese', 'Stipendio Base', 'Spese Vive', 'Stipendio Effettivo', 'Fondo', 'Quota Base', 'Quota Extra']];
+        Object.keys(d.monthlySalaries || {}).forEach(mk => {
+          const mIdx = parseInt(mk.replace('month_', ''));
+          if (isNaN(mIdx)) return;
+          const sal = d.monthlySalaries[mk] || {};
+          const mName = monthsNames[mIdx] || mk;
+          const customAlloc = sal.customFundAlloc || {};
+          const fundKeys = Object.keys(customAlloc);
+          if (fundKeys.length === 0) {
+            allocRows.push([mName, sal.base || 0, sal.speseVive || 0, sal.eff || 0, '', '', '']);
+          } else {
+            fundKeys.forEach((fn, i) => {
+              const c = customAlloc[fn] || {};
+              if (i === 0) {
+                allocRows.push([mName, sal.base || 0, sal.speseVive || 0, sal.eff || 0, fn, c.base || 0, c.extra || 0]);
+              } else {
+                allocRows.push(['', '', '', '', fn, c.base || 0, c.extra || 0]);
+              }
+            });
+          }
+        });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(allocRows), 'Ripartizione Mensile');
+
+        const safeName = arch.name.replace(/[^a-zA-Z0-9-_]/g, '_');
+        XLSX.writeFile(wb, `Archivio_${safeName}_${arch.year}.xlsx`);
+      } catch (err) {
+        alert("Errore durante l'export dell'archivio: " + err.message);
+        console.error(err);
+      }
+    }
+
+    // --- HANDLER PULSANTI GESTIONE ANNUALE ---
+
+    // Bottone "Archivia Gestione Corrente" -> apre modale nome
+    const btnArchiveCurrent = document.getElementById('btn-archive-current');
+    if (btnArchiveCurrent) {
+      btnArchiveCurrent.addEventListener('click', () => {
+        const defaultName = `Anno ${currentYearLabel}`;
+        document.getElementById('archive-name-input').value = defaultName;
+        document.getElementById('archive-name-modal').classList.add('open');
+      });
+    }
+
+    // Conferma archiviazione
+    const confirmArchiveBtn = document.getElementById('confirm-archive-btn');
+    if (confirmArchiveBtn) {
+      confirmArchiveBtn.addEventListener('click', () => {
+        const name = document.getElementById('archive-name-input').value.trim();
+        if (!name) {
+          alert("Inserisci un nome per la gestione da archiviare.");
+          return;
+        }
+        document.getElementById('archive-name-modal').classList.remove('open');
+        archiveCurrentYear(name);
+      });
+    }
+
+    // Chiudi modale archiviazione
+    const closeArchiveModalBtn = document.getElementById('close-archive-modal-btn');
+    if (closeArchiveModalBtn) {
+      closeArchiveModalBtn.addEventListener('click', () => {
+        document.getElementById('archive-name-modal').classList.remove('open');
+      });
+    }
+
+    // Bottone "Torna alla Gestione Corrente" nella sezione annuale
+    const btnReturnToCurrent = document.getElementById('btn-return-to-current');
+    if (btnReturnToCurrent) {
+      btnReturnToCurrent.addEventListener('click', returnToCurrent);
+    }
+
+    // Bottone "Torna alla Corrente" nel banner della home
+    const homeReturnBtn = document.getElementById('home-return-btn');
+    if (homeReturnBtn) {
+      homeReturnBtn.addEventListener('click', returnToCurrent);
     }
   </script>
 </body>
