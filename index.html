@@ -116,6 +116,25 @@
       align-items: center;
       gap: 8px;
     }
+    /* Barra stato anno sotto l'header */
+    #year-status-bar {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: sticky;
+      top: 70px;
+      z-index: 99;
+    }
+    #year-status-bar .status-badge {
+      font-size: 0.75rem;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
     /* Drawer Menu */
     .drawer-overlay {
       position: fixed;
@@ -472,6 +491,30 @@
     .archive-actions .btn-export-arc { color: var(--accent-green); border-color: var(--accent-green); }
     .archive-actions .btn-restore { color: var(--accent-orange); border-color: var(--accent-orange); }
     .archive-actions .btn-delete-arc { color: var(--accent-red); border-color: var(--accent-red); }
+    /* Modale Export Excel */
+    #export-excel-modal .modal-content { max-width: 480px; }
+    .export-option-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--card-inner);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      margin-bottom: 10px;
+      text-align: left;
+      transition: all 0.2s ease;
+    }
+    .export-option-btn:hover {
+      border-color: var(--accent-blue);
+      transform: translateX(4px);
+    }
+    .export-option-btn i { font-size: 1.2rem; }
   </style>
 </head>
 <body>
@@ -501,7 +544,6 @@
   <header class="app-bar">
     <div style="display:flex; align-items:center; gap:8px;">
       <span class="status-badge" id="cloud-status-badge"><i class="fa-solid fa-circle" style="font-size:8px;"></i> ONLINE</span>
-      <span class="status-badge" id="viewing-year-badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); border-color: rgba(56, 189, 248, 0.3);"><i class="fa-solid fa-calendar"></i> <span id="viewing-year-text">Anno Corrente</span></span>
     </div>
     <div class="logo-container nav-item-btn" data-target="sec-home" title="Torna alla Home">
       <img src="https://lh3.googleusercontent.com/d/1eimNS4XHA7QeuNP2qnTRdC1COpFQGV3c" alt="Logo">
@@ -510,6 +552,13 @@
       <i class="fa-solid fa-bars"></i> Menu
     </button>
   </header>
+
+  <!-- BARRA STATO ANNO (SOTTO L'HEADER, NON SOVRAPPOSTA AL LOGO) -->
+  <div id="year-status-bar">
+    <span class="status-badge" id="viewing-year-badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); border: 1px solid rgba(56, 189, 248, 0.3);">
+      <i class="fa-solid fa-calendar"></i> <span id="viewing-year-text">Anno Corrente</span>
+    </span>
+  </div>
 
   <!-- DRAWER LATERAL -->
   <div class="drawer-overlay" id="drawer-overlay"></div>
@@ -862,17 +911,33 @@
       <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:20px;">
         Seleziona la tipologia di Report Excel formattato che desideri scaricare:
       </p>
-      <button class="btn btn-secondary" id="btn-export-mensile" style="border: 1px solid var(--accent-blue); text-align: left; justify-content: flex-start;">
-        <i class="fa-solid fa-calendar-days" style="color:var(--accent-blue);"></i> 1) Export Gestione Mensile Corrente
+      <button class="export-option-btn" id="btn-export-mensile" style="border-color: rgba(56, 189, 248, 0.5);">
+        <i class="fa-solid fa-calendar-days" style="color:var(--accent-blue);"></i>
+        <div>
+          <div style="font-weight:700;">Gestione Mensile Corrente</div>
+          <small style="color:var(--text-muted); font-weight:400;">Riepilogo mese corrente con settimane e totali</small>
+        </div>
       </button>
-      <button class="btn btn-secondary" id="btn-export-mastrini" style="border: 1px solid var(--accent-orange); text-align: left; justify-content: flex-start;">
-        <i class="fa-solid fa-vault" style="color:var(--accent-orange);"></i> 2) Export Mastrini & Saldi Fondi
+      <button class="export-option-btn" id="btn-export-mastrini" style="border-color: rgba(249, 115, 22, 0.5);">
+        <i class="fa-solid fa-vault" style="color:var(--accent-orange);"></i>
+        <div>
+          <div style="font-weight:700;">Mastrini & Saldi Fondi</div>
+          <small style="color:var(--text-muted); font-weight:400;">Tutti i fondi con saldi progressivi</small>
+        </div>
       </button>
-      <button class="btn btn-secondary" id="btn-export-banca" style="border: 1px solid var(--accent-red); text-align: left; justify-content: flex-start;">
-        <i class="fa-solid fa-receipt" style="color:var(--accent-red);"></i> 3) Export Spese Bancarie
+      <button class="export-option-btn" id="btn-export-banca" style="border-color: rgba(239, 68, 68, 0.5);">
+        <i class="fa-solid fa-receipt" style="color:var(--accent-red);"></i>
+        <div>
+          <div style="font-weight:700;">Spese Bancarie</div>
+          <small style="color:var(--text-muted); font-weight:400;">Elenco commissioni e totale</small>
+        </div>
       </button>
-      <button class="btn btn-primary" id="btn-export-completo" style="background:var(--accent-green); color:#000; text-align: left; justify-content: flex-start; margin-top:10px;">
-        <i class="fa-solid fa-file-circle-check"></i> 4) Export Completo Anno (1 foglio/mese + Mastrini + Spese Banca)
+      <button class="export-option-btn" id="btn-export-completo" style="border-color: rgba(34, 197, 94, 0.6); background: rgba(34, 197, 94, 0.05);">
+        <i class="fa-solid fa-file-circle-check" style="color:var(--accent-green);"></i>
+        <div>
+          <div style="font-weight:700;">Export Completo Annuale</div>
+          <small style="color:var(--text-muted); font-weight:400;">12 mesi + Mastrini + Spese Bancarie</small>
+        </div>
       </button>
       <button class="btn btn-secondary" id="close-export-modal-btn" style="margin-top:15px;">Annulla</button>
     </div>
@@ -881,8 +946,8 @@
   <!-- MODALE BANNER DI CONFERMA ELIMINAZIONE GENERALIZZATA -->
   <div class="modal" id="confirm-delete-modal">
     <div class="modal-content" style="max-width: 400px; text-align: center;">
-      <i class="fa-solid fa-triangle-exclamation" style="font-size: 3rem; color: var(--accent-red); margin-bottom: 15px;"></i>
-      <h3 style="margin-bottom:10px; font-weight:700;">Conferma Eliminazione</h3>
+      <i class="fa-solid fa-triangle-exclamation" id="confirm-delete-icon" style="font-size: 3rem; color: var(--accent-red); margin-bottom: 15px;"></i>
+      <h3 style="margin-bottom:10px; font-weight:700;" id="confirm-delete-title">Conferma Eliminazione</h3>
       <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:20px;" id="confirm-delete-msg">
         Sei sicuro di voler eliminare questa voce? L'azione non potrà essere annullata.
       </p>
@@ -1038,8 +1103,12 @@
         Verrà salvata una copia completa della gestione corrente nell'archivio. I mastrini della nuova gestione conserveranno il solo totale finale come voce "da anno [nome]". Spese bancarie e movimenti mensili verranno azzerati.
       </p>
       <div class="form-group">
-        <label>Nome Gestione Archiviata</label>
-        <input type="text" id="archive-name-input" class="form-control" placeholder="Es. Anno 2025">
+        <label>Nome Gestione Archiviata (attuale)</label>
+        <input type="text" id="archive-name-input" class="form-control" placeholder="Es. Anno 2026">
+      </div>
+      <div class="form-group">
+        <label>Nome Nuova Gestione (per il nuovo anno)</label>
+        <input type="text" id="archive-new-name-input" class="form-control" placeholder="Es. Anno 2027">
       </div>
       <button class="btn btn-primary" id="confirm-archive-btn" style="background:var(--accent-orange); color:#fff;">Archivia Ora</button>
       <button class="btn btn-secondary" id="close-archive-modal-btn">Annulla</button>
@@ -1088,11 +1157,11 @@
     let bankTargetFund = localStorage.getItem('bank_target_fund') || "";
     let gasUrl = localStorage.getItem('gas_sync_url') || "";
 
-    // --- STATO ARCHIVIO ANNUALE (NUOVO) ---
+    // --- STATO ARCHIVIO ANNUALE ---
     let archives = JSON.parse(localStorage.getItem('archives_data')) || [];
-    let viewingArchiveId = null; // null = gestione corrente, altrimenti id archivio visualizzato
-    let liveState = null;        // snapshot della gestione corrente mentre si visualizza un archivio
-    let currentYearLabel = new Date().getFullYear().toString();
+    let viewingArchiveId = null;
+    let liveState = null;
+    let currentYearLabel = localStorage.getItem('current_year_label') || new Date().getFullYear().toString();
 
     let currentMovementType = "expense";
     let modalMovementType = "expense";
@@ -1117,12 +1186,10 @@
       if (mastrinoItemDate && !mastrinoItemDate.value) mastrinoItemDate.value = today;
     }
 
-    // --- HELPER: deep clone ---
     function deepClone(obj) {
       return JSON.parse(JSON.stringify(obj));
     }
 
-    // --- HELPER: verifica se sto visualizzando un archivio ---
     function isViewingArchive() {
       return viewingArchiveId !== null;
     }
@@ -1196,7 +1263,6 @@
 
     // --- SINCRONIZZAZIONE REALTIME FIREBASE & TRASCRIZIONE AUTOMATICA ---
     function syncToCloud(previousBankFund = null) {
-      // MODIFICA: se sto visualizzando un archivio, non sincronizzo
       if (isViewingArchive()) {
         console.warn("Sync bloccato: stai visualizzando un archivio. Le modifiche non verranno salvate.");
         return;
@@ -1211,7 +1277,8 @@
       localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
       localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
       localStorage.setItem('bank_target_fund', bankTargetFund);
-      localStorage.setItem('archives_data', JSON.stringify(archives)); // NUOVO
+      localStorage.setItem('archives_data', JSON.stringify(archives));
+      localStorage.setItem('current_year_label', currentYearLabel);
 
       sendAutoSyncToGAS();
 
@@ -1225,7 +1292,8 @@
         monthlySalaries,
         bankExpenses,
         bankTargetFund,
-        archives,          // NUOVO
+        archives,
+        currentYearLabel,
         updatedAt: Date.now()
       };
 
@@ -1262,7 +1330,8 @@
             monthlySalaries = data.monthlySalaries || {};
             bankExpenses = data.bankExpenses || [];
             bankTargetFund = data.bankTargetFund || "";
-            archives = data.archives || []; // NUOVO
+            archives = data.archives || [];
+            currentYearLabel = data.currentYearLabel || currentYearLabel;
 
             localStorage.setItem('expenses_data', JSON.stringify(expenses));
             localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
@@ -1271,7 +1340,8 @@
             localStorage.setItem('monthly_salaries', JSON.stringify(monthlySalaries));
             localStorage.setItem('bank_expenses_data', JSON.stringify(bankExpenses));
             localStorage.setItem('bank_target_fund', bankTargetFund);
-            localStorage.setItem('archives_data', JSON.stringify(archives)); // NUOVO
+            localStorage.setItem('archives_data', JSON.stringify(archives));
+            localStorage.setItem('current_year_label', currentYearLabel);
           }
           
           isInitialLoadDone = true;
@@ -1280,9 +1350,9 @@
           renderMonthlyView();
           renderMastriniView();
           renderBankExpensesView();
-          renderArchiveList();      // NUOVO
-          updateYearIndicator();    // NUOVO
-          renderArchiveControls();  // NUOVO
+          renderArchiveList();
+          updateYearIndicator();
+          renderArchiveControls();
           
           const gasInput = document.getElementById('gas-url-input');
           if (gasInput) {
@@ -1584,14 +1654,21 @@
       });
     }
 
-    // UTILITY MODALE DI CONFERMA
+    // UTILITY MODALE DI CONFERMA (con supporto dinamico titolo/etichetta/icona)
     let pendingDeleteCallback = null;
     const confirmDeleteModal = document.getElementById('confirm-delete-modal');
     const confirmDeleteYesBtn = document.getElementById('confirm-delete-yes-btn');
     const confirmDeleteNoBtn = document.getElementById('confirm-delete-no-btn');
 
-    function requestDeleteConfirmation(message, onConfirm) {
+    function requestDeleteConfirmation(message, onConfirm, options = {}) {
       document.getElementById('confirm-delete-msg').textContent = message || "Sei sicuro di voler eliminare questa voce?";
+      document.getElementById('confirm-delete-title').textContent = options.title || 'Conferma Eliminazione';
+      confirmDeleteYesBtn.textContent = options.confirmText || 'Elimina';
+      confirmDeleteYesBtn.className = options.confirmClass || 'btn btn-danger';
+      const icon = document.getElementById('confirm-delete-icon');
+      icon.className = options.icon || 'fa-solid fa-triangle-exclamation';
+      icon.style.color = options.iconColor || 'var(--accent-red)';
+
       pendingDeleteCallback = onConfirm;
       confirmDeleteModal.classList.add('open');
     }
@@ -2819,10 +2896,413 @@
     }
 
     // ================================================================
-    // GESTIONE ANNUALE / ARCHIVIO (NUOVO)
+    // EXPORT EXCEL FORMATTATO (xlsx-js-style)
     // ================================================================
 
-    // Snapshot della gestione corrente
+    const thinBorder = (color = "CBD5E1") => ({
+      top: { style: "thin", color: { rgb: color } },
+      bottom: { style: "thin", color: { rgb: color } },
+      left: { style: "thin", color: { rgb: color } },
+      right: { style: "thin", color: { rgb: color } }
+    });
+
+    const XL_STYLE = {
+      title: {
+        font: { name: "Calibri", sz: 16, bold: true, color: { rgb: "FFFFFF" } },
+        fill: { patternType: "solid", fgColor: { rgb: "0F172A" } },
+        alignment: { horizontal: "center", vertical: "center" }
+      },
+      sectionHeader: {
+        font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "FFFFFF" } },
+        fill: { patternType: "solid", fgColor: { rgb: "0284C7" } },
+        alignment: { horizontal: "left", vertical: "center" }
+      },
+      tableHeader: {
+        font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "FFFFFF" } },
+        fill: { patternType: "solid", fgColor: { rgb: "334155" } },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: thinBorder("64748B")
+      },
+      labelBold: {
+        font: { name: "Calibri", sz: 11, bold: true },
+        fill: { patternType: "solid", fgColor: { rgb: "F1F5F9" } },
+        border: thinBorder()
+      },
+      valueNormal: {
+        font: { name: "Calibri", sz: 11 },
+        fill: { patternType: "solid", fgColor: { rgb: "F1F5F9" } },
+        alignment: { horizontal: "right", vertical: "center" },
+        border: thinBorder()
+      },
+      dataCell: {
+        font: { name: "Calibri", sz: 11 },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: thinBorder("E2E8F0")
+      },
+      dataCellLeft: {
+        font: { name: "Calibri", sz: 11 },
+        alignment: { horizontal: "left", vertical: "center" },
+        border: thinBorder("E2E8F0")
+      },
+      dataCellRight: {
+        font: { name: "Calibri", sz: 11 },
+        alignment: { horizontal: "right", vertical: "center" },
+        border: thinBorder("E2E8F0")
+      },
+      income: {
+        font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "16A34A" } },
+        alignment: { horizontal: "right", vertical: "center" },
+        border: thinBorder("E2E8F0")
+      },
+      expense: {
+        font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "DC2626" } },
+        alignment: { horizontal: "right", vertical: "center" },
+        border: thinBorder("E2E8F0")
+      },
+      totalIncome: {
+        font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "14532D" } },
+        fill: { patternType: "solid", fgColor: { rgb: "BBF7D0" } },
+        alignment: { horizontal: "left", vertical: "center" },
+        border: thinBorder("86EFAC")
+      },
+      totalIncomeValue: {
+        font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "14532D" } },
+        fill: { patternType: "solid", fgColor: { rgb: "BBF7D0" } },
+        alignment: { horizontal: "right", vertical: "center" },
+        border: thinBorder("86EFAC")
+      },
+      totalExpense: {
+        font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "7F1D1D" } },
+        fill: { patternType: "solid", fgColor: { rgb: "FECACA" } },
+        alignment: { horizontal: "left", vertical: "center" },
+        border: thinBorder("FCA5A5")
+      },
+      totalExpenseValue: {
+        font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "7F1D1D" } },
+        fill: { patternType: "solid", fgColor: { rgb: "FECACA" } },
+        alignment: { horizontal: "right", vertical: "center" },
+        border: thinBorder("FCA5A5")
+      },
+      totalBalance: {
+        font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "FFFFFF" } },
+        fill: { patternType: "solid", fgColor: { rgb: "0284C7" } },
+        alignment: { horizontal: "left", vertical: "center" },
+        border: thinBorder("0369A1")
+      },
+      totalBalanceValue: {
+        font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "FFFFFF" } },
+        fill: { patternType: "solid", fgColor: { rgb: "0284C7" } },
+        alignment: { horizontal: "right", vertical: "center" },
+        border: thinBorder("0369A1")
+      },
+      fundHeader: {
+        font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "FFFFFF" } },
+        fill: { patternType: "solid", fgColor: { rgb: "7C3AED" } },
+        alignment: { horizontal: "left", vertical: "center" },
+        border: thinBorder("6D28D9")
+      },
+      fundTotal: {
+        font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "FFFFFF" } },
+        fill: { patternType: "solid", fgColor: { rgb: "4338CA" } },
+        alignment: { horizontal: "left", vertical: "center" },
+        border: thinBorder("3730A3")
+      },
+      fundTotalValue: {
+        font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "FFFFFF" } },
+        fill: { patternType: "solid", fgColor: { rgb: "4338CA" } },
+        alignment: { horizontal: "right", vertical: "center" },
+        border: thinBorder("3730A3")
+      },
+      grandTotal: {
+        font: { name: "Calibri", sz: 14, bold: true, color: { rgb: "FFFFFF" } },
+        fill: { patternType: "solid", fgColor: { rgb: "0F172A" } },
+        alignment: { horizontal: "left", vertical: "center" },
+        border: thinBorder("0F172A")
+      },
+      grandTotalValue: {
+        font: { name: "Calibri", sz: 14, bold: true, color: { rgb: "FBBF24" } },
+        fill: { patternType: "solid", fgColor: { rgb: "0F172A" } },
+        alignment: { horizontal: "right", vertical: "center" },
+        border: thinBorder("0F172A")
+      }
+    };
+
+    function xc(v, s) {
+      const cell = { v: (v === null || v === undefined) ? "" : v };
+      cell.t = typeof v === 'number' ? 'n' : 's';
+      if (s) cell.s = s;
+      return cell;
+    }
+
+    function buildSheet(rows, colWidths, merges) {
+      const ws = {};
+      const range = { s: { r: 0, c: 0 }, e: { r: 0, c: 0 } };
+      rows.forEach((row, r) => {
+        row.forEach((c, col) => {
+          const addr = XLSX.utils.encode_cell({ r: r, c: col });
+          let cell;
+          if (c && typeof c === 'object' && 'v' in c) {
+            cell = { v: c.v, t: c.t || (typeof c.v === 'number' ? 'n' : 's') };
+            if (c.s) cell.s = c.s;
+          } else {
+            cell = { v: c === undefined ? "" : c, t: typeof c === 'number' ? 'n' : 's' };
+          }
+          ws[addr] = cell;
+          if (col > range.e.c) range.e.c = col;
+        });
+        if (r > range.e.r) range.e.r = r;
+      });
+      ws['!ref'] = XLSX.utils.encode_range(range);
+      if (colWidths) ws['!cols'] = colWidths.map(w => ({ wch: w }));
+      if (merges) ws['!merges'] = merges;
+      return ws;
+    }
+
+    function buildMonthSheetData(monthIdx) {
+      const monthName = monthsNames[monthIdx].toUpperCase();
+      const key = `month_${monthIdx}`;
+      const currentSal = monthlySalaries[key] || {};
+      const weeks = generateWeeks(monthIdx);
+      
+      const rows = [];
+      const merges = [];
+      
+      rows.push([xc(`GESTIONE MENSILE - ${monthName}`, XL_STYLE.title), xc(""), xc(""), xc(""), xc("")]);
+      merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } });
+      rows.push([xc(""), xc(""), xc(""), xc(""), xc("")]);
+      
+      rows.push([xc("RIEPILOGO MENSILE", XL_STYLE.sectionHeader), xc("VALORE (€)", XL_STYLE.sectionHeader), xc(""), xc(""), xc("")]);
+      merges.push({ s: { r: 2, c: 0 }, e: { r: 2, c: 0 } });
+      
+      const salBase = currentSal.base || 0;
+      const speseVive = currentSal.speseVive || 0;
+      const salEff = currentSal.eff || 0;
+      const extra = Math.max(0, salEff - salBase);
+      
+      rows.push([xc("Stipendio Base", XL_STYLE.labelBold), xc(salBase, XL_STYLE.valueNormal), xc(""), xc(""), xc("")]);
+      rows.push([xc("Budget Spese Vive", XL_STYLE.labelBold), xc(speseVive, XL_STYLE.valueNormal), xc(""), xc(""), xc("")]);
+      rows.push([xc("Stipendio Effettivo", XL_STYLE.labelBold), xc(salEff, XL_STYLE.valueNormal), xc(""), xc(""), xc("")]);
+      rows.push([xc("Extra Calcolato", XL_STYLE.labelBold), xc(extra, XL_STYLE.valueNormal), xc(""), xc(""), xc("")]);
+      rows.push([xc(""), xc(""), xc(""), xc(""), xc("")]);
+      
+      rows.push([
+        xc("Settimana", XL_STYLE.tableHeader),
+        xc("Data", XL_STYLE.tableHeader),
+        xc("Descrizione / Fondo", XL_STYLE.tableHeader),
+        xc("Tipologia", XL_STYLE.tableHeader),
+        xc("Importo (€)", XL_STYLE.tableHeader)
+      ]);
+      
+      let totEntrate = 0, totSpese = 0;
+      weeks.forEach((w, i) => {
+        const wExp = expenses.filter(e => e.date >= w.start && e.date <= w.end);
+        if (wExp.length === 0) {
+          rows.push([
+            xc(`Settimana ${i+1}`, XL_STYLE.labelBold),
+            xc(`${w.start} - ${w.end}`, XL_STYLE.dataCell),
+            xc("Nessun movimento", XL_STYLE.dataCellLeft),
+            xc("-", XL_STYLE.dataCell),
+            xc(0, XL_STYLE.dataCellRight)
+          ]);
+        } else {
+          wExp.forEach((e, j) => {
+            const isInc = e.type === 'income';
+            const amt = isInc ? parseFloat(e.amount) : -parseFloat(e.amount);
+            if (isInc) totEntrate += parseFloat(e.amount); else totSpese += parseFloat(e.amount);
+            rows.push([
+              xc(j === 0 ? `Settimana ${i+1}` : "", j === 0 ? XL_STYLE.labelBold : XL_STYLE.dataCell),
+              xc(e.date, XL_STYLE.dataCell),
+              xc(e.desc, XL_STYLE.dataCellLeft),
+              xc(isInc ? "Entrata" : "Spesa", XL_STYLE.dataCell),
+              xc(amt, isInc ? XL_STYLE.income : XL_STYLE.expense)
+            ]);
+          });
+        }
+      });
+      
+      rows.push([xc(""), xc(""), xc(""), xc(""), xc("")]);
+      
+      const saldo = totEntrate - totSpese;
+      rows.push([xc("TOTALE ENTRATE", XL_STYLE.totalIncome), xc(""), xc(""), xc(""), xc(totEntrate, XL_STYLE.totalIncomeValue)]);
+      rows.push([xc("TOTALE SPESE", XL_STYLE.totalExpense), xc(""), xc(""), xc(""), xc(totSpese, XL_STYLE.totalExpenseValue)]);
+      rows.push([xc("SALDO NETTO SPESE VIVE", XL_STYLE.totalBalance), xc(""), xc(""), xc(""), xc(saldo, XL_STYLE.totalBalanceValue)]);
+      
+      return { rows, merges, colWidths: [16, 24, 32, 14, 16] };
+    }
+
+    function buildMastriniSheetData() {
+      const rows = [];
+      const merges = [];
+      
+      rows.push([xc("REPORT MASTRINI E SALDI FONDI", XL_STYLE.title), xc(""), xc(""), xc(""), xc("")]);
+      merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } });
+      rows.push([xc(""), xc(""), xc(""), xc(""), xc("")]);
+      
+      rows.push([
+        xc("Nome Fondo", XL_STYLE.tableHeader),
+        xc("Data Voce", XL_STYLE.tableHeader),
+        xc("Descrizione / Nota", XL_STYLE.tableHeader),
+        xc("Importo (€)", XL_STYLE.tableHeader),
+        xc("Saldo Progressivo (€)", XL_STYLE.tableHeader)
+      ]);
+      
+      let grandTotal = 0;
+      const excludedFunds = ["investimenti", "fondo pensione", "time deposit"];
+      
+      (mastriniData || []).forEach(m => {
+        const items = m.items || [];
+        let prog = 0;
+        const isExcluded = excludedFunds.includes(m.name.trim().toLowerCase());
+        if (items.length === 0) {
+          rows.push([
+            xc(m.name, XL_STYLE.labelBold),
+            xc("-", XL_STYLE.dataCell),
+            xc("Nessun movimento", XL_STYLE.dataCellLeft),
+            xc(0, XL_STYLE.dataCellRight),
+            xc(0, XL_STYLE.dataCellRight)
+          ]);
+        } else {
+          items.forEach((it, idx) => {
+            const amt = parseFloat(it.amount) || 0;
+            prog += amt;
+            if (!isExcluded) grandTotal += amt;
+            rows.push([
+              xc(idx === 0 ? m.name : "", idx === 0 ? XL_STYLE.labelBold : XL_STYLE.dataCell),
+              xc(it.date || "", XL_STYLE.dataCell),
+              xc(it.note || "", XL_STYLE.dataCellLeft),
+              xc(amt, amt >= 0 ? XL_STYLE.income : XL_STYLE.expense),
+              xc(prog, XL_STYLE.dataCellRight)
+            ]);
+          });
+        }
+        const fundTotal = items.reduce((a, c) => a + (parseFloat(c.amount) || 0), 0);
+        rows.push([
+          xc(`TOTALE FONDO ${m.name.toUpperCase()}`, XL_STYLE.fundTotal),
+          xc(""), xc(""),
+          xc(fundTotal, XL_STYLE.fundTotalValue),
+          xc(fundTotal, XL_STYLE.fundTotalValue)
+        ]);
+        rows.push([xc(""), xc(""), xc(""), xc(""), xc("")]);
+      });
+      
+      rows.push([
+        xc("TOTALE LIQUIDITÀ MASTRINI", XL_STYLE.grandTotal),
+        xc(""), xc(""), xc(""),
+        xc(grandTotal, XL_STYLE.grandTotalValue)
+      ]);
+      
+      return { rows, merges, colWidths: [26, 16, 34, 16, 22] };
+    }
+
+    function buildBankSheetData() {
+      const rows = [];
+      const merges = [];
+      
+      rows.push([xc("REPORT SPESE BANCARIE", XL_STYLE.title), xc(""), xc("")]);
+      merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 2 } });
+      rows.push([xc(""), xc(""), xc("")]);
+      
+      rows.push([xc("Fondo Collegato:", XL_STYLE.labelBold), xc(bankTargetFund || "-", XL_STYLE.valueNormal), xc("")]);
+      rows.push([xc(""), xc(""), xc("")]);
+      
+      rows.push([
+        xc("Data", XL_STYLE.tableHeader),
+        xc("Descrizione Commissione / Voce", XL_STYLE.tableHeader),
+        xc("Costo (€)", XL_STYLE.tableHeader)
+      ]);
+      
+      let tot = 0;
+      (bankExpenses || []).forEach(b => {
+        const cost = parseFloat(b.cost) || 0;
+        tot += cost;
+        rows.push([
+          xc(b.date, XL_STYLE.dataCell),
+          xc(b.desc, XL_STYLE.dataCellLeft),
+          xc(cost, XL_STYLE.expense)
+        ]);
+      });
+      
+      rows.push([xc(""), xc(""), xc("")]);
+      rows.push([
+        xc("TOTALE SPESE BANCARIE", XL_STYLE.totalExpense),
+        xc(""),
+        xc(tot, XL_STYLE.totalExpenseValue)
+      ]);
+      
+      return { rows, merges, colWidths: [16, 44, 16] };
+    }
+
+    function exportMensile() {
+      const monthIdx = parseInt(monthSelect.value);
+      const monthName = monthsNames[monthIdx];
+      const { rows, merges, colWidths } = buildMonthSheetData(monthIdx);
+      const ws = buildSheet(rows, colWidths, merges);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, monthName.substring(0, 31));
+      XLSX.writeFile(wb, `Gestione_Mensile_${monthName}_${currentYearLabel}.xlsx`);
+    }
+
+    function exportMastrini() {
+      const { rows, merges, colWidths } = buildMastriniSheetData();
+      const ws = buildSheet(rows, colWidths, merges);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Mastrini e Saldi");
+      XLSX.writeFile(wb, `Mastrini_${currentYearLabel}.xlsx`);
+    }
+
+    function exportBanca() {
+      const { rows, merges, colWidths } = buildBankSheetData();
+      const ws = buildSheet(rows, colWidths, merges);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Spese Bancarie");
+      XLSX.writeFile(wb, `Spese_Bancarie_${currentYearLabel}.xlsx`);
+    }
+
+    function exportCompleto(suffix) {
+      const wb = XLSX.utils.book_new();
+      monthsNames.forEach((mName, idx) => {
+        const { rows, merges, colWidths } = buildMonthSheetData(idx);
+        const ws = buildSheet(rows, colWidths, merges);
+        XLSX.utils.book_append_sheet(wb, ws, mName.substring(0, 31));
+      });
+      const mast = buildMastriniSheetData();
+      XLSX.utils.book_append_sheet(wb, buildSheet(mast.rows, mast.colWidths, mast.merges), "Mastrini e Saldi");
+      const bank = buildBankSheetData();
+      XLSX.utils.book_append_sheet(wb, buildSheet(bank.rows, bank.colWidths, bank.merges), "Spese Bancarie");
+      const suffixName = suffix || currentYearLabel;
+      XLSX.writeFile(wb, `Gestionale_Completo_${suffixName}.xlsx`);
+    }
+
+    // ---- HANDLER PULSANTI EXPORT ----
+    const exportModal = document.getElementById('export-excel-modal');
+    document.getElementById('btn-open-export-modal').addEventListener('click', () => {
+      closeDrawer();
+      exportModal.classList.add('open');
+    });
+    document.getElementById('close-export-modal-btn').addEventListener('click', () => {
+      exportModal.classList.remove('open');
+    });
+    document.getElementById('btn-export-mensile').addEventListener('click', () => {
+      try { exportMensile(); exportModal.classList.remove('open'); }
+      catch(err) { alert("Errore durante l'export: " + err.message); console.error(err); }
+    });
+    document.getElementById('btn-export-mastrini').addEventListener('click', () => {
+      try { exportMastrini(); exportModal.classList.remove('open'); }
+      catch(err) { alert("Errore durante l'export: " + err.message); console.error(err); }
+    });
+    document.getElementById('btn-export-banca').addEventListener('click', () => {
+      try { exportBanca(); exportModal.classList.remove('open'); }
+      catch(err) { alert("Errore durante l'export: " + err.message); console.error(err); }
+    });
+    document.getElementById('btn-export-completo').addEventListener('click', () => {
+      try { exportCompleto(); exportModal.classList.remove('open'); }
+      catch(err) { alert("Errore durante l'export: " + err.message); console.error(err); }
+    });
+
+    // ================================================================
+    // GESTIONE ANNUALE / ARCHIVIO
+    // ================================================================
+
     function snapshotCurrentState() {
       return {
         expenses: deepClone(expenses),
@@ -2831,11 +3311,11 @@
         settingsFunds: deepClone(settingsFunds),
         monthlySalaries: deepClone(monthlySalaries),
         bankExpenses: deepClone(bankExpenses),
-        bankTargetFund: bankTargetFund
+        bankTargetFund: bankTargetFund,
+        currentYearLabel: currentYearLabel
       };
     }
 
-    // Salva snapshot negli archivi senza modificare lo stato corrente
     function saveCurrentToArchive(name) {
       archives.push({
         id: Date.now() + Math.floor(Math.random() * 1000),
@@ -2846,17 +3326,14 @@
       });
     }
 
-    // Archivia la gestione corrente (reset dello stato attivo)
-    function archiveCurrentYear(name) {
+    function archiveCurrentYear(name, newName) {
       if (isViewingArchive()) {
         alert("Torna prima alla gestione corrente per poterla archiviare.");
         return;
       }
 
-      // 1) Salva snapshot completo
       saveCurrentToArchive(name);
 
-      // 2) Riduci i mastrini a una sola voce "da anno [nome]" col totale finale
       mastriniData = (mastriniData || []).map(m => {
         const total = (m.items || []).reduce((acc, it) => acc + (parseFloat(it.amount) || 0), 0);
         return {
@@ -2869,20 +3346,21 @@
         };
       });
 
-      // 3) Azzera le altre gestioni (spese bancarie incluse; il loro totale è già dentro ai mastrini)
       expenses = [];
       customWeekRanges = {};
       monthlySalaries = {};
       bankExpenses = [];
 
-      // 4) Salva e re-render
+      // Imposta il nome della NUOVA gestione (rinominabile)
+      currentYearLabel = (newName && newName.trim()) ? newName.trim() : String(new Date().getFullYear());
+
       syncToCloud();
       renderAllViews();
       renderArchiveList();
       updateYearIndicator();
+      renderArchiveControls();
     }
 
-    // Helper: re-render completo delle viste
     function renderAllViews() {
       initDefaultDates();
       initMonthDropdown();
@@ -2891,12 +3369,9 @@
       renderBankExpensesView();
     }
 
-    // Aggiorna indicatore anno (badge header + banner home)
     function updateYearIndicator() {
-      // Badge header
       const badge = document.getElementById('viewing-year-badge');
       const badgeText = document.getElementById('viewing-year-text');
-      // Banner home
       const homeBanner = document.getElementById('home-viewing-year');
       const homeReturnBtn = document.getElementById('home-return-btn');
 
@@ -2912,7 +3387,7 @@
         if (homeBanner) homeBanner.textContent = label;
         if (homeReturnBtn) homeReturnBtn.style.display = 'inline-flex';
       } else {
-        const label = `Anno Corrente (${currentYearLabel})`;
+        const label = `Gestione Attiva: ${currentYearLabel}`;
         if (badge && badgeText) {
           badgeText.textContent = label;
           badge.style.background = 'rgba(56, 189, 248, 0.15)';
@@ -2924,7 +3399,6 @@
       }
     }
 
-    // Controlla visibilità pulsanti della sezione Gestione Annuale
     function renderArchiveControls() {
       const archiveBtn = document.getElementById('btn-archive-current');
       const returnBtn = document.getElementById('btn-return-to-current');
@@ -2950,7 +3424,6 @@
       }
     }
 
-    // Render lista archivi
     function renderArchiveList() {
       const container = document.getElementById('archive-list-container');
       if (!container) return;
@@ -2962,7 +3435,6 @@
         return;
       }
 
-      // Ordina per data archiviazione decrescente
       const sorted = [...archives].sort((a, b) => new Date(b.archivedAt) - new Date(a.archivedAt));
 
       sorted.forEach(arch => {
@@ -3005,20 +3477,16 @@
       renderArchiveControls();
     }
 
-    // Visualizza un archivio (read-only)
     function viewArchive(id) {
       const arch = archives.find(a => a.id === id);
       if (!arch) return;
 
-      // Se sto già visualizzando un altro archivio, prima torno alla corrente
       if (isViewingArchive()) {
         returnToCurrent();
       }
 
-      // Salva lo stato corrente
       liveState = snapshotCurrentState();
 
-      // Carica lo stato dell'archivio
       expenses = deepClone(arch.data.expenses || []);
       customWeekRanges = deepClone(arch.data.customWeekRanges || {});
       mastriniData = deepClone(arch.data.mastriniData || []);
@@ -3026,6 +3494,7 @@
       monthlySalaries = deepClone(arch.data.monthlySalaries || {});
       bankExpenses = deepClone(arch.data.bankExpenses || []);
       bankTargetFund = arch.data.bankTargetFund || '';
+      if (arch.data.currentYearLabel) currentYearLabel = arch.data.currentYearLabel;
 
       viewingArchiveId = id;
 
@@ -3034,11 +3503,9 @@
       updateYearIndicator();
     }
 
-    // Torna alla gestione corrente
     function returnToCurrent() {
       if (!isViewingArchive()) return;
 
-      // Ripristina lo stato live
       if (liveState) {
         expenses = liveState.expenses;
         customWeekRanges = liveState.customWeekRanges;
@@ -3047,6 +3514,7 @@
         monthlySalaries = liveState.monthlySalaries;
         bankExpenses = liveState.bankExpenses;
         bankTargetFund = liveState.bankTargetFund;
+        if (liveState.currentYearLabel) currentYearLabel = liveState.currentYearLabel;
       }
       liveState = null;
       viewingArchiveId = null;
@@ -3056,50 +3524,54 @@
       updateYearIndicator();
     }
 
-    // Ripristina un archivio come gestione attiva (archiviando la corrente)
     function restoreArchive(id) {
       const arch = archives.find(a => a.id === id);
       if (!arch) return;
 
-      requestDeleteConfirmation(`Sei sicuro di voler ripristinare "${arch.name}" come gestione attiva? La gestione corrente verrà archiviata automaticamente.`, () => {
-        // Se sto visualizzando un archivio, torno prima alla corrente
-        if (isViewingArchive()) {
-          returnToCurrent();
+      requestDeleteConfirmation(
+        `Sei sicuro di voler ripristinare "${arch.name}" come gestione attiva? La gestione corrente verrà archiviata automaticamente.`,
+        () => {
+          if (isViewingArchive()) {
+            returnToCurrent();
+          }
+
+          const hasCurrentData = (expenses.length > 0 || (mastriniData || []).some(m => (m.items || []).length > 0) || bankExpenses.length > 0);
+          if (hasCurrentData) {
+            // Archivia la corrente mantenendo SOLO il nome settato (senza "Backup"/"Ripristinato")
+            saveCurrentToArchive(currentYearLabel);
+          }
+
+          expenses = deepClone(arch.data.expenses || []);
+          customWeekRanges = deepClone(arch.data.customWeekRanges || {});
+          mastriniData = deepClone(arch.data.mastriniData || []);
+          settingsFunds = deepClone(arch.data.settingsFunds || { defaultBase: 0, defaultSpeseVive: 0, defaultEff: 0, allocations: {} });
+          monthlySalaries = deepClone(arch.data.monthlySalaries || {});
+          bankExpenses = deepClone(arch.data.bankExpenses || []);
+          bankTargetFund = arch.data.bankTargetFund || '';
+          currentYearLabel = arch.data.currentYearLabel || arch.name;
+
+          archives = archives.filter(a => a.id !== id);
+
+          syncToCloud();
+          renderAllViews();
+          renderArchiveList();
+          updateYearIndicator();
+          renderArchiveControls();
+        },
+        {
+          title: 'Conferma Ripristino',
+          confirmText: 'Ripristina',
+          confirmClass: 'btn btn-primary',
+          icon: 'fa-solid fa-rotate-left',
+          iconColor: 'var(--accent-orange)'
         }
-
-        // Archivia la gestione corrente con nome automatico (se ha dati)
-        const hasCurrentData = (expenses.length > 0 || (mastriniData || []).some(m => (m.items || []).length > 0) || bankExpenses.length > 0);
-        if (hasCurrentData) {
-          const autoName = `Backup ${currentYearLabel} - ${new Date().toLocaleString('it-IT')}`;
-          saveCurrentToArchive(autoName);
-        }
-
-        // Carica l'archivio come stato attivo
-        expenses = deepClone(arch.data.expenses || []);
-        customWeekRanges = deepClone(arch.data.customWeekRanges || {});
-        mastriniData = deepClone(arch.data.mastriniData || []);
-        settingsFunds = deepClone(arch.data.settingsFunds || { defaultBase: 0, defaultSpeseVive: 0, defaultEff: 0, allocations: {} });
-        monthlySalaries = deepClone(arch.data.monthlySalaries || {});
-        bankExpenses = deepClone(arch.data.bankExpenses || []);
-        bankTargetFund = arch.data.bankTargetFund || '';
-        currentYearLabel = String(arch.year || new Date().getFullYear());
-
-        // Rimuovi l'archivio ripristinato
-        archives = archives.filter(a => a.id !== id);
-
-        syncToCloud();
-        renderAllViews();
-        renderArchiveList();
-        updateYearIndicator();
-      });
+      );
     }
 
-    // Elimina un archivio
     function deleteArchive(id) {
       const arch = archives.find(a => a.id === id);
       if (!arch) return;
       requestDeleteConfirmation(`Sei sicuro di voler eliminare definitivamente l'archivio "${arch.name}"? L'azione non è reversibile.`, () => {
-        // Se sto visualizzando proprio questo archivio, torno alla corrente
         if (viewingArchiveId === id) {
           returnToCurrent();
         }
@@ -3109,96 +3581,70 @@
       });
     }
 
-    // Export Excel di un archivio (usa SheetJS già caricato)
     function exportArchiveToExcel(id) {
       const arch = archives.find(a => a.id === id);
       if (!arch) return;
+
+      const wasViewingThisArchive = (viewingArchiveId === id);
+      const liveSnapshot = wasViewingThisArchive ? null : snapshotCurrentState();
+
+      if (!wasViewingThisArchive) {
+        expenses = arch.data.expenses || [];
+        customWeekRanges = arch.data.customWeekRanges || {};
+        mastriniData = arch.data.mastriniData || [];
+        settingsFunds = arch.data.settingsFunds || { defaultBase: 0, defaultSpeseVive: 0, defaultEff: 0, allocations: {} };
+        monthlySalaries = arch.data.monthlySalaries || {};
+        bankExpenses = arch.data.bankExpenses || [];
+        bankTargetFund = arch.data.bankTargetFund || '';
+      }
+
       try {
-        const wb = XLSX.utils.book_new();
-        const d = arch.data || {};
-
-        // Foglio Riepilogo Mastrini
-        const mastriniRows = [['Fondo', 'Data', 'Voce', 'Importo (€)']];
-        (d.mastriniData || []).forEach(m => {
-          (m.items || []).forEach(it => {
-            mastriniRows.push([m.name, it.date || '', it.note || '', parseFloat(it.amount) || 0]);
-          });
-        });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(mastriniRows), 'Mastrini');
-
-        // Foglio Movimenti
-        const movRows = [['Data', 'Descrizione', 'Tipo', 'Importo (€)']];
-        (d.expenses || []).forEach(e => {
-          movRows.push([e.date || '', e.desc || '', (e.type === 'income' ? 'Entrata' : 'Spesa'), parseFloat(e.amount) || 0]);
-        });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(movRows), 'Movimenti');
-
-        // Foglio Spese Bancarie
-        const bankRows = [['Data', 'Voce', 'Costo (€)']];
-        (d.bankExpenses || []).forEach(b => {
-          bankRows.push([b.date || '', b.desc || '', parseFloat(b.cost) || 0]);
-        });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(bankRows), 'Spese Bancarie');
-
-        // Foglio Ripartizione Mensile
-        const allocRows = [['Mese', 'Stipendio Base', 'Spese Vive', 'Stipendio Effettivo', 'Fondo', 'Quota Base', 'Quota Extra']];
-        Object.keys(d.monthlySalaries || {}).forEach(mk => {
-          const mIdx = parseInt(mk.replace('month_', ''));
-          if (isNaN(mIdx)) return;
-          const sal = d.monthlySalaries[mk] || {};
-          const mName = monthsNames[mIdx] || mk;
-          const customAlloc = sal.customFundAlloc || {};
-          const fundKeys = Object.keys(customAlloc);
-          if (fundKeys.length === 0) {
-            allocRows.push([mName, sal.base || 0, sal.speseVive || 0, sal.eff || 0, '', '', '']);
-          } else {
-            fundKeys.forEach((fn, i) => {
-              const c = customAlloc[fn] || {};
-              if (i === 0) {
-                allocRows.push([mName, sal.base || 0, sal.speseVive || 0, sal.eff || 0, fn, c.base || 0, c.extra || 0]);
-              } else {
-                allocRows.push(['', '', '', '', fn, c.base || 0, c.extra || 0]);
-              }
-            });
-          }
-        });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(allocRows), 'Ripartizione Mensile');
-
-        const safeName = arch.name.replace(/[^a-zA-Z0-9-_]/g, '_');
-        XLSX.writeFile(wb, `Archivio_${safeName}_${arch.year}.xlsx`);
+        exportCompleto(arch.name + "_" + arch.year);
       } catch (err) {
         alert("Errore durante l'export dell'archivio: " + err.message);
         console.error(err);
+      } finally {
+        if (!wasViewingThisArchive && liveSnapshot) {
+          expenses = liveSnapshot.expenses;
+          customWeekRanges = liveSnapshot.customWeekRanges;
+          mastriniData = liveSnapshot.mastriniData;
+          settingsFunds = liveSnapshot.settingsFunds;
+          monthlySalaries = liveSnapshot.monthlySalaries;
+          bankExpenses = liveSnapshot.bankExpenses;
+          bankTargetFund = liveSnapshot.bankTargetFund;
+          if (liveSnapshot.currentYearLabel) currentYearLabel = liveSnapshot.currentYearLabel;
+        }
       }
     }
 
     // --- HANDLER PULSANTI GESTIONE ANNUALE ---
 
-    // Bottone "Archivia Gestione Corrente" -> apre modale nome
     const btnArchiveCurrent = document.getElementById('btn-archive-current');
     if (btnArchiveCurrent) {
       btnArchiveCurrent.addEventListener('click', () => {
-        const defaultName = `Anno ${currentYearLabel}`;
+        const defaultName = currentYearLabel || `Anno ${new Date().getFullYear()}`;
+        // Suggerisci anno successivo come nome nuova gestione
+        const nextYear = (parseInt(currentYearLabel.match(/\d{4}/)?.[0]) || new Date().getFullYear()) + 1;
         document.getElementById('archive-name-input').value = defaultName;
+        document.getElementById('archive-new-name-input').value = `Anno ${nextYear}`;
         document.getElementById('archive-name-modal').classList.add('open');
       });
     }
 
-    // Conferma archiviazione
     const confirmArchiveBtn = document.getElementById('confirm-archive-btn');
     if (confirmArchiveBtn) {
       confirmArchiveBtn.addEventListener('click', () => {
         const name = document.getElementById('archive-name-input').value.trim();
+        const newName = document.getElementById('archive-new-name-input').value.trim();
         if (!name) {
           alert("Inserisci un nome per la gestione da archiviare.");
           return;
         }
         document.getElementById('archive-name-modal').classList.remove('open');
-        archiveCurrentYear(name);
+        archiveCurrentYear(name, newName);
       });
     }
 
-    // Chiudi modale archiviazione
     const closeArchiveModalBtn = document.getElementById('close-archive-modal-btn');
     if (closeArchiveModalBtn) {
       closeArchiveModalBtn.addEventListener('click', () => {
@@ -3206,13 +3652,11 @@
       });
     }
 
-    // Bottone "Torna alla Gestione Corrente" nella sezione annuale
     const btnReturnToCurrent = document.getElementById('btn-return-to-current');
     if (btnReturnToCurrent) {
       btnReturnToCurrent.addEventListener('click', returnToCurrent);
     }
 
-    // Bottone "Torna alla Corrente" nel banner della home
     const homeReturnBtn = document.getElementById('home-return-btn');
     if (homeReturnBtn) {
       homeReturnBtn.addEventListener('click', returnToCurrent);
