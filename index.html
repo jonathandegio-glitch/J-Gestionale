@@ -1167,6 +1167,24 @@
     let modalMovementType = "expense";
     let mastrinoMovementType = "expense";
 
+    // --- SETUP UNA TANTUM DEL LISTENER SULL'INPUT URL GAS ---
+    // (Era erroneamente dentro onValue, causando accumulo di listener duplicati
+    //  ed il reset del campo mentre l'utente digitava.)
+    (function setupGasInputListener() {
+      const gasInput = document.getElementById('gas-url-input');
+      if (!gasInput) return;
+      if (gasUrl) gasInput.value = gasUrl;
+      gasInput.addEventListener('change', () => {
+        const newVal = gasInput.value.trim();
+        if (newVal !== gasUrl) {
+          gasUrl = newVal;
+          localStorage.setItem('gas_sync_url', gasUrl);
+          console.log('[GAS Sync] URL aggiornato:', gasUrl);
+          sendAutoSyncToGAS();
+        }
+      });
+    })();
+
     // --- HELPER DATE DI DEFAULT ---
     function formatDateToYMD(d) {
       if (!(d instanceof Date) || isNaN(d)) d = new Date();
@@ -1195,11 +1213,27 @@
     }
 
     // --- AUTOMATISMO SCRITTURA GOOGLE SHEETS VIA SCRIPT ---
+    // Legge SEMPRE il valore corrente dall'input (fallback: variabile gasUrl).
+    // Invia il payload JSON come text/plain in modalità no-cors, che è il modo
+    // standard e funzionante per parlare con una Web App Google Apps Script.
     function sendAutoSyncToGAS() {
       const urlInput = document.getElementById('gas-url-input');
-      const url = urlInput ? urlInput.value.trim() : gasUrl;
-      if (!url) return;
-      
+      let url = urlInput ? urlInput.value.trim() : '';
+      if (!url) url = (gasUrl || '').trim();
+
+      if (!url) {
+        console.warn('[GAS Sync] URL non configurato. Vai su "Sincronizzazione Google Script" e inserisci l\'URL della Web App.');
+        return;
+      }
+
+      // Normalizza e tieni allineati variabile + localStorage
+      gasUrl = url;
+      localStorage.setItem('gas_sync_url', gasUrl);
+
+      if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec/.test(url)) {
+        console.warn('[GAS Sync] ATTENZIONE: l\'URL non termina con "/exec". Le Web App GAS devono essere pubblicate come "Chiunque" e usare l\'URL che termina in "/exec" (non "/dev").');
+      }
+
       const payload = {
         expenses: expenses,
         mastrini: mastriniData,
@@ -1207,21 +1241,32 @@
         updatedAt: new Date().toISOString()
       };
 
+      console.log('[GAS Sync] Invio dati a:', url);
+
       fetch(url, {
         method: "POST",
         mode: "no-cors",
+        cache: "no-cache",
+        redirect: "follow",
         headers: {
           "Content-Type": "text/plain;charset=utf-8"
         },
         body: JSON.stringify(payload)
       }).then(() => {
+        // Con mode:"no-cors" la risposta è opaca: sappiamo solo che la richiesta è partita.
         const syncStatus = document.getElementById('sync-status');
         if (syncStatus) {
           syncStatus.style.color = "var(--accent-green)";
-          syncStatus.textContent = "Sincronizzato automaticamente su Google Sheets alle " + new Date().toLocaleTimeString();
+          syncStatus.textContent = "Dati inviati a Google Sheets alle " + new Date().toLocaleTimeString() + " (controlla il foglio per verifica).";
         }
+        console.log('[GAS Sync] Richiesta inviata con successo.');
       }).catch(err => {
-        console.error("Errore Sincronizzazione GAS:", err);
+        console.error("[GAS Sync] Errore invio:", err);
+        const syncStatus = document.getElementById('sync-status');
+        if (syncStatus) {
+          syncStatus.style.color = "var(--accent-red)";
+          syncStatus.textContent = "Errore invio a Google Sheets: " + err.message;
+        }
       });
     }
 
@@ -1354,14 +1399,15 @@
           updateYearIndicator();
           renderArchiveControls();
           
+          // NOTA: il listener sull'input URL GAS è ora impostato una sola volta
+          // all'avvio del modulo (vedi setupGasInputListener in cima).
+          // Qui aggiorniamo soltanto il valore visualizzato, senza toccare il campo
+          // se l'utente lo sta editando.
           const gasInput = document.getElementById('gas-url-input');
-          if (gasInput) {
-            gasInput.value = gasUrl;
-            gasInput.addEventListener('change', () => {
-              gasUrl = gasInput.value.trim();
-              localStorage.setItem('gas_sync_url', gasUrl);
-              sendAutoSyncToGAS();
-            });
+          if (gasInput && document.activeElement !== gasInput) {
+            if (gasUrl && gasInput.value !== gasUrl) {
+              gasInput.value = gasUrl;
+            }
           }
         });
       } else {
@@ -1409,6 +1455,11 @@
         if (!gasUrl) {
           alert("Inserisci un URL valido di Google Apps Script!");
           return;
+        }
+        const syncStatus = document.getElementById('sync-status');
+        if (syncStatus) {
+          syncStatus.style.color = "var(--accent-blue)";
+          syncStatus.textContent = "Invio dati in corso...";
         }
         sendAutoSyncToGAS();
       });
