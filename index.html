@@ -339,8 +339,9 @@
               <div class="form-group"><label>Stipendio Effettivo (€)</label><input type="number" step="0.01" id="m-salary-eff" class="form-control" placeholder="0.00"></div>
               <div class="form-group"><label>Extra Calcolato (€)</label><input type="number" step="0.01" id="m-salary-extra" class="form-control" placeholder="0.00" readonly style="background: rgba(255,255,255,0.05); color: var(--accent-green); font-weight:700;"></div>
             </div>
-            <div style="margin-bottom: 16px;">
-              <button class="btn btn-primary" id="btn-send-all-mastrini"><i class="fa-solid fa-paper-plane"></i> Invia Tutti i Fondi ai Mastrini</button>
+            <div style="margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap;">
+              <button class="btn btn-primary" id="btn-send-all-mastrini" style="flex: 1; min-width: 200px; margin: 0;"><i class="fa-solid fa-paper-plane"></i> Invia Tutti i Fondi ai Mastrini</button>
+              <button class="btn btn-danger" id="btn-cancel-all-mastrini" style="flex: 1; min-width: 200px; margin: 0; display: none;"><i class="fa-solid fa-xmark"></i> Annulla Tutti gli Invii</button>
             </div>
             <h4 style="font-size:0.9rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px;">Suddivisione Fondi Mastrini Esistenti:</h4>
             <div id="monthly-funds-allocation-list"></div>
@@ -700,10 +701,16 @@
     function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
     function isViewingArchive() { return viewingArchiveId !== null; }
 
+    // Helper: legge il mese attualmente selezionato dall'utente (per non perderlo durante i re-render)
+    function getPreservedMonthIndex() {
+      const sel = document.getElementById('select-month-cycle');
+      if (!sel || sel.value === "") return null;
+      const n = parseInt(sel.value);
+      return isNaN(n) ? null : n;
+    }
+
     // ================================================================
     // FIX: APERTURA CALENDARIO NATIVO AL CLICK SUI CAMPI DATA (DESKTOP)
-    // Permette di digitare manualmente E di aprire il calendario cliccando
-    // ovunque sul campo, replicando il comportamento dello smartphone.
     // ================================================================
     (function enableDesktopDatePicker() {
       function applyToInput(input) {
@@ -711,7 +718,7 @@
         input.dataset.dpEnhanced = "1";
         input.addEventListener('click', () => {
           if (typeof input.showPicker === 'function') {
-            try { input.showPicker(); } catch (err) { /* ignorato: alcuni browser richiedono user gesture */ }
+            try { input.showPicker(); } catch (err) { /* ignorato */ }
           }
         });
         input.addEventListener('focus', () => {
@@ -731,10 +738,7 @@
       let url = urlInput ? urlInput.value.trim() : '';
       if (!url) url = (gasUrl || '').trim();
 
-      if (!url) {
-        console.warn('[GAS Sync] URL non configurato.');
-        return;
-      }
+      if (!url) { console.warn('[GAS Sync] URL non configurato.'); return; }
 
       gasUrl = url;
       localStorage.setItem('gas_sync_url', gasUrl);
@@ -743,7 +747,6 @@
         console.warn('[GAS Sync] ATTENZIONE: l\'URL non termina con "/exec".');
       }
 
-      // Converte monthlySalaries da oggetto {month_0:{...}} ad array [0..11]
       const monthlySalariesArr = [];
       for (let i = 0; i < 12; i++) {
         const mSal = monthlySalaries[`month_${i}`] || {};
@@ -765,8 +768,6 @@
         updatedAt: new Date().toISOString()
       };
 
-      console.log('[GAS Sync] Invio dati a:', url);
-
       fetch(url, {
         method: "POST",
         mode: "no-cors",
@@ -780,7 +781,6 @@
           syncStatus.style.color = "var(--accent-green)";
           syncStatus.textContent = "✔ Dati inviati a Google Sheets alle " + new Date().toLocaleTimeString();
         }
-        console.log('[GAS Sync] Richiesta inviata con successo.');
       }).catch(err => {
         console.error("[GAS Sync] Errore invio:", err);
         const syncStatus = document.getElementById('sync-status');
@@ -866,9 +866,10 @@
         authScreen.style.display = 'none';
         const userRef = ref(db, 'users/' + user.uid);
         onValue(userRef, (snapshot) => {
+          // FIX IMPORTANTE: preserva il mese selezionato dall'utente prima di re-inizializzare
+          const preservedMonth = getPreservedMonthIndex();
           const data = snapshot.val();
           if (data) {
-            // FIX: Assicuriamoci che i dati da Firebase siano array
             expenses = data.expenses || [];
             if (!Array.isArray(expenses)) expenses = [];
             
@@ -901,7 +902,8 @@
           }
           isInitialLoadDone = true;
           initDefaultDates();
-          initMonthDropdown();
+          // FIX: mantiene il mese selezionato (se presente), altrimenti usa quello corrente
+          initMonthDropdown(preservedMonth);
           renderMonthlyView();
           renderMastriniView();
           renderBankExpensesView();
@@ -1115,7 +1117,6 @@
       confirmDeleteModal.classList.add('open');
     }
     
-    // FIX: Aggiunto try-catch per evitare che errori blocchino la chiusura della modale
     confirmDeleteYesBtn.addEventListener('click', () => {
       try {
         if (pendingDeleteCallback) pendingDeleteCallback();
@@ -1165,7 +1166,7 @@
         opt.textContent = `${mName} (${startStr} - ${endStr})`;
         monthSelect.appendChild(opt);
       });
-      if (selectedMonthIdx !== null) {
+      if (selectedMonthIdx !== null && !isNaN(selectedMonthIdx)) {
         monthSelect.value = selectedMonthIdx;
       } else {
         const today = new Date();
@@ -1273,6 +1274,7 @@
       document.getElementById('quick-amount').value = "";
       document.getElementById('quick-desc').value = "";
       document.getElementById('quick-date').value = formatDateToYMD(new Date());
+      // FIX: renderizza mantenendo il mese selezionato dall'utente
       renderMonthlyView(newExp.id);
     });
 
@@ -1350,6 +1352,42 @@
       renderMonthlyView();
     });
 
+    // ================================================================
+    // ANNULLA INVIO SINGOLO / GLOBALE (NUOVE FUNZIONI)
+    // ================================================================
+    function cancelSingleSend(mIdx, mName) {
+      const monthIdx = parseInt(monthSelect.value);
+      const key = `month_${monthIdx}`;
+      const currentSal = monthlySalaries[key];
+      if (!currentSal) return;
+      if (!currentSal.sentFunds || !currentSal.sentFunds[mName]) return;
+      const fundName = mastriniData[mIdx] ? mastriniData[mIdx].name : mName;
+      // Rimuove tutte le voci inviate dal mese corrente al fondo
+      mastriniData.forEach(m => {
+        if (!m.items) return;
+        m.items = m.items.filter(it => !(it.monthKey === key && it.fundName === fundName));
+      });
+      delete currentSal.sentFunds[fundName];
+      monthlySalaries[key] = currentSal;
+      saveAndRenderMastrini();
+    }
+
+    function cancelAllSendsForMonth() {
+      const monthIdx = parseInt(monthSelect.value);
+      const key = `month_${monthIdx}`;
+      const currentSal = monthlySalaries[key];
+      if (!currentSal || !currentSal.sentFunds) return;
+      const sentNames = Object.keys(currentSal.sentFunds).filter(k => currentSal.sentFunds[k]);
+      if (sentNames.length === 0) return;
+      mastriniData.forEach(m => {
+        if (!m.items) return;
+        m.items = m.items.filter(it => !(it.monthKey === key && it.fundName && sentNames.includes(it.fundName)));
+      });
+      currentSal.sentFunds = {};
+      monthlySalaries[key] = currentSal;
+      saveAndRenderMastrini();
+    }
+
     function renderMonthlyFundAllocation() {
       const monthIdx = parseInt(monthSelect.value);
       const key = `month_${monthIdx}`;
@@ -1376,6 +1414,8 @@
       if (!mastriniData || mastriniData.length === 0) {
         allocationContainer.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted);">Nessun mastrino disponibile.</i>';
         document.getElementById('salary-over-alert').style.display = 'none';
+        const cancelAllBtnEmpty = document.getElementById('btn-cancel-all-mastrini');
+        if (cancelAllBtnEmpty) cancelAllBtnEmpty.style.display = 'none';
         return;
       }
 
@@ -1391,6 +1431,15 @@
 
         const subAcc = document.createElement('div');
         subAcc.className = 'sub-accordion';
+        // FIX: bottone diventa "Annulla Invio" se già inviato
+        const actionButtonHtml = isSent
+          ? `<button class="btn btn-danger btn-cancel-single-mastrino" data-idx="${mIdx}" data-name="${m.name}" style="width:auto; padding:6px 12px; font-size:0.8rem; margin:0;">
+               <i class="fa-solid fa-xmark"></i> Annulla Invio
+             </button>`
+          : `<button class="btn btn-success btn-send-single-mastrino" data-idx="${mIdx}" data-amount="${totalFundSum}" data-name="${m.name}" style="width:auto; padding:6px 12px; font-size:0.8rem; margin:0;">
+               <i class="fa-solid fa-paper-plane"></i> Invia ai Mastrini
+             </button>`;
+
         subAcc.innerHTML = `
           <div class="sub-accordion-header">
             <span><i class="fa-solid fa-vault" style="margin-right:6px; color:var(--accent-blue);"></i> <b>${m.name}</b>
@@ -1406,10 +1455,8 @@
                 <input type="number" step="0.01" class="form-control m-fund-extra-input" data-mastrino="${m.name}" value="${extraShare}"></div>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-              <span style="font-size:0.8rem; font-weight:600;">Totale da Inviare: € ${totalFundSum.toFixed(2)}</span>
-              <button class="btn btn-success btn-send-single-mastrino" data-idx="${mIdx}" data-amount="${totalFundSum}" data-name="${m.name}" style="width:auto; padding:6px 12px; font-size:0.8rem; margin:0;">
-                <i class="fa-solid fa-paper-plane"></i> Invia ai Mastrini
-              </button>
+              <span style="font-size:0.8rem; font-weight:600;">Totale: € ${totalFundSum.toFixed(2)}</span>
+              ${actionButtonHtml}
             </div>
           </div>`;
         subAcc.querySelector('.sub-accordion-header').addEventListener('click', () => { subAcc.classList.toggle('open'); });
@@ -1440,6 +1487,7 @@
         });
       });
 
+      // FIX: bottone singolo Invia - blocca se già inviato
       document.querySelectorAll('.btn-send-single-mastrino').forEach(btn => {
         btn.addEventListener('click', () => {
           if (totalBaseAllocated > maxAllowed) { alert("Impossibile procedere: la ripartizione supera lo Stipendio Base al netto delle Spese Vive!"); return; }
@@ -1448,6 +1496,11 @@
           const name = btn.dataset.name;
           const currentMonthName = monthsNames[monthIdx];
           if (isNaN(amount) || amount <= 0) return;
+          // FIX: non inviare se già inviato
+          if (currentSal.sentFunds && currentSal.sentFunds[name]) {
+            alert("Questo fondo è già stato inviato. Usa 'Annulla Invio' per rimuoverlo.");
+            return;
+          }
           const noteText = `da mese ${currentMonthName}`;
           if (!mastriniData[mIdx].items) mastriniData[mIdx].items = [];
           mastriniData[mIdx].items.push({ date: formatDateToYMD(new Date()), note: noteText, amount, monthKey: key, fundName: name });
@@ -1457,26 +1510,46 @@
           alert(`€ ${amount.toFixed(2)} inviati a ${mastriniData[mIdx].name} (${noteText})`);
         });
       });
+
+      // FIX: bottone singolo Annulla Invio
+      document.querySelectorAll('.btn-cancel-single-mastrino').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const mIdx = parseInt(btn.dataset.idx);
+          const name = btn.dataset.name;
+          cancelSingleSend(mIdx, name);
+        });
+      });
+
+      // FIX: mostra/nascondi bottone "Annulla Tutti gli Invii"
+      const sentCount = Object.values(currentSal.sentFunds || {}).filter(v => v).length;
+      const cancelAllBtn = document.getElementById('btn-cancel-all-mastrini');
+      if (cancelAllBtn) {
+        cancelAllBtn.style.display = sentCount > 0 ? 'flex' : 'none';
+      }
     }
 
+    // FIX: Invia tutti i fondi SALTANDO quelli già inviati
     document.getElementById('btn-send-all-mastrini').addEventListener('click', () => {
       const monthIdx = parseInt(monthSelect.value);
       const key = `month_${monthIdx}`;
       const currentSal = monthlySalaries[key];
       if (!currentSal) return;
+      if (!currentSal.sentFunds) currentSal.sentFunds = {};
       let totalBaseAllocated = 0;
       mastriniData.forEach(m => {
         const defaultCfg = (settingsFunds.allocations && settingsFunds.allocations[m.name]) || { baseAlloc: 0 };
-        const savedCustom = currentSal.customFundAlloc[m.name];
+        const savedCustom = currentSal.customFundAlloc && currentSal.customFundAlloc[m.name];
         const baseShare = savedCustom && savedCustom.base !== undefined ? savedCustom.base : defaultCfg.baseAlloc;
         totalBaseAllocated += parseFloat(baseShare) || 0;
       });
       const maxAllowed = (currentSal.base || 0) - (currentSal.speseVive || 0);
       if (totalBaseAllocated > maxAllowed) { alert("Impossibile procedere: la ripartizione supera lo Stipendio Base al netto delle Spese Vive!"); return; }
       let count = 0;
+      let skipped = 0;
       mastriniData.forEach((m) => {
+        if (currentSal.sentFunds[m.name]) { skipped++; return; } // Salta già inviati
         const defaultCfg = (settingsFunds.allocations && settingsFunds.allocations[m.name]) || { baseAlloc: 0, extraRatio: 0 };
-        const savedCustom = currentSal.customFundAlloc[m.name];
+        const savedCustom = currentSal.customFundAlloc && currentSal.customFundAlloc[m.name];
         const baseShare = savedCustom && savedCustom.base !== undefined ? savedCustom.base : defaultCfg.baseAlloc;
         const extraShare = savedCustom && savedCustom.extra !== undefined ? savedCustom.extra : defaultCfg.extraRatio;
         const totalFundSum = (parseFloat(baseShare) || 0) + (parseFloat(extraShare) || 0);
@@ -1489,7 +1562,22 @@
       });
       monthlySalaries[key] = currentSal;
       saveAndRenderMastrini();
-      alert(`Inviati con successo le quote per ${count} fondi!`);
+      if (count > 0) {
+        alert(`Inviati con successo le quote per ${count} fondi!${skipped > 0 ? ` (${skipped} già inviati, saltati)` : ''}`);
+      } else if (skipped > 0) {
+        alert("Tutti i fondi sono già stati inviati per questo mese.");
+      } else {
+        alert("Nessun fondo da inviare (quote a 0).");
+      }
+    });
+
+    // FIX: bottone "Annulla Tutti gli Invii"
+    document.getElementById('btn-cancel-all-mastrini').addEventListener('click', () => {
+      requestDeleteConfirmation(
+        "Sei sicuro di voler annullare TUTTI gli invii del mese corrente? Verranno rimosse le voci corrispondenti dai mastrini.",
+        () => { cancelAllSendsForMonth(); },
+        { title: 'Annulla Invii', confirmText: 'Sì, annulla tutti', confirmClass: 'btn btn-danger', icon: 'fa-solid fa-xmark', iconColor: 'var(--accent-red)' }
+      );
     });
 
     document.getElementById('m-salary-base').addEventListener('change', (e) => {
@@ -1539,7 +1627,7 @@
       weeks.push({ id: weeks.length + 1, start: formatDateToYMD(lastEnd), end: formatDateToYMD(nextEnd) });
       customWeekRanges[key] = weeks;
       syncToCloud();
-      initMonthDropdown(monthIdx); // FIX: Mantiene il mese selezionato
+      initMonthDropdown(monthIdx);
       renderMonthlyView();
     });
 
@@ -1549,8 +1637,7 @@
       const container = document.getElementById('weeks-container');
       if (!container) return;
       container.innerHTML = "";
-      initMonthDropdown(monthIdx); // FIX: Mantiene il mese selezionato
-      // monthSelect.value = monthIdx; // Rimosso perché ora initMonthDropdown gestisce il mese
+      initMonthDropdown(monthIdx);
       renderMonthlyFundAllocation();
       const weeks = generateWeeks(monthIdx);
       let weekTotals = [];
@@ -1702,7 +1789,6 @@
     function renderRecentExpenses() {
       const container = document.getElementById('recent-expenses-list');
       if (!container) return;
-      // FIX: Assicuriamoci che expenses sia un array prima di fare lo spread
       const safeExpenses = Array.isArray(expenses) ? expenses : [];
       const recent = [...safeExpenses].sort((a, b) => b.id - a.id).slice(0, 5);
       if (recent.length === 0) {
@@ -1732,7 +1818,6 @@
       });
     }
 
-    // FIX: Comparazione ID forzata a stringa per evitare problemi di tipo
     function deleteExpense(id) {
       requestDeleteConfirmation("Sei sicuro di voler eliminare questo movimento di spesa / entrata?", () => {
         expenses = expenses.filter(e => String(e.id) !== String(id));
@@ -1819,7 +1904,7 @@
     });
 
     // ================================================================
-    // RENDERING MASTRINI (con RINOMINA)
+    // RENDERING MASTRINI
     // ================================================================
     function renderMastriniView() {
       const container = document.getElementById('mastrini-container');
@@ -1830,7 +1915,6 @@
       container.innerHTML = "";
       let grandTotal = 0;
       const excludedFunds = ["investimenti", "fondo pensione", "time deposit", "entrate"];
-      // FIX: Assicuriamoci che mastriniData sia un array
       const safeMastrini = Array.isArray(mastriniData) ? mastriniData : [];
       const filteredMastrini = safeMastrini.map((m, originalIdx) => ({ ...m, originalIdx }))
         .filter(m => m.name.toLowerCase().includes(searchVal));
@@ -1873,9 +1957,10 @@
                     const isPos = amt >= 0;
                     const parts = it.date ? it.date.split('-') : ['','',''];
                     const dateStr = parts.length === 3 ? `${parts[2]}/${parts[1]}` : '';
+                    const isFromMonthly = !!(it.monthKey && it.fundName);
                     return `
                       <div class="expense-item" style="padding:6px 0;">
-                        <span><b>${it.note || 'Voce'}</b> ${dateStr ? `(${dateStr})` : ''}</span>
+                        <span><b>${it.note || 'Voce'}</b> ${dateStr ? `(${dateStr})` : ''} ${isFromMonthly ? '<span class="sent-badge" style="font-size:0.65rem;"><i class="fa-solid fa-check"></i> da mensile</span>' : ''}</span>
                         <div>
                           <span style="color:${isPos ? 'var(--accent-green)' : 'var(--accent-red)'}; font-weight:600;">${isPos ? '+' : ''} € ${amt.toFixed(2)}</span>
                           <button class="action-btn edit-btn btn-edit-mastrino-item" data-midx="${mIdx}" data-iidx="${itemIdx}"><i class="fa-solid fa-pen-to-square"></i></button>
@@ -1899,7 +1984,15 @@
           e.stopPropagation();
           const idx = parseInt(btn.dataset.idx);
           requestDeleteConfirmation(`Sei sicuro di voler eliminare il fondo "${mastriniData[idx].name}" e tutti i suoi movimenti?`, () => {
-            if (bankTargetFund === mastriniData[idx].name) bankTargetFund = "";
+            const fundName = mastriniData[idx].name;
+            // FIX: rimuove il flag "Inviato" da tutti i mesi per questo fondo
+            Object.keys(monthlySalaries).forEach(k => {
+              const sal = monthlySalaries[k];
+              if (sal && sal.sentFunds && sal.sentFunds[fundName]) {
+                delete sal.sentFunds[fundName];
+              }
+            });
+            if (bankTargetFund === fundName) bankTargetFund = "";
             mastriniData.splice(idx, 1);
             saveAndRenderMastrini();
           });
@@ -1913,10 +2006,20 @@
           openItemMastrinoModal(parseInt(btn.dataset.midx), parseInt(btn.dataset.iidx));
         });
       });
+      // FIX IMPORTANTE: quando si elimina una voce dal mastrino, se proviene da un invio mensile
+      // va rimosso anche il flag "Inviato" dalla gestione mensile corrispondente
       document.querySelectorAll('.btn-delete-mastrino-item').forEach(btn => {
         btn.addEventListener('click', () => {
           const mIdx = parseInt(btn.dataset.midx), iIdx = parseInt(btn.dataset.iidx);
           requestDeleteConfirmation("Sei sicuro di voler eliminare questa voce dal fondo?", () => {
+            const item = mastriniData[mIdx] && mastriniData[mIdx].items ? mastriniData[mIdx].items[iIdx] : null;
+            if (item && item.monthKey) {
+              const key = item.monthKey;
+              const fName = item.fundName || (mastriniData[mIdx] ? mastriniData[mIdx].name : null);
+              if (fName && monthlySalaries[key] && monthlySalaries[key].sentFunds && monthlySalaries[key].sentFunds[fName]) {
+                delete monthlySalaries[key].sentFunds[fName];
+              }
+            }
             mastriniData[mIdx].items.splice(iIdx, 1);
             saveAndRenderMastrini();
           });
@@ -1925,7 +2028,6 @@
       document.querySelectorAll('.btn-transfer-mastrino').forEach(btn => {
         btn.addEventListener('click', (e) => { e.stopPropagation(); openTransferFundModal(parseInt(btn.dataset.idx)); });
       });
-      // NUOVO: rinomina fondo
       document.querySelectorAll('.btn-rename-mastrino').forEach(btn => {
         btn.addEventListener('click', (e) => { e.stopPropagation(); openRenameMastrinoModal(parseInt(btn.dataset.idx)); });
       });
@@ -1975,16 +2077,13 @@
       const oldName = mastriniData[idx].name;
       if (newName === oldName) { renameMastrinoModal.classList.remove('open'); return; }
 
-      // 1) Aggiorna il nome nel mastrino
       mastriniData[idx].name = newName;
 
-      // 2) Aggiorna settingsFunds.allocations
       if (settingsFunds.allocations && settingsFunds.allocations[oldName]) {
         settingsFunds.allocations[newName] = settingsFunds.allocations[oldName];
         delete settingsFunds.allocations[oldName];
       }
 
-      // 3) Aggiorna monthlySalaries (customFundAlloc + sentFunds)
       Object.keys(monthlySalaries).forEach(key => {
         const sal = monthlySalaries[key];
         if (sal.customFundAlloc && sal.customFundAlloc[oldName] !== undefined) {
@@ -1997,10 +2096,8 @@
         }
       });
 
-      // 4) Aggiorna bankTargetFund
       if (bankTargetFund === oldName) bankTargetFund = newName;
 
-      // 5) Aggiorna note di trasferimento negli altri mastrini
       mastriniData.forEach(m => {
         if (!m.items) return;
         m.items.forEach(it => {
@@ -2050,7 +2147,12 @@
       amount = mastrinoMovementType === 'expense' ? -Math.abs(amount) : Math.abs(amount);
       if (!mastriniData[mIdx].items) mastriniData[mIdx].items = [];
       if (itemIdxStr !== "") {
-        mastriniData[mIdx].items[parseInt(itemIdxStr)] = { date, note, amount };
+        const originalItem = mastriniData[mIdx].items[parseInt(itemIdxStr)];
+        const updatedItem = { date, note, amount };
+        // Preserva metadata di provenienza mensile se l'item originale li aveva
+        if (originalItem && originalItem.monthKey) updatedItem.monthKey = originalItem.monthKey;
+        if (originalItem && originalItem.fundName) updatedItem.fundName = originalItem.fundName;
+        mastriniData[mIdx].items[parseInt(itemIdxStr)] = updatedItem;
       } else {
         mastriniData[mIdx].items.push({ date, note, amount });
       }
@@ -2093,7 +2195,6 @@
       const targetSelect = document.getElementById('bank-target-fund');
       if (targetSelect) {
         targetSelect.innerHTML = '<option value="">-- Nessun Fondo Assegnato --</option>';
-        // FIX: Assicuriamoci che mastriniData sia un array
         const safeMastrini = Array.isArray(mastriniData) ? mastriniData : [];
         safeMastrini.forEach(m => {
           const opt = document.createElement('option');
@@ -2107,7 +2208,6 @@
       listContainer.innerHTML = "";
       const bankDateInput = document.getElementById('bank-date');
       if (bankDateInput && !bankDateInput.value) bankDateInput.value = formatDateToYMD(new Date());
-      // FIX: Assicuriamoci che bankExpenses sia un array
       const safeBankExpenses = Array.isArray(bankExpenses) ? bankExpenses : [];
       if (safeBankExpenses.length === 0) {
         listContainer.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted);">Nessuna spesa bancaria registrata</i>';
@@ -2382,7 +2482,15 @@
       updateYearIndicator();
       renderArchiveControls();
     }
-    function renderAllViews() { initDefaultDates(); initMonthDropdown(); renderMonthlyView(); renderMastriniView(); renderBankExpensesView(); }
+    function renderAllViews() {
+      // FIX: preserva il mese selezionato anche qui
+      const preservedMonth = getPreservedMonthIndex();
+      initDefaultDates();
+      initMonthDropdown(preservedMonth);
+      renderMonthlyView();
+      renderMastriniView();
+      renderBankExpensesView();
+    }
     function updateYearIndicator() {
       const badge = document.getElementById('viewing-year-badge');
       const badgeText = document.getElementById('viewing-year-text');
