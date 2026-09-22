@@ -620,16 +620,28 @@
     let currentUser = null;
     let isInitialLoadDone = false;
 
+    // FIX: Assicuriamoci che i dati siano sempre array
     let expenses = JSON.parse(localStorage.getItem('expenses_data')) || [];
+    if (!Array.isArray(expenses)) expenses = [];
+    
     let customWeekRanges = JSON.parse(localStorage.getItem('custom_week_ranges')) || {};
+    
     let mastriniData = JSON.parse(localStorage.getItem('mastrini_data')) || [];
+    if (!Array.isArray(mastriniData)) mastriniData = [];
+    
     let settingsFunds = JSON.parse(localStorage.getItem('settings_funds')) || { defaultBase: 0, defaultSpeseVive: 0, defaultEff: 0, allocations: {} };
+    
     let monthlySalaries = JSON.parse(localStorage.getItem('monthly_salaries')) || {};
+    
     let bankExpenses = JSON.parse(localStorage.getItem('bank_expenses_data')) || [];
+    if (!Array.isArray(bankExpenses)) bankExpenses = [];
+    
     let bankTargetFund = localStorage.getItem('bank_target_fund') || "";
     let gasUrl = localStorage.getItem('gas_sync_url') || "";
 
     let archives = JSON.parse(localStorage.getItem('archives_data')) || [];
+    if (!Array.isArray(archives)) archives = [];
+    
     let viewingArchiveId = null;
     let liveState = null;
     let currentYearLabel = localStorage.getItem('current_year_label') || new Date().getFullYear().toString();
@@ -819,14 +831,26 @@
         onValue(userRef, (snapshot) => {
           const data = snapshot.val();
           if (data) {
+            // FIX: Assicuriamoci che i dati da Firebase siano array
             expenses = data.expenses || [];
+            if (!Array.isArray(expenses)) expenses = [];
+            
             customWeekRanges = data.customWeekRanges || {};
+            
             mastriniData = data.mastriniData || [];
+            if (!Array.isArray(mastriniData)) mastriniData = [];
+            
             settingsFunds = data.settingsFunds || { defaultBase: 0, defaultSpeseVive: 0, defaultEff: 0, allocations: {} };
             monthlySalaries = data.monthlySalaries || {};
+            
             bankExpenses = data.bankExpenses || [];
+            if (!Array.isArray(bankExpenses)) bankExpenses = [];
+            
             bankTargetFund = data.bankTargetFund || "";
+            
             archives = data.archives || [];
+            if (!Array.isArray(archives)) archives = [];
+            
             currentYearLabel = data.currentYearLabel || currentYearLabel;
             localStorage.setItem('expenses_data', JSON.stringify(expenses));
             localStorage.setItem('custom_week_ranges', JSON.stringify(customWeekRanges));
@@ -1053,10 +1077,17 @@
       pendingDeleteCallback = onConfirm;
       confirmDeleteModal.classList.add('open');
     }
+    
+    // FIX: Aggiunto try-catch per evitare che errori blocchino la chiusura della modale
     confirmDeleteYesBtn.addEventListener('click', () => {
-      if (pendingDeleteCallback) pendingDeleteCallback();
-      pendingDeleteCallback = null;
-      confirmDeleteModal.classList.remove('open');
+      try {
+        if (pendingDeleteCallback) pendingDeleteCallback();
+      } catch (err) {
+        console.error("Errore durante l'esecuzione dell'eliminazione:", err);
+      } finally {
+        pendingDeleteCallback = null;
+        confirmDeleteModal.classList.remove('open');
+      }
     });
     confirmDeleteNoBtn.addEventListener('click', () => {
       pendingDeleteCallback = null;
@@ -1085,7 +1116,8 @@
       return { startDate: new Date(startY, startM, 15), endDate: new Date(endY, endM, 15) };
     }
 
-    function initMonthDropdown() {
+    // FIX: Accetta un parametro opzionale per forzare il mese selezionato
+    function initMonthDropdown(selectedMonthIdx = null) {
       monthSelect.innerHTML = "";
       monthsNames.forEach((mName, idx) => {
         const { startDate, endDate } = getMonthDateRange(idx);
@@ -1096,8 +1128,12 @@
         opt.textContent = `${mName} (${startStr} - ${endStr})`;
         monthSelect.appendChild(opt);
       });
-      const today = new Date();
-      monthSelect.value = getTargetMonthIndex(today);
+      if (selectedMonthIdx !== null) {
+        monthSelect.value = selectedMonthIdx;
+      } else {
+        const today = new Date();
+        monthSelect.value = getTargetMonthIndex(today);
+      }
     }
 
     monthSelect.addEventListener('change', () => { renderMonthlyView(); });
@@ -1466,7 +1502,7 @@
       weeks.push({ id: weeks.length + 1, start: formatDateToYMD(lastEnd), end: formatDateToYMD(nextEnd) });
       customWeekRanges[key] = weeks;
       syncToCloud();
-      initMonthDropdown();
+      initMonthDropdown(monthIdx); // FIX: Mantiene il mese selezionato
       renderMonthlyView();
     });
 
@@ -1476,8 +1512,8 @@
       const container = document.getElementById('weeks-container');
       if (!container) return;
       container.innerHTML = "";
-      initMonthDropdown();
-      monthSelect.value = monthIdx;
+      initMonthDropdown(monthIdx); // FIX: Mantiene il mese selezionato
+      // monthSelect.value = monthIdx; // Rimosso perché ora initMonthDropdown gestisce il mese
       renderMonthlyFundAllocation();
       const weeks = generateWeeks(monthIdx);
       let weekTotals = [];
@@ -1629,7 +1665,9 @@
     function renderRecentExpenses() {
       const container = document.getElementById('recent-expenses-list');
       if (!container) return;
-      const recent = [...expenses].sort((a, b) => b.id - a.id).slice(0, 5);
+      // FIX: Assicuriamoci che expenses sia un array prima di fare lo spread
+      const safeExpenses = Array.isArray(expenses) ? expenses : [];
+      const recent = [...safeExpenses].sort((a, b) => b.id - a.id).slice(0, 5);
       if (recent.length === 0) {
         container.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted);">Nessun movimento recente inserito</i>';
         return;
@@ -1657,9 +1695,10 @@
       });
     }
 
+    // FIX: Comparazione ID forzata a stringa per evitare problemi di tipo
     function deleteExpense(id) {
       requestDeleteConfirmation("Sei sicuro di voler eliminare questo movimento di spesa / entrata?", () => {
-        expenses = expenses.filter(e => e.id !== id);
+        expenses = expenses.filter(e => String(e.id) !== String(id));
         syncToCloud();
         renderMonthlyView();
       });
@@ -1680,7 +1719,7 @@
     });
 
     function openEditExpenseModal(id) {
-      const exp = expenses.find(e => e.id === id);
+      const exp = expenses.find(e => String(e.id) === String(id));
       if (!exp) return;
       document.getElementById('expense-modal-title').textContent = "Modifica Movimento";
       document.getElementById('edit-exp-id').value = exp.id;
@@ -1708,7 +1747,7 @@
       const amount = parseFloat(document.getElementById('modal-exp-amount').value);
       if (!date || !desc || isNaN(amount)) return;
       if (id) {
-        const exp = expenses.find(e => e.id === parseInt(id));
+        const exp = expenses.find(e => String(e.id) === String(id));
         if (exp) { exp.date = date; exp.desc = desc; exp.amount = amount; exp.type = modalMovementType; }
       } else {
         expenses.push({ id: Date.now(), date, desc, amount, type: modalMovementType });
@@ -1754,10 +1793,12 @@
       container.innerHTML = "";
       let grandTotal = 0;
       const excludedFunds = ["investimenti", "fondo pensione", "time deposit", "entrate"];
-      const filteredMastrini = (mastriniData || []).map((m, originalIdx) => ({ ...m, originalIdx }))
+      // FIX: Assicuriamoci che mastriniData sia un array
+      const safeMastrini = Array.isArray(mastriniData) ? mastriniData : [];
+      const filteredMastrini = safeMastrini.map((m, originalIdx) => ({ ...m, originalIdx }))
         .filter(m => m.name.toLowerCase().includes(searchVal));
 
-      if (!mastriniData || mastriniData.length === 0) {
+      if (safeMastrini.length === 0) {
         container.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted); grid-column: 1/-1;">Nessun fondo/mastrino presente. Clicca su "+ Nuovo Fondo" per aggiungerne uno.</i>';
       } else if (filteredMastrini.length === 0) {
         container.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted); grid-column: 1/-1;">Nessun fondo trovato con questo nome.</i>';
@@ -2015,7 +2056,9 @@
       const targetSelect = document.getElementById('bank-target-fund');
       if (targetSelect) {
         targetSelect.innerHTML = '<option value="">-- Nessun Fondo Assegnato --</option>';
-        (mastriniData || []).forEach(m => {
+        // FIX: Assicuriamoci che mastriniData sia un array
+        const safeMastrini = Array.isArray(mastriniData) ? mastriniData : [];
+        safeMastrini.forEach(m => {
           const opt = document.createElement('option');
           opt.value = m.name; opt.textContent = m.name;
           if (m.name === bankTargetFund) opt.selected = true;
@@ -2027,12 +2070,14 @@
       listContainer.innerHTML = "";
       const bankDateInput = document.getElementById('bank-date');
       if (bankDateInput && !bankDateInput.value) bankDateInput.value = formatDateToYMD(new Date());
-      if (!bankExpenses || bankExpenses.length === 0) {
+      // FIX: Assicuriamoci che bankExpenses sia un array
+      const safeBankExpenses = Array.isArray(bankExpenses) ? bankExpenses : [];
+      if (safeBankExpenses.length === 0) {
         listContainer.innerHTML = '<i style="font-size:0.85rem; color:var(--text-muted);">Nessuna spesa bancaria registrata</i>';
         return;
       }
       let totalCost = 0;
-      const htmlList = bankExpenses.map((b, idx) => {
+      const htmlList = safeBankExpenses.map((b, idx) => {
         const costVal = parseFloat(b.cost || 0);
         totalCost += costVal;
         const parts = b.date ? b.date.split('-') : ['','',''];
@@ -2383,7 +2428,7 @@
       renderArchiveControls();
     }
     function viewArchive(id) {
-      const arch = archives.find(a => a.id === id);
+      const arch = archives.find(a => String(a.id) === String(id));
       if (!arch) return;
       if (isViewingArchive()) returnToCurrent();
       liveState = snapshotCurrentState();
@@ -2415,7 +2460,7 @@
       updateYearIndicator();
     }
     function restoreArchive(id) {
-      const arch = archives.find(a => a.id === id);
+      const arch = archives.find(a => String(a.id) === String(id));
       if (!arch) return;
       requestDeleteConfirmation(
         `Sei sicuro di voler ripristinare "${arch.name}" come gestione attiva? La gestione corrente verrà archiviata automaticamente.`,
@@ -2431,7 +2476,7 @@
           bankExpenses = deepClone(arch.data.bankExpenses || []);
           bankTargetFund = arch.data.bankTargetFund || '';
           currentYearLabel = arch.data.currentYearLabel || arch.name;
-          archives = archives.filter(a => a.id !== id);
+          archives = archives.filter(a => String(a.id) !== String(id));
           syncToCloud();
           renderAllViews();
           renderArchiveList();
@@ -2442,19 +2487,19 @@
       );
     }
     function deleteArchive(id) {
-      const arch = archives.find(a => a.id === id);
+      const arch = archives.find(a => String(a.id) === String(id));
       if (!arch) return;
       requestDeleteConfirmation(`Sei sicuro di voler eliminare definitivamente l'archivio "${arch.name}"? L'azione non è reversibile.`, () => {
-        if (viewingArchiveId === id) returnToCurrent();
-        archives = archives.filter(a => a.id !== id);
+        if (String(viewingArchiveId) === String(id)) returnToCurrent();
+        archives = archives.filter(a => String(a.id) !== String(id));
         syncToCloud();
         renderArchiveList();
       });
     }
     function exportArchiveToExcel(id) {
-      const arch = archives.find(a => a.id === id);
+      const arch = archives.find(a => String(a.id) === String(id));
       if (!arch) return;
-      const wasViewingThisArchive = (viewingArchiveId === id);
+      const wasViewingThisArchive = (String(viewingArchiveId) === String(id));
       const liveSnapshot = wasViewingThisArchive ? null : snapshotCurrentState();
       if (!wasViewingThisArchive) {
         expenses = arch.data.expenses || []; customWeekRanges = arch.data.customWeekRanges || {};
