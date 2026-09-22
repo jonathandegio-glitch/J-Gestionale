@@ -117,6 +117,20 @@
     .export-option-btn { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 16px; background: var(--card-inner); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-main); font-weight: 600; font-size: 0.9rem; cursor: pointer; margin-bottom: 10px; text-align: left; transition: all 0.2s ease; }
     .export-option-btn:hover { border-color: var(--accent-blue); transform: translateX(4px); }
     .export-option-btn i { font-size: 1.2rem; }
+
+    /* ==========================================================
+       FIX CAMPI DATA SU DESKTOP: cursore testo + calendario cliccabile
+       ========================================================== */
+    input[type="date"].form-control { cursor: pointer; }
+    input[type="date"].form-control::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+      opacity: 0.9;
+      filter: invert(0.8);
+      padding: 4px;
+    }
+    input[type="date"].form-control::-webkit-calendar-picker-indicator:hover {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
@@ -685,6 +699,29 @@
 
     function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
     function isViewingArchive() { return viewingArchiveId !== null; }
+
+    // ================================================================
+    // FIX: APERTURA CALENDARIO NATIVO AL CLICK SUI CAMPI DATA (DESKTOP)
+    // Permette di digitare manualmente E di aprire il calendario cliccando
+    // ovunque sul campo, replicando il comportamento dello smartphone.
+    // ================================================================
+    (function enableDesktopDatePicker() {
+      function applyToInput(input) {
+        if (!input || input.dataset.dpEnhanced === "1") return;
+        input.dataset.dpEnhanced = "1";
+        input.addEventListener('click', () => {
+          if (typeof input.showPicker === 'function') {
+            try { input.showPicker(); } catch (err) { /* ignorato: alcuni browser richiedono user gesture */ }
+          }
+        });
+        input.addEventListener('focus', () => {
+          if (typeof input.showPicker === 'function') {
+            try { input.showPicker(); } catch (err) { /* ignorato */ }
+          }
+        });
+      }
+      document.querySelectorAll('input[type="date"]').forEach(applyToInput);
+    })();
 
     // ================================================================
     // SINCRONIZZAZIONE GOOGLE APPS SCRIPT
